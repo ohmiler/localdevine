@@ -16,6 +16,12 @@ const DOWNLOADS = {
         dest: path.join(BIN_DIR, 'nginx_temp'), // Nginx zips contain a root folder, need to handle
         zip: 'nginx.zip',
         finalDest: path.join(BIN_DIR, 'nginx')
+    },
+    mariadb: {
+        url: 'https://archive.mariadb.org/mariadb-11.2.2/winx64-packages/mariadb-11.2.2-winx64.zip',
+        dest: path.join(BIN_DIR, 'mariadb_temp'),
+        zip: 'mariadb.zip',
+        finalDest: path.join(BIN_DIR, 'mariadb')
     }
 };
 
@@ -127,6 +133,27 @@ const moveFiles = (src, dest) => {
         console.log('Nginx Setup Complete.');
     } else {
         console.log('Nginx already exists.');
+    }
+
+    // 3. Setup MariaDB
+    if (!fs.existsSync(path.join(DOWNLOADS.mariadb.finalDest, 'bin/mysqld.exe'))) {
+        console.log('Downloading MariaDB...');
+        if (!fs.existsSync(DOWNLOADS.mariadb.dest)) fs.mkdirSync(DOWNLOADS.mariadb.dest);
+        const zipPath = path.join(BIN_DIR, 'mariadb.zip');
+
+        await downloadFile(DOWNLOADS.mariadb.url, zipPath);
+        extractZip(zipPath, DOWNLOADS.mariadb.dest);
+
+        // Handle MariaDB folder nesting (flatten)
+        const nestedDir = fs.readdirSync(DOWNLOADS.mariadb.dest).find(f => f.startsWith('mariadb-'));
+        if (nestedDir) {
+            moveFiles(path.join(DOWNLOADS.mariadb.dest, nestedDir), DOWNLOADS.mariadb.finalDest);
+        }
+
+        fs.unlinkSync(zipPath);
+        console.log('MariaDB Setup Complete.');
+    } else {
+        console.log('MariaDB already exists.');
     }
 
     console.log('Use "npm run electron:dev" to start the app!');

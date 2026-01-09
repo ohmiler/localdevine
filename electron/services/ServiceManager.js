@@ -11,6 +11,49 @@ class ServiceManager {
             mariadb: null
         };
         this.binDir = path.join(__dirname, '../../bin');
+        this.wwwDir = path.join(__dirname, '../../www');
+    }
+
+    generateConfigs() {
+        const nginxConfPath = path.join(this.binDir, 'nginx/conf/nginx.conf');
+        const wwwPathForNginx = this.wwwDir.replace(/\\/g, '/'); // Nginx likes forward slashes
+
+        const confContent = `
+worker_processes  1;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+    keepalive_timeout  65;
+
+    server {
+        listen       80;
+        server_name  localhost;
+        
+        root   "${wwwPathForNginx}"; 
+        index  index.php index.html index.htm;
+
+        location / {
+            try_files $uri $uri/ =404;
+        }
+
+        location ~ \\.php$ {
+            try_files $uri =404;
+            fastcgi_pass   127.0.0.1:9000;
+            fastcgi_index  index.php;
+            fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+            include        fastcgi_params;
+        }
+    }
+}
+`;
+        fs.writeFileSync(nginxConfPath, confContent.trim());
+        this.log('system', 'Dynamic configuration generated.');
     }
 
     log(service, message) {
@@ -40,14 +83,30 @@ class ServiceManager {
                 args = ['-b', '127.0.0.1:9000'];
                 break;
             case 'nginx':
+                this.generateConfigs(); // Generate before start
                 cmd = path.join(this.binDir, 'nginx/nginx.exe');
                 cwd = path.join(this.binDir, 'nginx');
-                args = []; // Nginx reads conf/nginx.conf by default relative to cwd
+                args = [];
                 break;
             case 'mariadb':
                 cmd = path.join(this.binDir, 'mariadb/bin/mysqld.exe');
-                args = ['--console'];
                 cwd = path.join(this.binDir, 'mariadb');
+
+                // Initialize Data Directory if not exists
+                const dataDir = path.join(cwd, 'data');
+                if (!fs.existsSync(dataDir)) {
+                    this.log('mariadb', 'Initializing data directory... (This may take a moment)');
+                    const initCmd = path.join(cwd, 'bin/mysql_install_db.exe');
+                    try {
+                        // Use execSync for blocking init before starting server
+                        // Need require('child_process').execSync
+                        require('child_process').execSync(`"${initCmd}" --datadir=data`, { cwd });
+                        this.log('mariadb', 'Data directory initialized.');
+                    } catch (e) {
+                        this.log('mariadb', `Initialization failed: ${e.message}`);
+                    }
+                }
+                args = ['--console'];
                 break;
             default:
                 this.log('system', `Unknown service: ${serviceName}`);
@@ -98,6 +157,9 @@ class ServiceManager {
             }
             if (serviceName === 'php') {
                 spawn('taskkill', ['/F', '/IM', 'php-cgi.exe']);
+            }
+            if (serviceName === 'mariadb') {
+                spawn('taskkill', ['/F', '/IM', 'mysqld.exe']);
             }
             this.processes[serviceName] = null;
             this.notifyStatus(serviceName, 'stopped');

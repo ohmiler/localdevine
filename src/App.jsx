@@ -9,19 +9,30 @@ function App() {
 
   const [logs, setLogs] = useState([]);
 
-  // Mock logging for now
   useEffect(() => {
-    // In real app, we listen to IPC events
+    if (window.ipcRenderer) {
+      const handleStatus = (event, { service, status }) => {
+        setServices(prev => ({ ...prev, [service]: status }));
+      };
+
+      const handleLog = (event, { time, service, message }) => {
+        setLogs(prev => [...prev.slice(-100), { time, service, message }]);
+      };
+
+      window.ipcRenderer.on('service-status', handleStatus);
+      window.ipcRenderer.on('log-entry', handleLog);
+
+      return () => {
+        window.ipcRenderer.removeListener('service-status', handleStatus);
+        window.ipcRenderer.removeListener('log-entry', handleLog);
+      };
+    }
   }, []);
 
   const toggleService = (service) => {
     const currentState = services[service];
-    const newState = currentState === 'stopped' ? 'running' : 'stopped';
-    setServices(prev => ({ ...prev, [service]: newState }));
-
-    // Send IPC to main process
     if (window.ipcRenderer) {
-      window.ipcRenderer.send(`${newState === 'running' ? 'start' : 'stop'}-service`, service);
+      window.ipcRenderer.send(`${currentState === 'stopped' ? 'start' : 'stop'}-service`, service);
     }
   };
 
@@ -52,8 +63,8 @@ function App() {
             <button
               onClick={() => toggleService(service)}
               className={`w-full py-2 rounded-lg font-medium transition-colors ${services[service] === 'running'
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'bg-green-600 hover:bg-green-700 text-white'
+                ? 'bg-red-600 hover:bg-red-700 text-white'
+                : 'bg-green-600 hover:bg-green-700 text-white'
                 }`}
             >
               {services[service] === 'running' ? 'Stop' : 'Start'}

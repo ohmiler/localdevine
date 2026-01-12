@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 
 function Settings({ onBack }) {
     const [config, setConfig] = useState({
-        ports: { php: 9000, nginx: 80, mariadb: 3306 }
+        ports: { php: 9000, nginx: 80, mariadb: 3306 },
+        phpVersion: 'php'
     });
+    const [phpVersions, setPHPVersions] = useState([]);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
 
@@ -11,6 +13,9 @@ function Settings({ onBack }) {
         if (window.electronAPI) {
             window.electronAPI.getConfig().then(cfg => {
                 if (cfg) setConfig(cfg);
+            });
+            window.electronAPI.getPHPVersions().then(versions => {
+                setPHPVersions(versions || []);
             });
         }
     }, []);
@@ -23,6 +28,13 @@ function Settings({ onBack }) {
         }));
     };
 
+    const handlePHPVersionChange = async (version) => {
+        setConfig(prev => ({ ...prev, phpVersion: version }));
+        if (window.electronAPI) {
+            await window.electronAPI.setPHPVersion(version);
+        }
+    };
+
     const handleSave = async () => {
         setSaving(true);
         setMessage('');
@@ -30,7 +42,7 @@ function Settings({ onBack }) {
         if (window.electronAPI) {
             const result = await window.electronAPI.saveConfig(config);
             if (result.success) {
-                setMessage('✓ Settings saved successfully!');
+                setMessage('✓ Settings saved! Restart services to apply.');
             } else {
                 setMessage(`✗ Error: ${result.error}`);
             }
@@ -57,66 +69,106 @@ function Settings({ onBack }) {
                 </button>
             </header>
 
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 max-w-xl">
-                <h2 className="text-xl font-semibold mb-6">Port Configuration</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Port Configuration */}
+                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                    <h2 className="text-xl font-semibold mb-6">Port Configuration</h2>
 
-                <div className="space-y-4">
-                    {/* PHP Port */}
-                    <div className="flex items-center justify-between">
-                        <label className="text-gray-300">PHP-CGI Port</label>
-                        <input
-                            type="number"
-                            value={config.ports.php}
-                            onChange={(e) => handlePortChange('php', e.target.value)}
-                            className="w-24 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
-                        />
+                    <div className="space-y-4">
+                        {/* PHP Port */}
+                        <div className="flex items-center justify-between">
+                            <label className="text-gray-300">PHP-CGI Port</label>
+                            <input
+                                type="number"
+                                value={config.ports.php}
+                                onChange={(e) => handlePortChange('php', e.target.value)}
+                                className="w-24 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+                            />
+                        </div>
+
+                        {/* Nginx Port */}
+                        <div className="flex items-center justify-between">
+                            <label className="text-gray-300">Nginx Port</label>
+                            <input
+                                type="number"
+                                value={config.ports.nginx}
+                                onChange={(e) => handlePortChange('nginx', e.target.value)}
+                                className="w-24 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+                            />
+                        </div>
+
+                        {/* MariaDB Port */}
+                        <div className="flex items-center justify-between">
+                            <label className="text-gray-300">MariaDB Port</label>
+                            <input
+                                type="number"
+                                value={config.ports.mariadb}
+                                onChange={(e) => handlePortChange('mariadb', e.target.value)}
+                                className="w-24 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+                            />
+                        </div>
                     </div>
 
-                    {/* Nginx Port */}
-                    <div className="flex items-center justify-between">
-                        <label className="text-gray-300">Nginx Port</label>
-                        <input
-                            type="number"
-                            value={config.ports.nginx}
-                            onChange={(e) => handlePortChange('nginx', e.target.value)}
-                            className="w-24 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
-                        />
-                    </div>
-
-                    {/* MariaDB Port */}
-                    <div className="flex items-center justify-between">
-                        <label className="text-gray-300">MariaDB Port</label>
-                        <input
-                            type="number"
-                            value={config.ports.mariadb}
-                            onChange={(e) => handlePortChange('mariadb', e.target.value)}
-                            className="w-24 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
-                        />
-                    </div>
-                </div>
-
-                <div className="mt-6 flex items-center gap-4">
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className={`px-6 py-2 rounded-lg font-medium transition-all ${saving
+                    <div className="mt-6 flex items-center gap-4">
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className={`px-6 py-2 rounded-lg font-medium transition-all ${saving
                                 ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                                 : 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/25'
-                            }`}
-                    >
-                        {saving ? 'Saving...' : 'Save Settings'}
-                    </button>
+                                }`}
+                        >
+                            {saving ? 'Saving...' : 'Save Settings'}
+                        </button>
 
-                    {message && (
-                        <span className={`text-sm ${message.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>
-                            {message}
-                        </span>
-                    )}
+                        {message && (
+                            <span className={`text-sm ${message.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>
+                                {message}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
-                <p className="mt-4 text-xs text-gray-500">
-                    Note: Changes will take effect after restarting the services.
-                </p>
+                {/* PHP Version */}
+                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                    <h2 className="text-xl font-semibold mb-6">PHP Version</h2>
+
+                    {phpVersions.length === 0 ? (
+                        <div className="text-gray-500 italic">
+                            <p>No PHP versions found.</p>
+                            <p className="text-xs mt-2">Add PHP folders to bin/ (e.g., php81, php82, php83)</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {phpVersions.map(version => (
+                                <label
+                                    key={version.id}
+                                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${config.phpVersion === version.id
+                                            ? 'border-purple-500 bg-purple-900/20'
+                                            : 'border-gray-700 hover:border-gray-600'
+                                        }`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="phpVersion"
+                                        value={version.id}
+                                        checked={config.phpVersion === version.id}
+                                        onChange={() => handlePHPVersionChange(version.id)}
+                                        className="text-purple-500"
+                                    />
+                                    <div>
+                                        <p className="font-medium">{version.name}</p>
+                                        <p className="text-xs text-gray-500 truncate max-w-xs">{version.path}</p>
+                                    </div>
+                                </label>
+                            ))}
+                        </div>
+                    )}
+
+                    <p className="mt-4 text-xs text-gray-500">
+                        Note: Restart PHP service after changing version.
+                    </p>
+                </div>
             </div>
         </div>
     );

@@ -176,8 +176,9 @@ ${vhostBlocks}}
 
         switch (serviceName) {
             case 'php':
-                // Run PHP-CGI on configured port
-                cmd = path.join(this.binDir, 'php/php-cgi.exe');
+                // Run PHP-CGI on configured port using selected version
+                const phpPath = this.configManager ? this.configManager.getPHPPath() : path.join(this.binDir, 'php');
+                cmd = path.join(phpPath, 'php-cgi.exe');
                 args = ['-b', `127.0.0.1:${phpPort}`];
                 break;
             case 'nginx':

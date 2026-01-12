@@ -189,3 +189,13 @@ ipcMain.handle('remove-vhost', (event, id) => {
   }
   return result;
 });
+
+// IPC Handlers - PHP Versions
+ipcMain.handle('get-php-versions', () => {
+  return configManager ? configManager.getPHPVersions() : [];
+});
+
+ipcMain.handle('set-php-version', (event, version) => {
+  if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
+  return configManager.setPHPVersion(version);
+});

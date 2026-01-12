@@ -24,6 +24,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     addVHost: (vhost) => ipcRenderer.invoke('add-vhost', vhost),
     removeVHost: (id) => ipcRenderer.invoke('remove-vhost', id),
 
+    // PHP Versions
+    getPHPVersions: () => ipcRenderer.invoke('get-php-versions'),
+    setPHPVersion: (version) => ipcRenderer.invoke('set-php-version', version),
+
     // Event listeners
     on: (channel, callback) => {
         const allowedChannels = ['service-status', 'log-entry'];

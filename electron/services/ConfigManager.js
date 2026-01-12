@@ -4,6 +4,7 @@ const path = require('path');
 class ConfigManager {
     constructor() {
         this.configPath = path.join(__dirname, '../../config.json');
+        this.binDir = path.join(__dirname, '../../bin');
         this.defaultConfig = {
             ports: {
                 php: 9000,
@@ -11,7 +12,8 @@ class ConfigManager {
                 mariadb: 3306
             },
             autoStart: false,
-            vhosts: []
+            vhosts: [],
+            phpVersion: 'php'
         };
         this.config = this.load();
     }
@@ -26,7 +28,8 @@ class ConfigManager {
                     ...this.defaultConfig,
                     ...loaded,
                     ports: { ...this.defaultConfig.ports, ...loaded.ports },
-                    vhosts: loaded.vhosts || []
+                    vhosts: loaded.vhosts || [],
+                    phpVersion: loaded.phpVersion || 'php'
                 };
             }
         } catch (error) {
@@ -41,7 +44,8 @@ class ConfigManager {
                 ...this.config,
                 ...newConfig,
                 ports: { ...this.config.ports, ...(newConfig.ports || {}) },
-                vhosts: newConfig.vhosts !== undefined ? newConfig.vhosts : this.config.vhosts
+                vhosts: newConfig.vhosts !== undefined ? newConfig.vhosts : this.config.vhosts,
+                phpVersion: newConfig.phpVersion !== undefined ? newConfig.phpVersion : this.config.phpVersion
             };
             fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
             return { success: true };
@@ -89,6 +93,42 @@ class ConfigManager {
         const vhosts = this.getVHosts().filter(v => v.id !== id);
         this.config.vhosts = vhosts;
         return this.save(this.config);
+    }
+
+    // PHP Version methods
+    getPHPVersions() {
+        const versions = [];
+        try {
+            const entries = fs.readdirSync(this.binDir, { withFileTypes: true });
+            for (const entry of entries) {
+                if (entry.isDirectory() && entry.name.startsWith('php')) {
+                    const phpCgiPath = path.join(this.binDir, entry.name, 'php-cgi.exe');
+                    if (fs.existsSync(phpCgiPath)) {
+                        versions.push({
+                            id: entry.name,
+                            name: entry.name === 'php' ? 'PHP (default)' : entry.name.toUpperCase().replace('PHP', 'PHP '),
+                            path: path.join(this.binDir, entry.name)
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error scanning PHP versions:', error.message);
+        }
+        return versions;
+    }
+
+    getPHPVersion() {
+        return this.config.phpVersion || 'php';
+    }
+
+    setPHPVersion(version) {
+        this.config.phpVersion = version;
+        return this.save(this.config);
+    }
+
+    getPHPPath() {
+        return path.join(this.binDir, this.getPHPVersion());
     }
 }
 

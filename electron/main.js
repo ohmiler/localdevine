@@ -9,10 +9,12 @@ if (typeof app === 'undefined') {
 
 const ServiceManager = require('./services/ServiceManager');
 const TrayManager = require('./services/TrayManager');
+const ConfigManager = require('./services/ConfigManager');
 
 let mainWindow;
 let serviceManager;
 let trayManager;
+let configManager;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -40,7 +42,12 @@ function createWindow() {
 
 app.whenReady().then(() => {
   const win = createWindow();
-  serviceManager = new ServiceManager(win);
+
+  // Initialize config manager first
+  configManager = new ConfigManager();
+
+  // Pass config to service manager
+  serviceManager = new ServiceManager(win, configManager);
 
   // Create system tray
   trayManager = new TrayManager(win, serviceManager, app);
@@ -58,7 +65,8 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     const win = createWindow();
-    serviceManager = new ServiceManager(win);
+    configManager = new ConfigManager();
+    serviceManager = new ServiceManager(win, configManager);
     trayManager = new TrayManager(win, serviceManager, app);
     trayManager.create();
   }
@@ -86,7 +94,7 @@ app.on('will-quit', () => {
   }
 });
 
-// IPC Handlers
+// IPC Handlers - Service Control
 ipcMain.on('start-service', (event, serviceName) => {
   if (serviceManager) serviceManager.startService(serviceName);
 });
@@ -103,7 +111,15 @@ ipcMain.on('stop-all-services', () => {
   if (serviceManager) serviceManager.stopAllServices();
 });
 
-// Get app version
+// IPC Handlers - Config
 ipcMain.handle('get-version', () => {
   return app.getVersion();
+});
+
+ipcMain.handle('get-config', () => {
+  return configManager ? configManager.get() : null;
+});
+
+ipcMain.handle('save-config', (event, config) => {
+  return configManager ? configManager.save(config) : { success: false, error: 'ConfigManager not initialized' };
 });

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import ServiceCard from './components/ServiceCard';
 import ConsolePanel from './components/ConsolePanel';
+import Settings from './components/Settings';
 
 function App() {
+  const [currentPage, setCurrentPage] = useState('home');
   const [services, setServices] = useState({
     php: 'stopped',
     nginx: 'stopped',
@@ -61,6 +63,12 @@ function App() {
   const allRunning = Object.values(services).every(s => s === 'running');
   const allStopped = Object.values(services).every(s => s === 'stopped');
 
+  // Render Settings page
+  if (currentPage === 'settings') {
+    return <Settings onBack={() => setCurrentPage('home')} />;
+  }
+
+  // Render Home page
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <header className="mb-10 flex justify-between items-center">
@@ -70,7 +78,15 @@ function App() {
           </h1>
           <p className="text-gray-400">The Modern PHP Development Environment</p>
         </div>
-        <div className="text-xs text-gray-500 font-mono">v{version}</div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setCurrentPage('settings')}
+            className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-sm"
+          >
+            ⚙️ Settings
+          </button>
+          <div className="text-xs text-gray-500 font-mono">v{version}</div>
+        </div>
       </header>
 
       {/* Quick Actions */}

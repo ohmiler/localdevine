@@ -10,6 +10,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Get app version
     getVersion: () => ipcRenderer.invoke('get-version'),
 
+    // Config management
+    getConfig: () => ipcRenderer.invoke('get-config'),
+    saveConfig: (config) => ipcRenderer.invoke('save-config', config),
+
     // Event listeners
     on: (channel, callback) => {
         const allowedChannels = ['service-status', 'log-entry'];

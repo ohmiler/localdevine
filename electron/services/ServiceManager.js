@@ -3,8 +3,9 @@ const path = require('path');
 const fs = require('fs');
 
 class ServiceManager {
-    constructor(mainWindow) {
+    constructor(mainWindow, configManager) {
         this.mainWindow = mainWindow;
+        this.configManager = configManager;
         this.processes = {
             php: null,
             nginx: null,
@@ -14,9 +15,20 @@ class ServiceManager {
         this.wwwDir = path.join(__dirname, '../../www');
     }
 
+    getPort(service) {
+        if (this.configManager) {
+            return this.configManager.getPort(service);
+        }
+        // Fallback defaults
+        const defaults = { php: 9000, nginx: 80, mariadb: 3306 };
+        return defaults[service];
+    }
+
     generateConfigs() {
         const nginxConfPath = path.join(this.binDir, 'nginx/conf/nginx.conf');
         const wwwPathForNginx = this.wwwDir.replace(/\\/g, '/'); // Nginx likes forward slashes
+        const nginxPort = this.getPort('nginx');
+        const phpPort = this.getPort('php');
 
         const confContent = `
 worker_processes  1;
@@ -32,7 +44,7 @@ http {
     keepalive_timeout  65;
 
     server {
-        listen       80;
+        listen       ${nginxPort};
         server_name  localhost;
         
         root   "${wwwPathForNginx}"; 
@@ -44,7 +56,7 @@ http {
 
         location ~ \\.php$ {
             try_files $uri =404;
-            fastcgi_pass   127.0.0.1:9000;
+            fastcgi_pass   127.0.0.1:${phpPort};
             fastcgi_index  index.php;
             fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
             include        fastcgi_params;
@@ -53,7 +65,7 @@ http {
 }
 `;
         fs.writeFileSync(nginxConfPath, confContent.trim());
-        this.log('system', 'Dynamic configuration generated.');
+        this.log('system', `Config generated (Nginx:${nginxPort}, PHP:${phpPort})`);
     }
 
     log(service, message) {
@@ -127,12 +139,14 @@ http {
         }
 
         let cmd, args, cwd;
+        const phpPort = this.getPort('php');
+        const mariadbPort = this.getPort('mariadb');
 
         switch (serviceName) {
             case 'php':
-                // Run PHP-CGI on port 9000
+                // Run PHP-CGI on configured port
                 cmd = path.join(this.binDir, 'php/php-cgi.exe');
-                args = ['-b', '127.0.0.1:9000'];
+                args = ['-b', `127.0.0.1:${phpPort}`];
                 break;
             case 'nginx':
                 this.generateConfigs(); // Generate before start
@@ -152,14 +166,14 @@ http {
                     this.notifyStatus(serviceName, 'stopped');
                     return;
                 }
-                args = ['--console'];
+                args = ['--console', `--port=${mariadbPort}`];
                 break;
             default:
                 this.log('system', `Unknown service: ${serviceName}`);
                 return;
         }
 
-        this.log(serviceName, `Starting from ${cmd}...`);
+        this.log(serviceName, `Starting on port ${this.getPort(serviceName)}...`);
 
         if (!fs.existsSync(cmd)) {
             this.log(serviceName, `Executable not found! Please run setup script.`);

@@ -17,6 +17,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Folder operations
     openFolder: (folderType) => ipcRenderer.send('open-folder', folderType),
     openTerminal: () => ipcRenderer.send('open-terminal'),
+    selectFolder: () => ipcRenderer.invoke('select-folder'),
+
+    // Virtual Hosts
+    getVHosts: () => ipcRenderer.invoke('get-vhosts'),
+    addVHost: (vhost) => ipcRenderer.invoke('add-vhost', vhost),
+    removeVHost: (id) => ipcRenderer.invoke('remove-vhost', id),
 
     // Event listeners
     on: (channel, callback) => {

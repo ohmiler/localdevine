@@ -30,6 +30,36 @@ class ServiceManager {
         const nginxPort = this.getPort('nginx');
         const phpPort = this.getPort('php');
 
+        // Get virtual hosts from config
+        const vhosts = this.configManager ? this.configManager.getVHosts() : [];
+
+        // Generate vhost server blocks
+        let vhostBlocks = '';
+        for (const vhost of vhosts) {
+            const vhostPath = vhost.path.replace(/\\/g, '/');
+            vhostBlocks += `
+    server {
+        listen       ${nginxPort};
+        server_name  ${vhost.domain};
+        
+        root   "${vhostPath}"; 
+        index  index.php index.html index.htm;
+
+        location / {
+            try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        location ~ \\.php$ {
+            try_files $uri =404;
+            fastcgi_pass   127.0.0.1:${phpPort};
+            fastcgi_index  index.php;
+            fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+            include        fastcgi_params;
+        }
+    }
+`;
+        }
+
         const confContent = `
 worker_processes  1;
 
@@ -43,6 +73,7 @@ http {
     sendfile        on;
     keepalive_timeout  65;
 
+    # Default server (localhost)
     server {
         listen       ${nginxPort};
         server_name  localhost;
@@ -62,10 +93,11 @@ http {
             include        fastcgi_params;
         }
     }
-}
+${vhostBlocks}}
 `;
         fs.writeFileSync(nginxConfPath, confContent.trim());
-        this.log('system', `Config generated (Nginx:${nginxPort}, PHP:${phpPort})`);
+        const vhostCount = vhosts.length;
+        this.log('system', `Config generated (Nginx:${nginxPort}, PHP:${phpPort}, VHosts:${vhostCount})`);
     }
 
     log(service, message) {

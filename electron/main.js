@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -152,4 +152,40 @@ ipcMain.on('open-terminal', () => {
     detached: true,
     shell: true
   });
+});
+
+// IPC Handlers - Folder Selection
+ipcMain.handle('select-folder', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory']
+  });
+  if (!result.canceled && result.filePaths.length > 0) {
+    return result.filePaths[0];
+  }
+  return null;
+});
+
+// IPC Handlers - Virtual Hosts
+ipcMain.handle('get-vhosts', () => {
+  return configManager ? configManager.getVHosts() : [];
+});
+
+ipcMain.handle('add-vhost', (event, vhost) => {
+  if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
+  const result = configManager.addVHost(vhost);
+  // Notify to regenerate nginx config
+  if (result.success && serviceManager) {
+    serviceManager.generateConfigs();
+  }
+  return result;
+});
+
+ipcMain.handle('remove-vhost', (event, id) => {
+  if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
+  const result = configManager.removeVHost(id);
+  // Notify to regenerate nginx config
+  if (result.success && serviceManager) {
+    serviceManager.generateConfigs();
+  }
+  return result;
 });

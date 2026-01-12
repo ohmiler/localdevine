@@ -10,7 +10,8 @@ class ConfigManager {
                 nginx: 80,
                 mariadb: 3306
             },
-            autoStart: false
+            autoStart: false,
+            vhosts: []
         };
         this.config = this.load();
     }
@@ -21,7 +22,12 @@ class ConfigManager {
                 const data = fs.readFileSync(this.configPath, 'utf8');
                 const loaded = JSON.parse(data);
                 // Merge with defaults to ensure all keys exist
-                return { ...this.defaultConfig, ...loaded, ports: { ...this.defaultConfig.ports, ...loaded.ports } };
+                return {
+                    ...this.defaultConfig,
+                    ...loaded,
+                    ports: { ...this.defaultConfig.ports, ...loaded.ports },
+                    vhosts: loaded.vhosts || []
+                };
             }
         } catch (error) {
             console.error('Error loading config:', error.message);
@@ -31,7 +37,12 @@ class ConfigManager {
 
     save(newConfig) {
         try {
-            this.config = { ...this.config, ...newConfig, ports: { ...this.config.ports, ...newConfig.ports } };
+            this.config = {
+                ...this.config,
+                ...newConfig,
+                ports: { ...this.config.ports, ...(newConfig.ports || {}) },
+                vhosts: newConfig.vhosts !== undefined ? newConfig.vhosts : this.config.vhosts
+            };
             fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
             return { success: true };
         } catch (error) {
@@ -46,6 +57,38 @@ class ConfigManager {
 
     getPort(service) {
         return this.config.ports[service] || this.defaultConfig.ports[service];
+    }
+
+    // Virtual Hosts methods
+    getVHosts() {
+        return this.config.vhosts || [];
+    }
+
+    addVHost(vhost) {
+        // vhost = { name, domain, path }
+        const vhosts = this.getVHosts();
+
+        // Check if domain already exists
+        if (vhosts.some(v => v.domain === vhost.domain)) {
+            return { success: false, error: 'Domain already exists' };
+        }
+
+        vhosts.push({
+            id: Date.now().toString(),
+            name: vhost.name,
+            domain: vhost.domain,
+            path: vhost.path,
+            createdAt: new Date().toISOString()
+        });
+
+        this.config.vhosts = vhosts;
+        return this.save(this.config);
+    }
+
+    removeVHost(id) {
+        const vhosts = this.getVHosts().filter(v => v.id !== id);
+        this.config.vhosts = vhosts;
+        return this.save(this.config);
     }
 }
 

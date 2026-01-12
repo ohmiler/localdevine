@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import ServiceCard from './components/ServiceCard';
 import ConsolePanel from './components/ConsolePanel';
 import Settings from './components/Settings';
+import VirtualHosts from './components/VirtualHosts';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -68,6 +69,11 @@ function App() {
     return <Settings onBack={() => setCurrentPage('home')} />;
   }
 
+  // Render Virtual Hosts page
+  if (currentPage === 'vhosts') {
+    return <VirtualHosts onBack={() => setCurrentPage('home')} />;
+  }
+
   // Render Home page
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
@@ -79,6 +85,12 @@ function App() {
           <p className="text-gray-400">The Modern PHP Development Environment</p>
         </div>
         <div className="flex items-center gap-4">
+          <button
+            onClick={() => setCurrentPage('vhosts')}
+            className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-sm"
+          >
+            🌐 Virtual Hosts
+          </button>
           <button
             onClick={() => setCurrentPage('settings')}
             className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-sm"

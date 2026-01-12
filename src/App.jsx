@@ -95,8 +95,8 @@ function App() {
           onClick={startAllServices}
           disabled={allRunning}
           className={`px-6 py-2 rounded-lg font-medium transition-all ${allRunning
-              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-green-500/25'
+            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+            : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-green-500/25'
             }`}
         >
           ▶ Start All
@@ -105,8 +105,8 @@ function App() {
           onClick={stopAllServices}
           disabled={allStopped}
           className={`px-6 py-2 rounded-lg font-medium transition-all ${allStopped
-              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              : 'bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white shadow-lg hover:shadow-red-500/25'
+            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+            : 'bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white shadow-lg hover:shadow-red-500/25'
             }`}
         >
           ■ Stop All
@@ -123,6 +123,28 @@ function App() {
             onToggle={() => toggleService(service)}
           />
         ))}
+      </div>
+
+      {/* Quick Access */}
+      <div className="flex gap-3 mb-6">
+        <button
+          onClick={() => window.electronAPI?.openFolder('www')}
+          className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-sm"
+        >
+          📁 www Folder
+        </button>
+        <button
+          onClick={() => window.electronAPI?.openFolder('config')}
+          className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-sm"
+        >
+          📄 Config Folder
+        </button>
+        <button
+          onClick={() => window.electronAPI?.openTerminal()}
+          className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-sm"
+        >
+          💻 Terminal
+        </button>
       </div>
 
       {/* Console / Logs Area */}

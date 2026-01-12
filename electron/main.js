@@ -1,5 +1,6 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
+const { spawn } = require('child_process');
 
 // Basic error handling to catch the 'string' issue
 if (typeof app === 'undefined') {
@@ -122,4 +123,33 @@ ipcMain.handle('get-config', () => {
 
 ipcMain.handle('save-config', (event, config) => {
   return configManager ? configManager.save(config) : { success: false, error: 'ConfigManager not initialized' };
+});
+
+// IPC Handlers - Folder Operations
+ipcMain.on('open-folder', (event, folderType) => {
+  let folderPath;
+  switch (folderType) {
+    case 'www':
+      folderPath = path.join(__dirname, '../www');
+      break;
+    case 'config':
+      folderPath = path.join(__dirname, '../');
+      break;
+    case 'bin':
+      folderPath = path.join(__dirname, '../bin');
+      break;
+    default:
+      return;
+  }
+  shell.openPath(folderPath);
+});
+
+ipcMain.on('open-terminal', () => {
+  const wwwPath = path.join(__dirname, '../www');
+  // Open PowerShell in www directory
+  spawn('powershell.exe', [], {
+    cwd: wwwPath,
+    detached: true,
+    shell: true
+  });
 });

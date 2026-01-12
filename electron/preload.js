@@ -14,6 +14,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getConfig: () => ipcRenderer.invoke('get-config'),
     saveConfig: (config) => ipcRenderer.invoke('save-config', config),
 
+    // Folder operations
+    openFolder: (folderType) => ipcRenderer.send('open-folder', folderType),
+    openTerminal: () => ipcRenderer.send('open-terminal'),
+
     // Event listeners
     on: (channel, callback) => {
         const allowedChannels = ['service-status', 'log-entry'];

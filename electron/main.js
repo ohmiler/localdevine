@@ -7,8 +7,13 @@ if (typeof app === 'undefined') {
   process.exit(1);
 }
 
+const ServiceManager = require('./services/ServiceManager');
+
+let mainWindow;
+let serviceManager;
+
 function createWindow() {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
     webPreferences: {
@@ -20,26 +25,47 @@ function createWindow() {
   });
 
   // In production, load the built file
-  // In dev, load localhost (but we are building now)
+  // In dev, load localhost
   if (app.isPackaged) {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   } else {
-    // Fallback if needed
     mainWindow.loadURL('http://localhost:5173');
   }
 
   return mainWindow;
 }
 
-const ServiceManager = require('./services/ServiceManager');
-
-let serviceManager;
-
 app.whenReady().then(() => {
   const win = createWindow();
   serviceManager = new ServiceManager(win);
 });
 
+// Properly quit when all windows are closed (Windows & Linux)
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+// macOS: re-create window when dock icon is clicked
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    const win = createWindow();
+    serviceManager = new ServiceManager(win);
+  }
+});
+
+// Cleanup all services before quitting
+app.on('before-quit', async (event) => {
+  if (serviceManager && serviceManager.hasRunningServices()) {
+    event.preventDefault();
+    console.log('Stopping all services before quit...');
+    await serviceManager.stopAllServices();
+    app.quit();
+  }
+});
+
+// IPC Handlers
 ipcMain.on('start-service', (event, serviceName) => {
   if (serviceManager) serviceManager.startService(serviceName);
 });
@@ -48,3 +74,15 @@ ipcMain.on('stop-service', (event, serviceName) => {
   if (serviceManager) serviceManager.stopService(serviceName);
 });
 
+ipcMain.on('start-all-services', () => {
+  if (serviceManager) serviceManager.startAllServices();
+});
+
+ipcMain.on('stop-all-services', () => {
+  if (serviceManager) serviceManager.stopAllServices();
+});
+
+// Get app version
+ipcMain.handle('get-version', () => {
+  return app.getVersion();
+});

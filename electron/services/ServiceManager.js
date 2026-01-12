@@ -1,4 +1,4 @@
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
@@ -57,7 +57,7 @@ http {
     }
 
     log(service, message) {
-        if (this.mainWindow) {
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
             this.mainWindow.webContents.send('log-entry', {
                 time: new Date().toLocaleTimeString(),
                 service,
@@ -68,7 +68,59 @@ http {
         }
     }
 
-    startService(serviceName) {
+    hasRunningServices() {
+        return Object.values(this.processes).some(p => p !== null);
+    }
+
+    async startAllServices() {
+        const services = ['php', 'nginx', 'mariadb'];
+        for (const service of services) {
+            if (!this.processes[service]) {
+                await this.startService(service);
+                // Small delay between starts
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+    }
+
+    async stopAllServices() {
+        const services = ['php', 'nginx', 'mariadb'];
+        const stopPromises = services.map(service => this.stopService(service));
+        await Promise.all(stopPromises);
+    }
+
+    async initMariaDB(cwd) {
+        const dataDir = path.join(cwd, 'data');
+        if (!fs.existsSync(dataDir)) {
+            this.log('mariadb', 'Initializing data directory... (This may take a moment)');
+            const initCmd = path.join(cwd, 'bin/mysql_install_db.exe');
+
+            return new Promise((resolve, reject) => {
+                const initProcess = spawn(initCmd, ['--datadir=data'], { cwd });
+
+                initProcess.stdout.on('data', (data) => this.log('mariadb', data));
+                initProcess.stderr.on('data', (data) => this.log('mariadb', data));
+
+                initProcess.on('close', (code) => {
+                    if (code === 0) {
+                        this.log('mariadb', 'Data directory initialized.');
+                        resolve();
+                    } else {
+                        this.log('mariadb', `Initialization failed with code ${code}`);
+                        reject(new Error(`Init failed with code ${code}`));
+                    }
+                });
+
+                initProcess.on('error', (err) => {
+                    this.log('mariadb', `Initialization error: ${err.message}`);
+                    reject(err);
+                });
+            });
+        }
+        return Promise.resolve();
+    }
+
+    async startService(serviceName) {
         if (this.processes[serviceName]) {
             this.log(serviceName, 'Already running.');
             return;
@@ -92,19 +144,13 @@ http {
                 cmd = path.join(this.binDir, 'mariadb/bin/mysqld.exe');
                 cwd = path.join(this.binDir, 'mariadb');
 
-                // Initialize Data Directory if not exists
-                const dataDir = path.join(cwd, 'data');
-                if (!fs.existsSync(dataDir)) {
-                    this.log('mariadb', 'Initializing data directory... (This may take a moment)');
-                    const initCmd = path.join(cwd, 'bin/mysql_install_db.exe');
-                    try {
-                        // Use execSync for blocking init before starting server
-                        // Need require('child_process').execSync
-                        require('child_process').execSync(`"${initCmd}" --datadir=data`, { cwd });
-                        this.log('mariadb', 'Data directory initialized.');
-                    } catch (e) {
-                        this.log('mariadb', `Initialization failed: ${e.message}`);
-                    }
+                // Initialize Data Directory if not exists (async)
+                try {
+                    await this.initMariaDB(cwd);
+                } catch (e) {
+                    this.log('mariadb', `Failed to initialize: ${e.message}`);
+                    this.notifyStatus(serviceName, 'stopped');
+                    return;
                 }
                 args = ['--console'];
                 break;
@@ -147,27 +193,55 @@ http {
     }
 
     stopService(serviceName) {
-        const child = this.processes[serviceName];
-        if (child) {
-            this.log(serviceName, 'Stopping...');
-            child.kill();
-            // Nginx might need specific kill command or taskkill if it spawns workers
-            if (serviceName === 'nginx') {
-                spawn('taskkill', ['/F', '/IM', 'nginx.exe']);
+        return new Promise((resolve) => {
+            const child = this.processes[serviceName];
+            if (child) {
+                const pid = child.pid;
+                this.log(serviceName, `Stopping (PID: ${pid})...`);
+
+                // Kill using PID instead of /IM for safety
+                this.killByPID(pid, serviceName)
+                    .then(() => {
+                        this.processes[serviceName] = null;
+                        this.notifyStatus(serviceName, 'stopped');
+                        resolve();
+                    })
+                    .catch((err) => {
+                        this.log(serviceName, `Kill error: ${err.message}`);
+                        // Try force kill as fallback
+                        child.kill('SIGKILL');
+                        this.processes[serviceName] = null;
+                        this.notifyStatus(serviceName, 'stopped');
+                        resolve();
+                    });
+            } else {
+                resolve();
             }
-            if (serviceName === 'php') {
-                spawn('taskkill', ['/F', '/IM', 'php-cgi.exe']);
-            }
-            if (serviceName === 'mariadb') {
-                spawn('taskkill', ['/F', '/IM', 'mysqld.exe']);
-            }
-            this.processes[serviceName] = null;
-            this.notifyStatus(serviceName, 'stopped');
-        }
+        });
+    }
+
+    killByPID(pid, serviceName) {
+        return new Promise((resolve, reject) => {
+            // Use taskkill with PID for safer termination
+            exec(`taskkill /F /PID ${pid} /T`, (error, stdout, stderr) => {
+                if (error) {
+                    // Check if process already terminated
+                    if (stderr.includes('not found') || stderr.includes('ไม่พบ')) {
+                        this.log(serviceName, 'Process already terminated.');
+                        resolve();
+                    } else {
+                        reject(error);
+                    }
+                } else {
+                    this.log(serviceName, 'Stopped successfully.');
+                    resolve();
+                }
+            });
+        });
     }
 
     notifyStatus(service, status) {
-        if (this.mainWindow) {
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
             this.mainWindow.webContents.send('service-status', { service, status });
         }
     }

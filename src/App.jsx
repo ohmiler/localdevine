@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react';
+import ServiceCard from './components/ServiceCard';
+import ConsolePanel from './components/ConsolePanel';
 
 function App() {
   const [services, setServices] = useState({
@@ -8,9 +10,13 @@ function App() {
   });
 
   const [logs, setLogs] = useState([]);
+  const [version, setVersion] = useState('0.0.0');
 
   useEffect(() => {
-    if (window.ipcRenderer) {
+    if (window.electronAPI) {
+      // Get version
+      window.electronAPI.getVersion().then(v => setVersion(v));
+
       const handleStatus = (event, { service, status }) => {
         setServices(prev => ({ ...prev, [service]: status }));
       };
@@ -19,22 +25,41 @@ function App() {
         setLogs(prev => [...prev.slice(-100), { time, service, message }]);
       };
 
-      window.ipcRenderer.on('service-status', handleStatus);
-      window.ipcRenderer.on('log-entry', handleLog);
+      window.electronAPI.on('service-status', handleStatus);
+      window.electronAPI.on('log-entry', handleLog);
 
       return () => {
-        window.ipcRenderer.removeListener('service-status', handleStatus);
-        window.ipcRenderer.removeListener('log-entry', handleLog);
+        window.electronAPI.removeListener('service-status', handleStatus);
+        window.electronAPI.removeListener('log-entry', handleLog);
       };
     }
   }, []);
 
   const toggleService = (service) => {
     const currentState = services[service];
-    if (window.ipcRenderer) {
-      window.ipcRenderer.send(`${currentState === 'stopped' ? 'start' : 'stop'}-service`, service);
+    if (window.electronAPI) {
+      if (currentState === 'stopped') {
+        window.electronAPI.startService(service);
+      } else {
+        window.electronAPI.stopService(service);
+      }
     }
   };
+
+  const startAllServices = () => {
+    if (window.electronAPI) {
+      window.electronAPI.startAllServices();
+    }
+  };
+
+  const stopAllServices = () => {
+    if (window.electronAPI) {
+      window.electronAPI.stopAllServices();
+    }
+  };
+
+  const allRunning = Object.values(services).every(s => s === 'running');
+  const allStopped = Object.values(services).every(s => s === 'stopped');
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
@@ -45,49 +70,49 @@ function App() {
           </h1>
           <p className="text-gray-400">The Modern PHP Development Environment</p>
         </div>
-        <div className="text-xs text-gray-500 font-mono">v0.1.0-alpha</div>
+        <div className="text-xs text-gray-500 font-mono">v{version}</div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* Service Cards */}
-        {['php', 'nginx', 'mariadb'].map(service => (
-          <div key={service} className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-purple-500 transition-all duration-300">
-            <div className="flex justify-between items-start mb-4">
-              <h2 className="text-xl font-semibold capitalize">{service === 'mariadb' ? 'MariaDB' : service.toUpperCase()}</h2>
-              <span className={`px-2 py-1 rounded text-xs font-bold ${services[service] === 'running' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
-                }`}>
-                {services[service].toUpperCase()}
-              </span>
-            </div>
+      {/* Quick Actions */}
+      <div className="flex gap-4 mb-6">
+        <button
+          onClick={startAllServices}
+          disabled={allRunning}
+          className={`px-6 py-2 rounded-lg font-medium transition-all ${allRunning
+              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-green-500/25'
+            }`}
+        >
+          ▶ Start All
+        </button>
+        <button
+          onClick={stopAllServices}
+          disabled={allStopped}
+          className={`px-6 py-2 rounded-lg font-medium transition-all ${allStopped
+              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              : 'bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white shadow-lg hover:shadow-red-500/25'
+            }`}
+        >
+          ■ Stop All
+        </button>
+      </div>
 
-            <button
-              onClick={() => toggleService(service)}
-              className={`w-full py-2 rounded-lg font-medium transition-colors ${services[service] === 'running'
-                ? 'bg-red-600 hover:bg-red-700 text-white'
-                : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
-            >
-              {services[service] === 'running' ? 'Stop' : 'Start'}
-            </button>
-          </div>
+      {/* Service Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {['php', 'nginx', 'mariadb'].map(service => (
+          <ServiceCard
+            key={service}
+            service={service}
+            status={services[service]}
+            onToggle={() => toggleService(service)}
+          />
         ))}
       </div>
 
       {/* Console / Logs Area */}
-      <div className="bg-black rounded-xl border border-gray-800 p-4 h-64 overflow-y-auto font-mono text-sm shadow-inner">
-        <div className="text-gray-500 mb-2 sticky top-0 bg-black pb-2 border-b border-gray-900">Console Output</div>
-        {logs.length === 0 ? (
-          <div className="text-gray-600 italic">Ready to start services...</div>
-        ) : (
-          logs.map((log, i) => (
-            <div key={i} className="text-gray-300 mb-1">
-              <span className="text-purple-400">[{log.time}]</span> {log.message}
-            </div>
-          ))
-        )}
-      </div>
+      <ConsolePanel logs={logs} />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

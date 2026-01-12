@@ -8,9 +8,11 @@ if (typeof app === 'undefined') {
 }
 
 const ServiceManager = require('./services/ServiceManager');
+const TrayManager = require('./services/TrayManager');
 
 let mainWindow;
 let serviceManager;
+let trayManager;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -22,6 +24,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
     title: 'LocalDevine',
+    icon: path.join(__dirname, '../public/icon.png'),
   });
 
   // In production, load the built file
@@ -38,6 +41,10 @@ function createWindow() {
 app.whenReady().then(() => {
   const win = createWindow();
   serviceManager = new ServiceManager(win);
+
+  // Create system tray
+  trayManager = new TrayManager(win, serviceManager, app);
+  trayManager.create();
 });
 
 // Properly quit when all windows are closed (Windows & Linux)
@@ -52,16 +59,30 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     const win = createWindow();
     serviceManager = new ServiceManager(win);
+    trayManager = new TrayManager(win, serviceManager, app);
+    trayManager.create();
   }
 });
 
 // Cleanup all services before quitting
 app.on('before-quit', async (event) => {
+  // Set tray to quitting mode
+  if (trayManager) {
+    trayManager.setQuitting(true);
+  }
+
   if (serviceManager && serviceManager.hasRunningServices()) {
     event.preventDefault();
     console.log('Stopping all services before quit...');
     await serviceManager.stopAllServices();
     app.quit();
+  }
+});
+
+// Cleanup tray on quit
+app.on('will-quit', () => {
+  if (trayManager) {
+    trayManager.destroy();
   }
 });
 

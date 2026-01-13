@@ -176,6 +176,36 @@ function Settings({ onBack }: SettingsProps) {
                         Note: Restart PHP service after changing version.
                     </p>
                 </div>
+
+                {/* Startup Options */}
+                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                    <h2 className="text-xl font-semibold mb-6">Startup Options</h2>
+
+                    <div className="space-y-4">
+                        <label className="flex items-center justify-between cursor-pointer">
+                            <div>
+                                <p className="text-gray-300">Auto Start Services</p>
+                                <p className="text-xs text-gray-500">Start all services when app launches</p>
+                            </div>
+                            <div
+                                onClick={() => setConfig((prev: Config) => ({ ...prev, autoStart: !prev.autoStart }))}
+                                className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer ${
+                                    config.autoStart ? 'bg-purple-600' : 'bg-gray-600'
+                                }`}
+                            >
+                                <div
+                                    className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ${
+                                        config.autoStart ? 'translate-x-8' : 'translate-x-1'
+                                    }`}
+                                />
+                            </div>
+                        </label>
+                    </div>
+
+                    <p className="mt-4 text-xs text-gray-500">
+                        Changes will apply on next app launch.
+                    </p>
+                </div>
             </div>
         </div>
     );

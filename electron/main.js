@@ -73,6 +73,15 @@ app.whenReady().then(() => {
   // Create system tray
   trayManager = new TrayManager(win, serviceManager, app);
   trayManager.create();
+
+  // Auto-start services if enabled
+  const config = configManager.get();
+  if (config.autoStart) {
+    console.log('Auto-starting all services...');
+    setTimeout(() => {
+      serviceManager.startAllServices();
+    }, 1000); // Small delay to ensure window is ready
+  }
 });
 
 // Properly quit when all windows are closed (Windows & Linux)

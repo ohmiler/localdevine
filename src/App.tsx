@@ -3,10 +3,11 @@ import ServiceCard from './components/ServiceCard';
 import ConsolePanel from './components/ConsolePanel';
 import Settings from './components/Settings';
 import VirtualHosts from './components/VirtualHosts';
+import HostsEditor from './components/HostsEditor';
 import NotificationPanel from './components/NotificationPanel';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 
-type PageType = 'home' | 'settings' | 'vhosts';
+type PageType = 'home' | 'settings' | 'vhosts' | 'hosts';
 
 interface Services {
   php: ServiceStatus;
@@ -98,6 +99,11 @@ function App() {
     return <VirtualHosts onBack={() => setCurrentPage('home')} />;
   }
 
+  // Render Hosts Editor page
+  if (currentPage === 'hosts') {
+    return <HostsEditor onBack={() => setCurrentPage('home')} />;
+  }
+
   // Render Home page
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
@@ -114,6 +120,12 @@ function App() {
             className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-sm"
           >
             🌐 Virtual Hosts
+          </button>
+          <button
+            onClick={() => setCurrentPage('hosts')}
+            className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-sm"
+          >
+            📝 Hosts File
           </button>
           <button
             onClick={() => setCurrentPage('settings')}

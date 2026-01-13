@@ -6,6 +6,7 @@ const { spawn } = require('child_process');
 const { ServiceManager } = require('../dist-electron/services/ServiceManager');
 const TrayManager = require('../dist-electron/services/TrayManager').default;
 const ConfigManager = require('../dist-electron/services/ConfigManager').default;
+const HostsManager = require('../dist-electron/services/HostsManager').default;
 
 console.log('Electron app starting...');
 console.log('app type:', typeof app);
@@ -255,4 +256,35 @@ ipcMain.on('service-notification', (event, notification) => {
   } else {
     console.log('Notifications not supported on this system');
   }
+});
+
+// IPC Handlers - Hosts File
+const hostsManager = new HostsManager();
+
+ipcMain.handle('get-hosts-entries', () => {
+  return hostsManager.readHostsFile();
+});
+
+ipcMain.handle('add-hosts-entry', async (event, ip, hostname, comment) => {
+  return hostsManager.addEntry(ip, hostname, comment);
+});
+
+ipcMain.handle('remove-hosts-entry', async (event, hostname) => {
+  return hostsManager.removeEntry(hostname);
+});
+
+ipcMain.handle('toggle-hosts-entry', async (event, hostname) => {
+  return hostsManager.toggleEntry(hostname);
+});
+
+ipcMain.handle('restore-hosts-backup', () => {
+  return hostsManager.restoreBackup();
+});
+
+ipcMain.handle('check-hosts-admin-rights', () => {
+  return hostsManager.checkAdminRights();
+});
+
+ipcMain.on('request-hosts-admin-rights', () => {
+  hostsManager.requestAdminRights();
 });

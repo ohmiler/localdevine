@@ -28,9 +28,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getPHPVersions: () => ipcRenderer.invoke('get-php-versions'),
     setPHPVersion: (version) => ipcRenderer.invoke('set-php-version', version),
 
+    // Hosts File
+    getHostsEntries: () => ipcRenderer.invoke('get-hosts-entries'),
+    addHostsEntry: (ip, hostname, comment) => ipcRenderer.invoke('add-hosts-entry', ip, hostname, comment),
+    removeHostsEntry: (hostname) => ipcRenderer.invoke('remove-hosts-entry', hostname),
+    toggleHostsEntry: (hostname) => ipcRenderer.invoke('toggle-hosts-entry', hostname),
+    restoreHostsBackup: () => ipcRenderer.invoke('restore-hosts-backup'),
+    checkHostsAdminRights: () => ipcRenderer.invoke('check-hosts-admin-rights'),
+    requestHostsAdminRights: () => ipcRenderer.send('request-hosts-admin-rights'),
+
     // Event listeners
     on: (channel, callback) => {
-        const allowedChannels = ['service-status', 'log-entry'];
+        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification'];
         if (allowedChannels.includes(channel)) {
             ipcRenderer.on(channel, (event, ...args) => callback(event, ...args));
         }

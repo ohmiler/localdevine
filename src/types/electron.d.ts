@@ -3,6 +3,7 @@ import { IpcRendererEvent } from 'electron';
 // Re-export types from backend for consistency
 export type { ServiceStatus, LogEntry, VHostConfig, ServiceHealth } from '../../../electron/services/ServiceManager';
 export type { Config, PHPVersion } from '../../../electron/services/ConfigManager';
+export type { HostsEntry, HostsFileResult, HostsOperationResult } from '../../../electron/services/HostsManager';
 
 // Additional frontend-specific types
 export interface ServiceStatusEvent {
@@ -58,6 +59,15 @@ export interface ElectronAPI {
     // PHP Versions
     getPHPVersions: () => Promise<PHPVersion[]>;
     setPHPVersion: (version: string) => Promise<{ success: boolean; error?: string }>;
+
+    // Hosts File
+    getHostsEntries: () => Promise<HostsFileResult>;
+    addHostsEntry: (ip: string, hostname: string, comment?: string) => Promise<HostsOperationResult>;
+    removeHostsEntry: (hostname: string) => Promise<HostsOperationResult>;
+    toggleHostsEntry: (hostname: string) => Promise<HostsOperationResult>;
+    restoreHostsBackup: () => Promise<HostsOperationResult>;
+    checkHostsAdminRights: () => Promise<boolean>;
+    requestHostsAdminRights: () => void;
 
     // Event listeners
     on: (channel: 'service-status' | 'log-entry' | 'health-status' | 'service-notification', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;

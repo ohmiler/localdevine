@@ -1,6 +1,10 @@
-const { Tray, Menu, nativeImage } = require('electron');
-const path = require('path');
-
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const electron_1 = require("electron");
+const path_1 = __importDefault(require("path"));
 class TrayManager {
     constructor(mainWindow, serviceManager, app) {
         this.mainWindow = mainWindow;
@@ -9,31 +13,24 @@ class TrayManager {
         this.tray = null;
         this.isQuitting = false;
     }
-
     create() {
         // Load tray icon
-        const iconPath = path.join(__dirname, '../../public/icon.png');
-        const icon = nativeImage.createFromPath(iconPath);
-
+        const iconPath = path_1.default.join(__dirname, '../../public/icon.png');
+        const icon = electron_1.nativeImage.createFromPath(iconPath);
         // Resize for tray (16x16 on Windows)
         const trayIcon = icon.resize({ width: 16, height: 16 });
-
-        this.tray = new Tray(trayIcon);
+        this.tray = new electron_1.Tray(trayIcon);
         this.tray.setToolTip('LocalDevine');
-
         this.updateContextMenu();
-
         // Double-click to show window
         this.tray.on('double-click', () => {
             this.showWindow();
         });
-
         // Setup window close behavior (minimize to tray)
         this.setupWindowBehavior();
     }
-
     updateContextMenu() {
-        const contextMenu = Menu.buildFromTemplate([
+        const contextMenu = electron_1.Menu.buildFromTemplate([
             {
                 label: 'Show LocalDevine',
                 click: () => this.showWindow()
@@ -64,10 +61,8 @@ class TrayManager {
                 }
             }
         ]);
-
         this.tray.setContextMenu(contextMenu);
     }
-
     setupWindowBehavior() {
         // Minimize to tray instead of closing
         this.mainWindow.on('close', (event) => {
@@ -77,18 +72,15 @@ class TrayManager {
             }
         });
     }
-
     showWindow() {
         if (this.mainWindow) {
             this.mainWindow.show();
             this.mainWindow.focus();
         }
     }
-
     setQuitting(value) {
         this.isQuitting = value;
     }
-
     destroy() {
         if (this.tray) {
             this.tray.destroy();
@@ -96,5 +88,4 @@ class TrayManager {
         }
     }
 }
-
-module.exports = TrayManager;
+exports.default = TrayManager;

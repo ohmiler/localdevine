@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
+import { VHostConfig, CreateVHostInput } from '../types/electron';
 
-function VirtualHosts({ onBack }) {
-    const [vhosts, setVHosts] = useState([]);
-    const [newVHost, setNewVHost] = useState({ name: '', domain: '', path: '' });
+interface VirtualHostsProps {
+  onBack: () => void;
+}
+
+function VirtualHosts({ onBack }: VirtualHostsProps) {
+    const [vhosts, setVHosts] = useState<VHostConfig[]>([]);
+    const [newVHost, setNewVHost] = useState<CreateVHostInput>({ name: '', domain: '', path: '' });
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
 
@@ -41,7 +46,7 @@ function VirtualHosts({ onBack }) {
         setTimeout(() => setMessage(''), 5000);
     };
 
-    const handleRemove = async (id) => {
+    const handleRemove = async (id: string) => {
         if (window.electronAPI) {
             await window.electronAPI.removeVHost(id);
             loadVHosts();
@@ -52,7 +57,7 @@ function VirtualHosts({ onBack }) {
         if (window.electronAPI) {
             const path = await window.electronAPI.selectFolder();
             if (path) {
-                setNewVHost(prev => ({ ...prev, path }));
+                setNewVHost((prev: CreateVHostInput) => ({ ...prev, path }));
             }
         }
     };
@@ -85,7 +90,7 @@ function VirtualHosts({ onBack }) {
                             <input
                                 type="text"
                                 value={newVHost.name}
-                                onChange={(e) => setNewVHost(prev => ({ ...prev, name: e.target.value }))}
+                                onChange={(e) => setNewVHost((prev: CreateVHostInput) => ({ ...prev, name: e.target.value }))}
                                 placeholder="My Project"
                                 className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
                             />
@@ -96,7 +101,7 @@ function VirtualHosts({ onBack }) {
                             <input
                                 type="text"
                                 value={newVHost.domain}
-                                onChange={(e) => setNewVHost(prev => ({ ...prev, domain: e.target.value }))}
+                                onChange={(e) => setNewVHost((prev: CreateVHostInput) => ({ ...prev, domain: e.target.value }))}
                                 placeholder="myproject.test"
                                 className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
                             />
@@ -108,7 +113,7 @@ function VirtualHosts({ onBack }) {
                                 <input
                                     type="text"
                                     value={newVHost.path}
-                                    onChange={(e) => setNewVHost(prev => ({ ...prev, path: e.target.value }))}
+                                    onChange={(e) => setNewVHost((prev: CreateVHostInput) => ({ ...prev, path: e.target.value }))}
                                     placeholder="C:\Projects\myproject\public"
                                     className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
                                 />

@@ -1,27 +1,27 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
-const path = require('path');
-const { spawn } = require('child_process');
+import { app, BrowserWindow, ipcMain, shell, dialog, IpcMainEvent } from 'electron';
+import path from 'path';
+import { spawn } from 'child_process';
 
-// Import compiled TypeScript services from dist-electron
-const { ServiceManager } = require('../dist-electron/services/ServiceManager');
-const TrayManager = require('../dist-electron/services/TrayManager').default;
-const ConfigManager = require('../dist-electron/services/ConfigManager').default;
+import { ServiceManager } from './services/ServiceManager';
+import TrayManager from './services/TrayManager';
+import ConfigManager from './services/ConfigManager';
+import { VHostConfig } from './services/ServiceManager';
 
-console.log('Electron app starting...');
-console.log('app type:', typeof app);
-console.log('BrowserWindow type:', typeof BrowserWindow);
+// Basic error handling to catch the 'string' issue
+if (typeof app === 'undefined') {
+  console.error('FATAL: electron module returned undefined/string. Exiting.');
+  process.exit(1);
+}
 
-let mainWindow;
-let serviceManager;
-let trayManager;
-let configManager;
+let mainWindow: BrowserWindow | null;
+let serviceManager: ServiceManager | null;
+let trayManager: TrayManager | null;
+let configManager: ConfigManager | null;
 
-function createWindow() {
-  console.log('Creating Electron window...');
+function createWindow(): BrowserWindow {
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
-    show: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -31,37 +31,18 @@ function createWindow() {
     icon: path.join(__dirname, '../public/icon.png'),
   });
 
-  console.log('Window created, loading URL...');
-
   // In production, load the built file
   // In dev, load localhost
   if (app.isPackaged) {
-    console.log('Loading production file...');
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   } else {
-    console.log('Loading development URL: http://localhost:5173');
     mainWindow.loadURL('http://localhost:5173');
   }
-
-  // Add debug logging
-  mainWindow.webContents.on('did-finish-load', () => {
-    console.log('Window finished loading');
-  });
-
-  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    console.error('Window failed to load:', errorCode, errorDescription);
-  });
-
-  mainWindow.on('closed', () => {
-    console.log('Window closed');
-    mainWindow = null;
-  });
 
   return mainWindow;
 }
 
 app.whenReady().then(() => {
-  console.log('Electron app is ready');
   const win = createWindow();
 
   // Initialize config manager first
@@ -77,7 +58,6 @@ app.whenReady().then(() => {
 
 // Properly quit when all windows are closed (Windows & Linux)
 app.on('window-all-closed', () => {
-  console.log('All windows closed');
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -85,7 +65,6 @@ app.on('window-all-closed', () => {
 
 // macOS: re-create window when dock icon is clicked
 app.on('activate', () => {
-  console.log('App activated');
   if (BrowserWindow.getAllWindows().length === 0) {
     const win = createWindow();
     configManager = new ConfigManager();
@@ -97,7 +76,7 @@ app.on('activate', () => {
 
 // Cleanup all services before quitting
 app.on('before-quit', async (event) => {
-  console.log('App before quit');
+  // Set tray to quitting mode
   if (trayManager) {
     trayManager.setQuitting(true);
   }
@@ -112,18 +91,17 @@ app.on('before-quit', async (event) => {
 
 // Cleanup tray on quit
 app.on('will-quit', () => {
-  console.log('App will quit');
   if (trayManager) {
     trayManager.destroy();
   }
 });
 
 // IPC Handlers - Service Control
-ipcMain.on('start-service', (event, serviceName) => {
+ipcMain.on('start-service', (event: IpcMainEvent, serviceName: 'php' | 'nginx' | 'mariadb') => {
   if (serviceManager) serviceManager.startService(serviceName);
 });
 
-ipcMain.on('stop-service', (event, serviceName) => {
+ipcMain.on('stop-service', (event: IpcMainEvent, serviceName: 'php' | 'nginx' | 'mariadb') => {
   if (serviceManager) serviceManager.stopService(serviceName);
 });
 
@@ -144,13 +122,13 @@ ipcMain.handle('get-config', () => {
   return configManager ? configManager.get() : null;
 });
 
-ipcMain.handle('save-config', async (event, config) => {
+ipcMain.handle('save-config', async (event: any, config: any) => {
   return configManager ? configManager.save(config) : { success: false, error: 'ConfigManager not initialized' };
 });
 
 // IPC Handlers - Folder Operations
-ipcMain.on('open-folder', (event, folderType) => {
-  let folderPath;
+ipcMain.on('open-folder', (event: IpcMainEvent, folderType: string) => {
+  let folderPath: string;
   switch (folderType) {
     case 'www':
       folderPath = path.join(__dirname, '../www');
@@ -169,6 +147,7 @@ ipcMain.on('open-folder', (event, folderType) => {
 
 ipcMain.on('open-terminal', () => {
   const wwwPath = path.join(__dirname, '../www');
+  // Open PowerShell in www directory
   spawn('powershell.exe', [], {
     cwd: wwwPath,
     detached: true,
@@ -178,7 +157,7 @@ ipcMain.on('open-terminal', () => {
 
 // IPC Handlers - Folder Selection
 ipcMain.handle('select-folder', async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
+  const result = await dialog.showOpenDialog(mainWindow!, {
     properties: ['openDirectory']
   });
   if (!result.canceled && result.filePaths.length > 0) {
@@ -192,18 +171,20 @@ ipcMain.handle('get-vhosts', () => {
   return configManager ? configManager.getVHosts() : [];
 });
 
-ipcMain.handle('add-vhost', async (event, vhost) => {
+ipcMain.handle('add-vhost', async (event: any, vhost: Omit<VHostConfig, 'id' | 'createdAt'>) => {
   if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
   const result = configManager.addVHost(vhost);
+  // Notify to regenerate nginx config
   if (result.success && serviceManager) {
     serviceManager.generateConfigs();
   }
   return result;
 });
 
-ipcMain.handle('remove-vhost', async (event, id) => {
+ipcMain.handle('remove-vhost', async (event: any, id: string) => {
   if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
   const result = configManager.removeVHost(id);
+  // Notify to regenerate nginx config
   if (result.success && serviceManager) {
     serviceManager.generateConfigs();
   }
@@ -215,7 +196,7 @@ ipcMain.handle('get-php-versions', () => {
   return configManager ? configManager.getPHPVersions() : [];
 });
 
-ipcMain.handle('set-php-version', async (event, version) => {
+ipcMain.handle('set-php-version', async (event: any, version: string) => {
   if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
   return configManager.setPHPVersion(version);
 });

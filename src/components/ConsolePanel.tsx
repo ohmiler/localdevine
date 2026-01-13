@@ -1,4 +1,10 @@
-function ConsolePanel({ logs }) {
+import { LogEntry } from '../types/electron';
+
+interface ConsolePanelProps {
+  logs: LogEntry[];
+}
+
+function ConsolePanel({ logs }: ConsolePanelProps) {
     return (
         <div className="bg-black rounded-xl border border-gray-800 p-4 h-64 overflow-y-auto font-mono text-sm shadow-inner">
             <div className="text-gray-500 mb-2 sticky top-0 bg-black pb-2 border-b border-gray-900">

@@ -1,7 +1,37 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { VHostConfig } from './ServiceManager';
 
-class ConfigManager {
+export interface Config {
+    ports: {
+        php: number;
+        nginx: number;
+        mariadb: number;
+    };
+    autoStart: boolean;
+    vhosts: VHostConfig[];
+    phpVersion: string;
+}
+
+export interface PHPVersion {
+    id: string;
+    name: string;
+    path: string;
+}
+
+export interface SaveResult {
+    success: boolean;
+    error?: string;
+}
+
+export interface AddVHostResult extends SaveResult {}
+
+export default class ConfigManager {
+    private configPath: string;
+    private binDir: string;
+    private defaultConfig: Config;
+    private config: Config;
+
     constructor() {
         this.configPath = path.join(__dirname, '../../config.json');
         this.binDir = path.join(__dirname, '../../bin');
@@ -18,11 +48,11 @@ class ConfigManager {
         this.config = this.load();
     }
 
-    load() {
+    load(): Config {
         try {
             if (fs.existsSync(this.configPath)) {
                 const data = fs.readFileSync(this.configPath, 'utf8');
-                const loaded = JSON.parse(data);
+                const loaded = JSON.parse(data) as Partial<Config>;
                 // Merge with defaults to ensure all keys exist
                 return {
                     ...this.defaultConfig,
@@ -33,12 +63,12 @@ class ConfigManager {
                 };
             }
         } catch (error) {
-            console.error('Error loading config:', error.message);
+            console.error('Error loading config:', (error as Error).message);
         }
         return { ...this.defaultConfig };
     }
 
-    save(newConfig) {
+    save(newConfig: Partial<Config>): SaveResult {
         try {
             this.config = {
                 ...this.config,
@@ -50,25 +80,25 @@ class ConfigManager {
             fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
             return { success: true };
         } catch (error) {
-            console.error('Error saving config:', error.message);
-            return { success: false, error: error.message };
+            console.error('Error saving config:', (error as Error).message);
+            return { success: false, error: (error as Error).message };
         }
     }
 
-    get() {
+    get(): Config {
         return this.config;
     }
 
-    getPort(service) {
+    getPort(service: keyof Config['ports']): number {
         return this.config.ports[service] || this.defaultConfig.ports[service];
     }
 
     // Virtual Hosts methods
-    getVHosts() {
+    getVHosts(): VHostConfig[] {
         return this.config.vhosts || [];
     }
 
-    addVHost(vhost) {
+    addVHost(vhost: Omit<VHostConfig, 'id' | 'createdAt'>): AddVHostResult {
         // vhost = { name, domain, path }
         const vhosts = this.getVHosts();
 
@@ -89,15 +119,15 @@ class ConfigManager {
         return this.save(this.config);
     }
 
-    removeVHost(id) {
+    removeVHost(id: string): SaveResult {
         const vhosts = this.getVHosts().filter(v => v.id !== id);
         this.config.vhosts = vhosts;
         return this.save(this.config);
     }
 
     // PHP Version methods
-    getPHPVersions() {
-        const versions = [];
+    getPHPVersions(): PHPVersion[] {
+        const versions: PHPVersion[] = [];
         try {
             const entries = fs.readdirSync(this.binDir, { withFileTypes: true });
             for (const entry of entries) {
@@ -113,23 +143,21 @@ class ConfigManager {
                 }
             }
         } catch (error) {
-            console.error('Error scanning PHP versions:', error.message);
+            console.error('Error scanning PHP versions:', (error as Error).message);
         }
         return versions;
     }
 
-    getPHPVersion() {
+    getPHPVersion(): string {
         return this.config.phpVersion || 'php';
     }
 
-    setPHPVersion(version) {
+    setPHPVersion(version: string): SaveResult {
         this.config.phpVersion = version;
         return this.save(this.config);
     }
 
-    getPHPPath() {
+    getPHPPath(): string {
         return path.join(this.binDir, this.getPHPVersion());
     }
 }
-
-module.exports = ConfigManager;

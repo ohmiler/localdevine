@@ -1,7 +1,12 @@
-const { spawn, exec } = require('child_process');
-const path = require('path');
-const fs = require('fs');
-
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ServiceManager = void 0;
+const child_process_1 = require("child_process");
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 class ServiceManager {
     constructor(mainWindow, configManager) {
         this.mainWindow = mainWindow;
@@ -11,28 +16,24 @@ class ServiceManager {
             nginx: null,
             mariadb: null
         };
-        this.binDir = path.join(__dirname, '../../bin');
-        this.wwwDir = path.join(__dirname, '../../www');
+        this.binDir = path_1.default.join(__dirname, '../../bin');
+        this.wwwDir = path_1.default.join(__dirname, '../../www');
     }
-
     getPort(service) {
         if (this.configManager) {
             return this.configManager.getPort(service);
         }
         // Fallback defaults
         const defaults = { php: 9000, nginx: 80, mariadb: 3306 };
-        return defaults[service];
+        return defaults[service] || 0;
     }
-
     generateConfigs() {
-        const nginxConfPath = path.join(this.binDir, 'nginx/conf/nginx.conf');
+        const nginxConfPath = path_1.default.join(this.binDir, 'nginx/conf/nginx.conf');
         const wwwPathForNginx = this.wwwDir.replace(/\\/g, '/'); // Nginx likes forward slashes
         const nginxPort = this.getPort('nginx');
         const phpPort = this.getPort('php');
-
         // Get virtual hosts from config
         const vhosts = this.configManager ? this.configManager.getVHosts() : [];
-
         // Generate vhost server blocks
         let vhostBlocks = '';
         for (const vhost of vhosts) {
@@ -59,7 +60,6 @@ class ServiceManager {
     }
 `;
         }
-
         const confContent = `
 worker_processes  1;
 
@@ -95,27 +95,26 @@ http {
     }
 ${vhostBlocks}}
 `;
-        fs.writeFileSync(nginxConfPath, confContent.trim());
+        fs_1.default.writeFileSync(nginxConfPath, confContent.trim());
         const vhostCount = vhosts.length;
         this.log('system', `Config generated (Nginx:${nginxPort}, PHP:${phpPort}, VHosts:${vhostCount})`);
     }
-
     log(service, message) {
+        const messageStr = message.toString().trim();
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
             this.mainWindow.webContents.send('log-entry', {
                 time: new Date().toLocaleTimeString(),
                 service,
-                message: message.toString().trim()
+                message: messageStr
             });
-        } else {
-            console.log(`[${service}] ${message}`);
+        }
+        else {
+            console.log(`[${service}] ${messageStr}`);
         }
     }
-
     hasRunningServices() {
         return Object.values(this.processes).some(p => p !== null);
     }
-
     async startAllServices() {
         const services = ['php', 'nginx', 'mariadb'];
         for (const service of services) {
@@ -126,35 +125,30 @@ ${vhostBlocks}}
             }
         }
     }
-
     async stopAllServices() {
         const services = ['php', 'nginx', 'mariadb'];
         const stopPromises = services.map(service => this.stopService(service));
         await Promise.all(stopPromises);
     }
-
     async initMariaDB(cwd) {
-        const dataDir = path.join(cwd, 'data');
-        if (!fs.existsSync(dataDir)) {
+        const dataDir = path_1.default.join(cwd, 'data');
+        if (!fs_1.default.existsSync(dataDir)) {
             this.log('mariadb', 'Initializing data directory... (This may take a moment)');
-            const initCmd = path.join(cwd, 'bin/mysql_install_db.exe');
-
+            const initCmd = path_1.default.join(cwd, 'bin/mysql_install_db.exe');
             return new Promise((resolve, reject) => {
-                const initProcess = spawn(initCmd, ['--datadir=data'], { cwd });
-
+                const initProcess = (0, child_process_1.spawn)(initCmd, ['--datadir=data'], { cwd });
                 initProcess.stdout.on('data', (data) => this.log('mariadb', data));
                 initProcess.stderr.on('data', (data) => this.log('mariadb', data));
-
                 initProcess.on('close', (code) => {
                     if (code === 0) {
                         this.log('mariadb', 'Data directory initialized.');
                         resolve();
-                    } else {
+                    }
+                    else {
                         this.log('mariadb', `Initialization failed with code ${code}`);
                         reject(new Error(`Init failed with code ${code}`));
                     }
                 });
-
                 initProcess.on('error', (err) => {
                     this.log('mariadb', `Initialization error: ${err.message}`);
                     reject(err);
@@ -163,38 +157,35 @@ ${vhostBlocks}}
         }
         return Promise.resolve();
     }
-
     async startService(serviceName) {
         if (this.processes[serviceName]) {
             this.log(serviceName, 'Already running.');
             return;
         }
-
         let cmd, args, cwd;
         const phpPort = this.getPort('php');
         const mariadbPort = this.getPort('mariadb');
-
         switch (serviceName) {
             case 'php':
                 // Run PHP-CGI on configured port using selected version
-                const phpPath = this.configManager ? this.configManager.getPHPPath() : path.join(this.binDir, 'php');
-                cmd = path.join(phpPath, 'php-cgi.exe');
+                const phpPath = this.configManager ? this.configManager.getPHPPath() : path_1.default.join(this.binDir, 'php');
+                cmd = path_1.default.join(phpPath, 'php-cgi.exe');
                 args = ['-b', `127.0.0.1:${phpPort}`];
                 break;
             case 'nginx':
                 this.generateConfigs(); // Generate before start
-                cmd = path.join(this.binDir, 'nginx/nginx.exe');
-                cwd = path.join(this.binDir, 'nginx');
+                cmd = path_1.default.join(this.binDir, 'nginx/nginx.exe');
+                cwd = path_1.default.join(this.binDir, 'nginx');
                 args = [];
                 break;
             case 'mariadb':
-                cmd = path.join(this.binDir, 'mariadb/bin/mysqld.exe');
-                cwd = path.join(this.binDir, 'mariadb');
-
+                cmd = path_1.default.join(this.binDir, 'mariadb/bin/mysqld.exe');
+                cwd = path_1.default.join(this.binDir, 'mariadb');
                 // Initialize Data Directory if not exists (async)
                 try {
                     await this.initMariaDB(cwd);
-                } catch (e) {
+                }
+                catch (e) {
                     this.log('mariadb', `Failed to initialize: ${e.message}`);
                     this.notifyStatus(serviceName, 'stopped');
                     return;
@@ -205,55 +196,48 @@ ${vhostBlocks}}
                 this.log('system', `Unknown service: ${serviceName}`);
                 return;
         }
-
         this.log(serviceName, `Starting on port ${this.getPort(serviceName)}...`);
-
-        if (!fs.existsSync(cmd)) {
+        if (!fs_1.default.existsSync(cmd)) {
             this.log(serviceName, `Executable not found! Please run setup script.`);
             this.notifyStatus(serviceName, 'stopped');
             return;
         }
-
         try {
-            const child = spawn(cmd, args, { cwd });
+            const child = (0, child_process_1.spawn)(cmd, args, { cwd });
             this.processes[serviceName] = child;
             this.notifyStatus(serviceName, 'running');
-
             child.stdout.on('data', (data) => this.log(serviceName, data));
             child.stderr.on('data', (data) => this.log(serviceName, data));
-
             child.on('close', (code) => {
                 this.log(serviceName, `Exited with code ${code}`);
                 this.processes[serviceName] = null;
                 this.notifyStatus(serviceName, 'stopped');
             });
-
             child.on('error', (err) => {
                 this.log(serviceName, `Failed to start: ${err.message}`);
                 this.processes[serviceName] = null;
                 this.notifyStatus(serviceName, 'stopped');
             });
-
-        } catch (e) {
+        }
+        catch (e) {
             this.log(serviceName, `Error: ${e.message}`);
         }
     }
-
     stopService(serviceName) {
         return new Promise((resolve) => {
             const child = this.processes[serviceName];
             if (child) {
                 const pid = child.pid;
-                this.log(serviceName, `Stopping (PID: ${pid})...`);
-
-                // Kill using PID instead of /IM for safety
-                this.killByPID(pid, serviceName)
-                    .then(() => {
+                if (pid) {
+                    this.log(serviceName, `Stopping (PID: ${pid})...`);
+                    // Kill using PID instead of /IM for safety
+                    this.killByPID(pid, serviceName)
+                        .then(() => {
                         this.processes[serviceName] = null;
                         this.notifyStatus(serviceName, 'stopped');
                         resolve();
                     })
-                    .catch((err) => {
+                        .catch((err) => {
                         this.log(serviceName, `Kill error: ${err.message}`);
                         // Try force kill as fallback
                         child.kill('SIGKILL');
@@ -261,37 +245,41 @@ ${vhostBlocks}}
                         this.notifyStatus(serviceName, 'stopped');
                         resolve();
                     });
-            } else {
+                }
+                else {
+                    resolve();
+                }
+            }
+            else {
                 resolve();
             }
         });
     }
-
     killByPID(pid, serviceName) {
         return new Promise((resolve, reject) => {
             // Use taskkill with PID for safer termination
-            exec(`taskkill /F /PID ${pid} /T`, (error, stdout, stderr) => {
+            (0, child_process_1.exec)(`taskkill /F /PID ${pid} /T`, (error, stdout, stderr) => {
                 if (error) {
                     // Check if process already terminated
                     if (stderr.includes('not found') || stderr.includes('ไม่พบ')) {
                         this.log(serviceName, 'Process already terminated.');
                         resolve();
-                    } else {
+                    }
+                    else {
                         reject(error);
                     }
-                } else {
+                }
+                else {
                     this.log(serviceName, 'Stopped successfully.');
                     resolve();
                 }
             });
         });
     }
-
     notifyStatus(service, status) {
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
             this.mainWindow.webContents.send('service-status', { service, status });
         }
     }
 }
-
-module.exports = ServiceManager;
+exports.ServiceManager = ServiceManager;

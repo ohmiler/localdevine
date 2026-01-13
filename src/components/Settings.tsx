@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
+import { Config, PHPVersion } from '../types/electron';
 
-function Settings({ onBack }) {
-    const [config, setConfig] = useState({
+interface SettingsProps {
+  onBack: () => void;
+}
+
+function Settings({ onBack }: SettingsProps) {
+    const [config, setConfig] = useState<Config>({
         ports: { php: 9000, nginx: 80, mariadb: 3306 },
+        autoStart: false,
+        vhosts: [],
         phpVersion: 'php'
     });
-    const [phpVersions, setPHPVersions] = useState([]);
+    const [phpVersions, setPHPVersions] = useState<PHPVersion[]>([]);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
 
@@ -20,16 +27,16 @@ function Settings({ onBack }) {
         }
     }, []);
 
-    const handlePortChange = (service, value) => {
+    const handlePortChange = (service: keyof Config['ports'], value: string) => {
         const port = parseInt(value, 10) || 0;
-        setConfig(prev => ({
+        setConfig((prev: Config) => ({
             ...prev,
             ports: { ...prev.ports, [service]: port }
         }));
     };
 
-    const handlePHPVersionChange = async (version) => {
-        setConfig(prev => ({ ...prev, phpVersion: version }));
+    const handlePHPVersionChange = async (version: string) => {
+        setConfig((prev: Config) => ({ ...prev, phpVersion: version }));
         if (window.electronAPI) {
             await window.electronAPI.setPHPVersion(version);
         }

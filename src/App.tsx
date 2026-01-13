@@ -3,28 +3,37 @@ import ServiceCard from './components/ServiceCard';
 import ConsolePanel from './components/ConsolePanel';
 import Settings from './components/Settings';
 import VirtualHosts from './components/VirtualHosts';
+import { ServiceStatus, LogEntry } from './types/electron';
+
+type PageType = 'home' | 'settings' | 'vhosts';
+
+interface Services {
+  php: ServiceStatus;
+  nginx: ServiceStatus;
+  mariadb: ServiceStatus;
+}
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home');
-  const [services, setServices] = useState({
+  const [currentPage, setCurrentPage] = useState<PageType>('home');
+  const [services, setServices] = useState<Services>({
     php: 'stopped',
     nginx: 'stopped',
     mariadb: 'stopped'
   });
 
-  const [logs, setLogs] = useState([]);
-  const [version, setVersion] = useState('0.0.0');
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [version, setVersion] = useState<string>('0.0.0');
 
   useEffect(() => {
     if (window.electronAPI) {
       // Get version
       window.electronAPI.getVersion().then(v => setVersion(v));
 
-      const handleStatus = (event, { service, status }) => {
+      const handleStatus = (event: any, { service, status }: { service: keyof Services; status: ServiceStatus }) => {
         setServices(prev => ({ ...prev, [service]: status }));
       };
 
-      const handleLog = (event, { time, service, message }) => {
+      const handleLog = (event: any, { time, service, message }: LogEntry) => {
         setLogs(prev => [...prev.slice(-100), { time, service, message }]);
       };
 
@@ -38,7 +47,7 @@ function App() {
     }
   }, []);
 
-  const toggleService = (service) => {
+  const toggleService = (service: keyof Services) => {
     const currentState = services[service];
     if (window.electronAPI) {
       if (currentState === 'stopped') {
@@ -127,7 +136,7 @@ function App() {
 
       {/* Service Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {['php', 'nginx', 'mariadb'].map(service => (
+        {(['php', 'nginx', 'mariadb'] as Array<keyof Services>).map(service => (
           <ServiceCard
             key={service}
             service={service}

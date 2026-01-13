@@ -8,8 +8,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "setup": "node scripts/setup-binaries.js",
-    "electron:dev": "concurrently \"npm run dev\" \"wait-on tcp:5173 && cross-env NODE_ENV=development electron .\"",
-    "electron:build": "npm run build && electron-builder"
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "electron:dev": "npm run build:electron && cross-env NODE_ENV=development node_modules/electron/dist/electron.exe .",
+    "electron:build": "npm run build && npm run build:electron && electron-builder"
   },
   "dependencies": {
     "react": "^19.2.0",
@@ -18,13 +19,14 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@tailwindcss/postcss": "^4.1.18",
+    "@types/node": "^25.0.7",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.23",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
-    "electron": "^30.0.0",
+    "electron": "^39.2.7",
     "electron-builder": "^26.4.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
@@ -32,6 +34,8 @@
     "globals": "^16.5.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
     "vite": "^7.2.4",
     "wait-on": "^9.0.3"
   }

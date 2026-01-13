@@ -1,4 +1,12 @@
-function ServiceCard({ service, status, onToggle }) {
+import { ServiceStatus } from '../types/electron';
+
+interface ServiceCardProps {
+  service: 'php' | 'nginx' | 'mariadb';
+  status: ServiceStatus;
+  onToggle: () => void;
+}
+
+function ServiceCard({ service, status, onToggle }: ServiceCardProps) {
     const displayName = service === 'mariadb' ? 'MariaDB' : service.toUpperCase();
     const isRunning = status === 'running';
 

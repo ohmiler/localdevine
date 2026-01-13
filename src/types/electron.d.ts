@@ -4,6 +4,7 @@ import { IpcRendererEvent } from 'electron';
 export type { ServiceStatus, LogEntry, VHostConfig, ServiceHealth } from '../../../electron/services/ServiceManager';
 export type { Config, PHPVersion } from '../../../electron/services/ConfigManager';
 export type { HostsEntry, HostsFileResult, HostsOperationResult } from '../../../electron/services/HostsManager';
+export type { ProjectTemplate, CreateProjectOptions, CreateProjectResult } from '../../../electron/services/ProjectTemplateManager';
 
 // Additional frontend-specific types
 export interface ServiceStatusEvent {
@@ -34,8 +35,8 @@ export interface ServiceNotification {
 // ElectronAPI interface for renderer process
 export interface ElectronAPI {
     // Service control
-    startService: (service: 'php' | 'nginx' | 'mariadb') => void;
-    stopService: (service: 'php' | 'nginx' | 'mariadb') => void;
+    startService: (service: 'php' | 'apache' | 'mariadb') => void;
+    stopService: (service: 'php' | 'apache' | 'mariadb') => void;
     startAllServices: () => void;
     stopAllServices: () => void;
 
@@ -68,6 +69,14 @@ export interface ElectronAPI {
     restoreHostsBackup: () => Promise<HostsOperationResult>;
     checkHostsAdminRights: () => Promise<boolean>;
     requestHostsAdminRights: () => void;
+
+    // Project Templates
+    getTemplates: () => Promise<ProjectTemplate[]>;
+    getProjects: () => Promise<string[]>;
+    createProject: (options: CreateProjectOptions) => Promise<CreateProjectResult>;
+    deleteProject: (projectName: string) => Promise<CreateProjectResult>;
+    openProjectFolder: (projectName: string) => Promise<void>;
+    openProjectBrowser: (projectName: string) => Promise<void>;
 
     // Event listeners
     on: (channel: 'service-status' | 'log-entry' | 'health-status' | 'service-notification', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;

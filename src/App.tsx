@@ -5,13 +5,14 @@ import Settings from './components/Settings';
 import VirtualHosts from './components/VirtualHosts';
 import HostsEditor from './components/HostsEditor';
 import NotificationPanel from './components/NotificationPanel';
+import ProjectTemplates from './components/ProjectTemplates';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 
-type PageType = 'home' | 'settings' | 'vhosts' | 'hosts';
+type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates';
 
 interface Services {
   php: ServiceStatus;
-  nginx: ServiceStatus;
+  apache: ServiceStatus;
   mariadb: ServiceStatus;
 }
 
@@ -19,7 +20,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('home');
   const [services, setServices] = useState<Services>({
     php: 'stopped',
-    nginx: 'stopped',
+    apache: 'stopped',
     mariadb: 'stopped'
   });
 
@@ -104,6 +105,24 @@ function App() {
     return <HostsEditor onBack={() => setCurrentPage('home')} />;
   }
 
+  // Render Project Templates page
+  if (currentPage === 'templates') {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white">
+        <div className="p-4 border-b border-gray-800 flex items-center gap-4">
+          <button
+            onClick={() => setCurrentPage('home')}
+            className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded"
+          >
+            ← Back
+          </button>
+          <h1 className="text-xl font-bold">Project Templates</h1>
+        </div>
+        <ProjectTemplates />
+      </div>
+    );
+  }
+
   // Render Home page
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
@@ -115,6 +134,12 @@ function App() {
           <p className="text-gray-400">The Modern PHP Development Environment</p>
         </div>
         <div className="flex items-center gap-4">
+          <button
+            onClick={() => setCurrentPage('templates')}
+            className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-sm"
+          >
+            📦 Projects
+          </button>
           <button
             onClick={() => setCurrentPage('vhosts')}
             className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-sm"
@@ -163,7 +188,7 @@ function App() {
 
       {/* Service Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {(['php', 'nginx', 'mariadb'] as Array<keyof Services>).map(service => (
+        {(['php', 'apache', 'mariadb'] as Array<keyof Services>).map(service => (
           <ServiceCard
             key={service}
             service={service}

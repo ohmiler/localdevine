@@ -5,7 +5,7 @@ import { VHostConfig } from './ServiceManager';
 export interface Config {
     ports: {
         php: number;
-        nginx: number;
+        apache: number;
         mariadb: number;
     };
     autoStart: boolean;
@@ -38,7 +38,7 @@ export default class ConfigManager {
         this.defaultConfig = {
             ports: {
                 php: 9000,
-                nginx: 80,
+                apache: 80,
                 mariadb: 3306
             },
             autoStart: false,

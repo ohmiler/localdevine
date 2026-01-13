@@ -12,7 +12,7 @@ class ConfigManager {
         this.defaultConfig = {
             ports: {
                 php: 9000,
-                nginx: 80,
+                apache: 80,
                 mariadb: 3306
             },
             autoStart: false,

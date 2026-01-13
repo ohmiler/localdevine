@@ -1,7 +1,7 @@
 import { ServiceStatus, ServiceHealth } from '../types/electron';
 
 interface ServiceCardProps {
-  service: 'php' | 'nginx' | 'mariadb';
+  service: 'php' | 'apache' | 'mariadb';
   status: ServiceStatus;
   health?: ServiceHealth;
   onToggle: () => void;

@@ -37,6 +37,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     checkHostsAdminRights: () => ipcRenderer.invoke('check-hosts-admin-rights'),
     requestHostsAdminRights: () => ipcRenderer.send('request-hosts-admin-rights'),
 
+    // Project Templates
+    getTemplates: () => ipcRenderer.invoke('get-templates'),
+    getProjects: () => ipcRenderer.invoke('get-projects'),
+    createProject: (options) => ipcRenderer.invoke('create-project', options),
+    deleteProject: (projectName) => ipcRenderer.invoke('delete-project', projectName),
+    openProjectFolder: (projectName) => ipcRenderer.invoke('open-project-folder', projectName),
+    openProjectBrowser: (projectName) => ipcRenderer.invoke('open-project-browser', projectName),
+
     // Event listeners
     on: (channel, callback) => {
         const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification'];

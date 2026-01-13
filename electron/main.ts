@@ -97,11 +97,11 @@ app.on('will-quit', () => {
 });
 
 // IPC Handlers - Service Control
-ipcMain.on('start-service', (event: IpcMainEvent, serviceName: 'php' | 'nginx' | 'mariadb') => {
+ipcMain.on('start-service', (event: IpcMainEvent, serviceName: 'php' | 'apache' | 'mariadb') => {
   if (serviceManager) serviceManager.startService(serviceName);
 });
 
-ipcMain.on('stop-service', (event: IpcMainEvent, serviceName: 'php' | 'nginx' | 'mariadb') => {
+ipcMain.on('stop-service', (event: IpcMainEvent, serviceName: 'php' | 'apache' | 'mariadb') => {
   if (serviceManager) serviceManager.stopService(serviceName);
 });
 

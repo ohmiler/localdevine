@@ -1,0 +1,13 @@
+prefix=C:/Apache24
+exec_prefix=C:/Apache24
+libdir=C:/Apache24/lib
+sharedlibdir=C:/Apache24/lib
+includedir=C:/Apache24/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.3.1
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}

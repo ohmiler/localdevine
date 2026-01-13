@@ -29,7 +29,7 @@ export interface VHostConfig {
 
 export interface ServiceProcesses {
     php: import('child_process').ChildProcessWithoutNullStreams | null;
-    nginx: import('child_process').ChildProcessWithoutNullStreams | null;
+    apache: import('child_process').ChildProcessWithoutNullStreams | null;
     mariadb: import('child_process').ChildProcessWithoutNullStreams | null;
 }
 
@@ -61,7 +61,7 @@ export class ServiceManager {
         this.configManager = configManager;
         this.processes = {
             php: null,
-            nginx: null,
+            apache: null,
             mariadb: null
         };
         this.binDir = path.join(__dirname, '../../bin');
@@ -72,7 +72,7 @@ export class ServiceManager {
     }
 
     private initializeHealthStatus(): void {
-        const services: Array<keyof ServiceProcesses> = ['php', 'nginx', 'mariadb'];
+        const services: Array<keyof ServiceProcesses> = ['php', 'apache', 'mariadb'];
         services.forEach(service => {
             this.healthStatus[service] = {
                 service,
@@ -88,7 +88,7 @@ export class ServiceManager {
             return this.configManager.getPort(service);
         }
         // Fallback defaults
-        const defaults: Record<string, number> = { php: 9000, nginx: 80, mariadb: 3306 };
+        const defaults: Record<string, number> = { php: 9000, apache: 80, mariadb: 3306 };
         return defaults[service] || 0;
     }
 
@@ -114,7 +114,7 @@ export class ServiceManager {
     }
 
     private async checkAllServicesHealth(): Promise<void> {
-        const services: Array<keyof ServiceProcesses> = ['php', 'nginx', 'mariadb'];
+        const services: Array<keyof ServiceProcesses> = ['php', 'apache', 'mariadb'];
         
         for (const service of services) {
             try {
@@ -152,8 +152,8 @@ export class ServiceManager {
                     case 'php':
                         await this.checkPHPHealth();
                         break;
-                    case 'nginx':
-                        await this.checkNginxHealth();
+                    case 'apache':
+                        await this.checkApacheHealth();
                         break;
                     case 'mariadb':
                         await this.checkMariaDBHealth();
@@ -222,8 +222,8 @@ export class ServiceManager {
         });
     }
 
-    private async checkNginxHealth(): Promise<void> {
-        const port = this.getPort('nginx');
+    private async checkApacheHealth(): Promise<void> {
+        const port = this.getPort('apache');
         return new Promise((resolve, reject) => {
             const http = require('http');
             
@@ -233,12 +233,12 @@ export class ServiceManager {
             });
 
             req.on('error', () => {
-                reject(new Error('Nginx not responding'));
+                reject(new Error('Apache not responding'));
             });
 
             req.setTimeout(2000, () => {
                 req.destroy();
-                reject(new Error('Nginx timeout'));
+                reject(new Error('Apache timeout'));
             });
         });
     }
@@ -359,79 +359,89 @@ export class ServiceManager {
     }
 
     generateConfigs(): void {
-        const nginxConfPath = path.join(this.binDir, 'nginx/conf/nginx.conf');
-        const wwwPathForNginx = this.wwwDir.replace(/\\/g, '/'); // Nginx likes forward slashes
-        const nginxPort = this.getPort('nginx');
-        const phpPort = this.getPort('php');
+        const apacheConfPath = path.join(this.binDir, 'apache/conf/httpd.conf');
+        const wwwPath = this.wwwDir.replace(/\\/g, '/');
+        const apachePort = this.getPort('apache');
+        const phpPath = (this.configManager ? this.configManager.getPHPPath() : path.join(this.binDir, 'php')).replace(/\\/g, '/');
+        const apachePath = path.join(this.binDir, 'apache').replace(/\\/g, '/');
 
         // Get virtual hosts from config
         const vhosts = this.configManager ? this.configManager.getVHosts() : [];
 
-        // Generate vhost server blocks
+        // Generate vhost blocks
         let vhostBlocks = '';
         for (const vhost of vhosts) {
             const vhostPath = vhost.path.replace(/\\/g, '/');
             vhostBlocks += `
-    server {
-        listen       ${nginxPort};
-        server_name  ${vhost.domain};
-        
-        root   "${vhostPath}"; 
-        index  index.php index.html index.htm;
-
-        location / {
-            try_files $uri $uri/ /index.php?$query_string;
-        }
-
-        location ~ \\.php$ {
-            try_files $uri =404;
-            fastcgi_pass   127.0.0.1:${phpPort};
-            fastcgi_index  index.php;
-            fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
-            include        fastcgi_params;
-        }
-    }
+<VirtualHost *:${apachePort}>
+    ServerName ${vhost.domain}
+    DocumentRoot "${vhostPath}"
+    <Directory "${vhostPath}">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
 `;
         }
 
         const confContent = `
-worker_processes  1;
+ServerRoot "${apachePath}"
+Listen ${apachePort}
+ServerName localhost:${apachePort}
 
-events {
-    worker_connections  1024;
-}
+LoadModule actions_module modules/mod_actions.so
+LoadModule alias_module modules/mod_alias.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule autoindex_module modules/mod_autoindex.so
+LoadModule cgi_module modules/mod_cgi.so
+LoadModule dir_module modules/mod_dir.so
+LoadModule env_module modules/mod_env.so
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule setenvif_module modules/mod_setenvif.so
 
-http {
-    include       mime.types;
-    default_type  application/octet-stream;
-    sendfile        on;
-    keepalive_timeout  65;
+<IfModule dir_module>
+    DirectoryIndex index.php index.html index.htm
+</IfModule>
 
-    # Default server (localhost)
-    server {
-        listen       ${nginxPort};
-        server_name  localhost;
-        
-        root   "${wwwPathForNginx}"; 
-        index  index.php index.html index.htm;
+<IfModule mime_module>
+    TypesConfig conf/mime.types
+    AddType application/x-httpd-php .php
+</IfModule>
 
-        location / {
-            try_files $uri $uri/ =404;
-        }
+# PHP via CGI
+ScriptAlias /php-cgi/ "${phpPath}/"
+Action application/x-httpd-php "/php-cgi/php-cgi.exe"
+AddHandler application/x-httpd-php .php
 
-        location ~ \\.php$ {
-            try_files $uri =404;
-            fastcgi_pass   127.0.0.1:${phpPort};
-            fastcgi_index  index.php;
-            fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
-            include        fastcgi_params;
-        }
-    }
-${vhostBlocks}}
+<Directory "${phpPath}">
+    AllowOverride None
+    Options ExecCGI
+    Require all granted
+</Directory>
+
+DocumentRoot "${wwwPath}"
+<Directory "${wwwPath}">
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
+
+ErrorLog "logs/error.log"
+LogLevel warn
+
+<IfModule log_config_module>
+    LogFormat "%h %l %u %t \\"%r\\" %>s %b" common
+    CustomLog "logs/access.log" common
+</IfModule>
+${vhostBlocks}
 `;
-        fs.writeFileSync(nginxConfPath, confContent.trim());
+        fs.writeFileSync(apacheConfPath, confContent.trim());
         const vhostCount = vhosts.length;
-        this.log('system', `Config generated (Nginx:${nginxPort}, PHP:${phpPort}, VHosts:${vhostCount})`);
+        this.log('system', `Config generated (Apache:${apachePort}, PHP, VHosts:${vhostCount})`);
     }
 
     log(service: string, message: string | Buffer): void {
@@ -452,7 +462,7 @@ ${vhostBlocks}}
     }
 
     async startAllServices(): Promise<void> {
-        const services: Array<keyof ServiceProcesses> = ['php', 'nginx', 'mariadb'];
+        const services: Array<keyof ServiceProcesses> = ['php', 'apache', 'mariadb'];
         for (const service of services) {
             if (!this.processes[service]) {
                 await this.startService(service);
@@ -463,7 +473,7 @@ ${vhostBlocks}}
     }
 
     async stopAllServices(): Promise<void> {
-        const services: Array<keyof ServiceProcesses> = ['php', 'nginx', 'mariadb'];
+        const services: Array<keyof ServiceProcesses> = ['php', 'apache', 'mariadb'];
         const stopPromises = services.map(service => this.stopService(service));
         await Promise.all(stopPromises);
     }
@@ -516,11 +526,11 @@ ${vhostBlocks}}
                 cmd = path.join(phpPath, 'php-cgi.exe');
                 args = ['-b', `127.0.0.1:${phpPort}`];
                 break;
-            case 'nginx':
+            case 'apache':
                 this.generateConfigs(); // Generate before start
-                cmd = path.join(this.binDir, 'nginx/nginx.exe');
-                cwd = path.join(this.binDir, 'nginx');
-                args = [];
+                cmd = path.join(this.binDir, 'apache/bin/httpd.exe');
+                cwd = path.join(this.binDir, 'apache');
+                args = ['-X']; // Run in foreground (single process mode)
                 break;
             case 'mariadb':
                 cmd = path.join(this.binDir, 'mariadb/bin/mysqld.exe');

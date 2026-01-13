@@ -7,7 +7,7 @@ interface SettingsProps {
 
 function Settings({ onBack }: SettingsProps) {
     const [config, setConfig] = useState<Config>({
-        ports: { php: 9000, nginx: 80, mariadb: 3306 },
+        ports: { php: 9000, apache: 80, mariadb: 3306 },
         autoStart: false,
         vhosts: [],
         phpVersion: 'php'
@@ -93,13 +93,13 @@ function Settings({ onBack }: SettingsProps) {
                             />
                         </div>
 
-                        {/* Nginx Port */}
+                        {/* Apache Port */}
                         <div className="flex items-center justify-between">
-                            <label className="text-gray-300">Nginx Port</label>
+                            <label className="text-gray-300">Apache Port</label>
                             <input
                                 type="number"
-                                value={config.ports.nginx}
-                                onChange={(e) => handlePortChange('nginx', e.target.value)}
+                                value={config.ports.apache}
+                                onChange={(e) => handlePortChange('apache', e.target.value)}
                                 className="w-24 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
                             />
                         </div>

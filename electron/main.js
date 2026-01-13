@@ -7,6 +7,7 @@ const { ServiceManager } = require('../dist-electron/services/ServiceManager');
 const TrayManager = require('../dist-electron/services/TrayManager').default;
 const ConfigManager = require('../dist-electron/services/ConfigManager').default;
 const HostsManager = require('../dist-electron/services/HostsManager').default;
+const ProjectTemplateManager = require('../dist-electron/services/ProjectTemplateManager').default;
 
 console.log('Electron app starting...');
 console.log('app type:', typeof app);
@@ -287,4 +288,32 @@ ipcMain.handle('check-hosts-admin-rights', () => {
 
 ipcMain.on('request-hosts-admin-rights', () => {
   hostsManager.requestAdminRights();
+});
+
+// IPC Handlers - Project Templates
+const projectTemplateManager = new ProjectTemplateManager();
+
+ipcMain.handle('get-templates', () => {
+  return projectTemplateManager.getTemplates();
+});
+
+ipcMain.handle('get-projects', () => {
+  return projectTemplateManager.getProjects();
+});
+
+ipcMain.handle('create-project', async (event, options) => {
+  return projectTemplateManager.createProject(options);
+});
+
+ipcMain.handle('delete-project', async (event, projectName) => {
+  return projectTemplateManager.deleteProject(projectName);
+});
+
+ipcMain.handle('open-project-folder', async (event, projectName) => {
+  const projectPath = path.join(__dirname, '../www', projectName);
+  shell.openPath(projectPath);
+});
+
+ipcMain.handle('open-project-browser', async (event, projectName) => {
+  shell.openExternal(`http://localhost/${projectName}`);
 });

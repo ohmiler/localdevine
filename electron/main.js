@@ -74,6 +74,10 @@ app.whenReady().then(() => {
   trayManager = new TrayManager(win, serviceManager, app);
   trayManager.create();
 
+  // Start health monitoring
+  console.log('Starting health monitoring...');
+  serviceManager.startHealthMonitoring(5000); // Check every 5 seconds
+
   // Auto-start services if enabled
   const config = configManager.get();
   if (config.autoStart) {

@@ -3,7 +3,7 @@ import ServiceCard from './components/ServiceCard';
 import ConsolePanel from './components/ConsolePanel';
 import Settings from './components/Settings';
 import VirtualHosts from './components/VirtualHosts';
-import { ServiceStatus, LogEntry } from './types/electron';
+import { ServiceStatus, LogEntry, ServiceHealth } from './types/electron';
 
 type PageType = 'home' | 'settings' | 'vhosts';
 
@@ -23,6 +23,7 @@ function App() {
 
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [version, setVersion] = useState<string>('0.0.0');
+  const [healthStatus, setHealthStatus] = useState<Record<string, ServiceHealth>>({});
 
   useEffect(() => {
     if (window.electronAPI) {
@@ -37,12 +38,18 @@ function App() {
         setLogs(prev => [...prev.slice(-100), { time, service, message }]);
       };
 
+      const handleHealth = (event: any, healthData: Record<string, ServiceHealth>) => {
+        setHealthStatus(healthData);
+      };
+
       window.electronAPI.on('service-status', handleStatus);
       window.electronAPI.on('log-entry', handleLog);
+      window.electronAPI.on('health-status', handleHealth);
 
       return () => {
         window.electronAPI.removeListener('service-status', handleStatus);
         window.electronAPI.removeListener('log-entry', handleLog);
+        window.electronAPI.removeListener('health-status', handleHealth);
       };
     }
   }, []);
@@ -141,6 +148,7 @@ function App() {
             key={service}
             service={service}
             status={services[service]}
+            health={healthStatus[service]}
             onToggle={() => toggleService(service)}
           />
         ))}

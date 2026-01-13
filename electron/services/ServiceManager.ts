@@ -11,6 +11,14 @@ export interface LogEntry {
     message: string;
 }
 
+export interface ServiceHealth {
+    service: string;
+    status: ServiceStatus;
+    isHealthy: boolean;
+    lastCheck: string;
+    error?: string;
+}
+
 export interface VHostConfig {
     id: string;
     name: string;
@@ -44,6 +52,8 @@ export class ServiceManager {
     private processes: ServiceProcesses;
     private binDir: string;
     private wwwDir: string;
+    private healthCheckInterval: NodeJS.Timeout | null = null;
+    private healthStatus: Record<string, ServiceHealth> = {};
 
     constructor(mainWindow: MainWindow, configManager: ConfigManager | null) {
         this.mainWindow = mainWindow;
@@ -55,6 +65,21 @@ export class ServiceManager {
         };
         this.binDir = path.join(__dirname, '../../bin');
         this.wwwDir = path.join(__dirname, '../../www');
+        
+        // Initialize health status
+        this.initializeHealthStatus();
+    }
+
+    private initializeHealthStatus(): void {
+        const services: Array<keyof ServiceProcesses> = ['php', 'nginx', 'mariadb'];
+        services.forEach(service => {
+            this.healthStatus[service] = {
+                service,
+                status: 'stopped',
+                isHealthy: false,
+                lastCheck: new Date().toISOString()
+            };
+        });
     }
 
     getPort(service: string): number {
@@ -64,6 +89,183 @@ export class ServiceManager {
         // Fallback defaults
         const defaults: Record<string, number> = { php: 9000, nginx: 80, mariadb: 3306 };
         return defaults[service] || 0;
+    }
+
+    // Health Check Methods
+    startHealthMonitoring(intervalMs: number = 5000): void {
+        if (this.healthCheckInterval) {
+            clearInterval(this.healthCheckInterval);
+        }
+
+        this.healthCheckInterval = setInterval(() => {
+            this.checkAllServicesHealth();
+        }, intervalMs);
+
+        // Initial check
+        this.checkAllServicesHealth();
+    }
+
+    stopHealthMonitoring(): void {
+        if (this.healthCheckInterval) {
+            clearInterval(this.healthCheckInterval);
+            this.healthCheckInterval = null;
+        }
+    }
+
+    private async checkAllServicesHealth(): Promise<void> {
+        const services: Array<keyof ServiceProcesses> = ['php', 'nginx', 'mariadb'];
+        
+        for (const service of services) {
+            try {
+                await this.checkServiceHealth(service);
+            } catch (error) {
+                this.log('system', `Health check error for ${service}: ${(error as Error).message}`);
+            }
+        }
+
+        // Send health status to UI
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            this.mainWindow.webContents.send('health-status', this.healthStatus);
+        }
+    }
+
+    private async checkServiceHealth(serviceName: keyof ServiceProcesses): Promise<void> {
+        const process = this.processes[serviceName];
+        const health = this.healthStatus[serviceName];
+        
+        if (!process || process.killed) {
+            health.status = 'stopped';
+            health.isHealthy = false;
+            health.lastCheck = new Date().toISOString();
+            health.error = undefined;
+            return;
+        }
+
+        try {
+            // Check if process is still running
+            if (process.pid) {
+                await this.isProcessRunning(process.pid);
+                
+                // Service-specific health checks
+                switch (serviceName) {
+                    case 'php':
+                        await this.checkPHPHealth();
+                        break;
+                    case 'nginx':
+                        await this.checkNginxHealth();
+                        break;
+                    case 'mariadb':
+                        await this.checkMariaDBHealth();
+                        break;
+                }
+
+                health.status = 'running';
+                health.isHealthy = true;
+                health.error = undefined;
+            } else {
+                health.status = 'error';
+                health.isHealthy = false;
+                health.error = 'Process has no PID';
+            }
+        } catch (error) {
+            health.status = 'error';
+            health.isHealthy = false;
+            health.error = (error as Error).message;
+        }
+
+        health.lastCheck = new Date().toISOString();
+    }
+
+    private async isProcessRunning(pid: number): Promise<void> {
+        return new Promise((resolve, reject) => {
+            exec(`tasklist /FI "PID eq ${pid}" /NH`, (error, stdout) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                
+                if (stdout.includes(pid.toString())) {
+                    resolve();
+                } else {
+                    reject(new Error('Process not found'));
+                }
+            });
+        });
+    }
+
+    private async checkPHPHealth(): Promise<void> {
+        const port = this.getPort('php');
+        return new Promise((resolve, reject) => {
+            const net = require('net');
+            const socket = new net.Socket();
+
+            socket.setTimeout(2000);
+            
+            socket.connect(port, '127.0.0.1', () => {
+                socket.destroy();
+                resolve();
+            });
+
+            socket.on('error', () => {
+                socket.destroy();
+                reject(new Error('PHP-CGI not responding'));
+            });
+
+            socket.on('timeout', () => {
+                socket.destroy();
+                reject(new Error('PHP-CGI timeout'));
+            });
+        });
+    }
+
+    private async checkNginxHealth(): Promise<void> {
+        const port = this.getPort('nginx');
+        return new Promise((resolve, reject) => {
+            const http = require('http');
+            
+            const req = http.get(`http://localhost:${port}`, (res: any) => {
+                res.destroy();
+                resolve();
+            });
+
+            req.on('error', () => {
+                reject(new Error('Nginx not responding'));
+            });
+
+            req.setTimeout(2000, () => {
+                req.destroy();
+                reject(new Error('Nginx timeout'));
+            });
+        });
+    }
+
+    private async checkMariaDBHealth(): Promise<void> {
+        const port = this.getPort('mariadb');
+        return new Promise((resolve, reject) => {
+            const net = require('net');
+            const socket = new net.Socket();
+
+            socket.setTimeout(2000);
+            
+            socket.connect(port, '127.0.0.1', () => {
+                socket.destroy();
+                resolve();
+            });
+
+            socket.on('error', () => {
+                socket.destroy();
+                reject(new Error('MariaDB not responding'));
+            });
+
+            socket.on('timeout', () => {
+                socket.destroy();
+                reject(new Error('MariaDB timeout'));
+            });
+        });
+    }
+
+    getHealthStatus(): Record<string, ServiceHealth> {
+        return this.healthStatus;
     }
 
     generateConfigs(): void {

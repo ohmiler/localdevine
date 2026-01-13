@@ -1,7 +1,7 @@
 import { IpcRendererEvent } from 'electron';
 
 // Re-export types from backend for consistency
-export type { ServiceStatus, LogEntry, VHostConfig } from '../../../electron/services/ServiceManager';
+export type { ServiceStatus, LogEntry, VHostConfig, ServiceHealth } from '../../../electron/services/ServiceManager';
 export type { Config, PHPVersion } from '../../../electron/services/ConfigManager';
 
 // Additional frontend-specific types
@@ -52,7 +52,7 @@ export interface ElectronAPI {
     setPHPVersion: (version: string) => Promise<{ success: boolean; error?: string }>;
 
     // Event listeners
-    on: (channel: 'service-status' | 'log-entry', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;
+    on: (channel: 'service-status' | 'log-entry' | 'health-status', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;
     removeListener: (channel: string, callback: (...args: any[]) => void) => void;
 }
 

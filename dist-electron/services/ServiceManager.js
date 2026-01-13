@@ -11,6 +11,7 @@ class ServiceManager {
     constructor(mainWindow, configManager) {
         this.healthCheckInterval = null;
         this.healthStatus = {};
+        this.lastNotificationTime = {};
         this.mainWindow = mainWindow;
         this.configManager = configManager;
         this.processes = {
@@ -116,6 +117,8 @@ class ServiceManager {
             health.error = error.message;
         }
         health.lastCheck = new Date().toISOString();
+        // Check and send notifications if needed
+        this.checkAndNotify(serviceName, health);
     }
     async isProcessRunning(pid) {
         return new Promise((resolve, reject) => {
@@ -192,6 +195,65 @@ class ServiceManager {
     }
     getHealthStatus() {
         return this.healthStatus;
+    }
+    // Notification Methods
+    sendNotification(title, body, service) {
+        // Send to UI for native notification
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            this.mainWindow.webContents.send('service-notification', {
+                title,
+                body,
+                service,
+                timestamp: new Date().toISOString()
+            });
+        }
+        // Log the notification
+        this.log('system', `Notification: ${title} - ${body}`);
+    }
+    shouldNotify(serviceName, type) {
+        const key = `${serviceName}-${type}`;
+        const now = Date.now();
+        const lastTime = this.lastNotificationTime[key] || 0;
+        // Prevent notification spam - only notify once every 30 seconds
+        return now - lastTime > 30000;
+    }
+    markNotificationSent(serviceName, type) {
+        const key = `${serviceName}-${type}`;
+        this.lastNotificationTime[key] = Date.now();
+    }
+    checkAndNotify(serviceName, health) {
+        const displayName = serviceName === 'mariadb' ? 'MariaDB' : serviceName.toUpperCase();
+        // Service crashed or stopped unexpectedly
+        if (health.status === 'error') {
+            if (this.shouldNotify(serviceName, 'error')) {
+                this.sendNotification(`${displayName} Error`, `${displayName} encountered an error: ${health.error || 'Unknown error'}`, serviceName);
+                this.markNotificationSent(serviceName, 'error');
+            }
+            return;
+        }
+        // Service stopped (but was running before)
+        if (health.status === 'stopped' && this.processes[serviceName]) {
+            if (this.shouldNotify(serviceName, 'error')) {
+                this.sendNotification(`${displayName} Stopped`, `${displayName} has stopped unexpectedly`, serviceName);
+                this.markNotificationSent(serviceName, 'error');
+            }
+            return;
+        }
+        // Service unhealthy but running
+        if (health.status === 'running' && !health.isHealthy) {
+            if (this.shouldNotify(serviceName, 'warning')) {
+                this.sendNotification(`${displayName} Warning`, `${displayName} is running but not responding properly: ${health.error || 'Health check failed'}`, serviceName);
+                this.markNotificationSent(serviceName, 'warning');
+            }
+            return;
+        }
+        // Service recovered
+        const previousHealth = this.healthStatus[serviceName];
+        if (previousHealth &&
+            (previousHealth.status === 'error' || previousHealth.status === 'stopped' || !previousHealth.isHealthy) &&
+            health.status === 'running' && health.isHealthy) {
+            this.sendNotification(`${displayName} Recovered`, `${displayName} is now running properly`, serviceName);
+        }
     }
     generateConfigs() {
         const nginxConfPath = path_1.default.join(this.binDir, 'nginx/conf/nginx.conf');

@@ -3,7 +3,8 @@ import ServiceCard from './components/ServiceCard';
 import ConsolePanel from './components/ConsolePanel';
 import Settings from './components/Settings';
 import VirtualHosts from './components/VirtualHosts';
-import { ServiceStatus, LogEntry, ServiceHealth } from './types/electron';
+import NotificationPanel from './components/NotificationPanel';
+import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 
 type PageType = 'home' | 'settings' | 'vhosts';
 
@@ -24,6 +25,7 @@ function App() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [version, setVersion] = useState<string>('0.0.0');
   const [healthStatus, setHealthStatus] = useState<Record<string, ServiceHealth>>({});
+  const [notifications, setNotifications] = useState<ServiceNotification[]>([]);
 
   useEffect(() => {
     if (window.electronAPI) {
@@ -42,14 +44,20 @@ function App() {
         setHealthStatus(healthData);
       };
 
+      const handleNotification = (event: any, notification: ServiceNotification) => {
+        setNotifications(prev => [...prev.slice(-9), notification]); // Keep last 10
+      };
+
       window.electronAPI.on('service-status', handleStatus);
       window.electronAPI.on('log-entry', handleLog);
       window.electronAPI.on('health-status', handleHealth);
+      window.electronAPI.on('service-notification', handleNotification);
 
       return () => {
         window.electronAPI.removeListener('service-status', handleStatus);
         window.electronAPI.removeListener('log-entry', handleLog);
         window.electronAPI.removeListener('health-status', handleHealth);
+        window.electronAPI.removeListener('service-notification', handleNotification);
       };
     }
   }, []);
@@ -178,6 +186,9 @@ function App() {
 
       {/* Console / Logs Area */}
       <ConsolePanel logs={logs} />
+      
+      {/* Notification Panel */}
+      <NotificationPanel notifications={notifications} />
     </div>
   );
 }

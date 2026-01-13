@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, Notification } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -231,4 +231,28 @@ ipcMain.handle('get-php-versions', () => {
 ipcMain.handle('set-php-version', async (event, version) => {
   if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
   return configManager.setPHPVersion(version);
+});
+
+// IPC Handlers - Notifications
+ipcMain.on('service-notification', (event, notification) => {
+  if (Notification.isSupported()) {
+    const nativeNotification = new Notification({
+      title: notification.title,
+      body: notification.body,
+      icon: path.join(__dirname, '../public/icon.png'),
+      urgency: notification.service ? 'normal' : 'low'
+    });
+
+    nativeNotification.on('click', () => {
+      // Focus the window when notification is clicked
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
+      }
+    });
+
+    nativeNotification.show();
+  } else {
+    console.log('Notifications not supported on this system');
+  }
 });

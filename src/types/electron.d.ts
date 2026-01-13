@@ -22,6 +22,14 @@ export interface CreateVHostInput {
     path: string;
 }
 
+// Notification types
+export interface ServiceNotification {
+    title: string;
+    body: string;
+    service?: string;
+    timestamp: string;
+}
+
 // ElectronAPI interface for renderer process
 export interface ElectronAPI {
     // Service control
@@ -52,7 +60,7 @@ export interface ElectronAPI {
     setPHPVersion: (version: string) => Promise<{ success: boolean; error?: string }>;
 
     // Event listeners
-    on: (channel: 'service-status' | 'log-entry' | 'health-status', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;
+    on: (channel: 'service-status' | 'log-entry' | 'health-status' | 'service-notification', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;
     removeListener: (channel: string, callback: (...args: any[]) => void) => void;
 }
 

@@ -10,6 +10,7 @@ function ProjectTemplates() {
   const [createDatabase, setCreateDatabase] = useState(true);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; project: string }>({ show: false, project: '' });
 
   // Debug: Log state changes
   console.log('ProjectTemplates render:', { projectName, selectedTemplate, templates: templates.length });
@@ -18,12 +19,19 @@ function ProjectTemplates() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    console.log('Projects changed:', projects);
+  }, [projects]);
+
   const loadData = async () => {
     if (window.electronAPI) {
+      console.log('Loading templates and projects...');
       const [templatesData, projectsData] = await Promise.all([
         window.electronAPI.getTemplates(),
         window.electronAPI.getProjects()
       ]);
+      console.log('Templates loaded:', templatesData.length);
+      console.log('Projects loaded:', projectsData);
       setTemplates(templatesData);
       setProjects(projectsData);
     }
@@ -67,22 +75,36 @@ function ProjectTemplates() {
   };
 
   const handleDeleteProject = async (name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+    setDeleteConfirm({ show: true, project: name });
+  };
 
+  const confirmDelete = async () => {
+    const name = deleteConfirm.project;
+    setDeleteConfirm({ show: false, project: '' });
+
+    console.log('Deleting project:', name);
     setLoading(true);
     try {
       const result = await window.electronAPI.deleteProject(name);
+      console.log('Delete result:', result);
       if (result.success) {
         setMessage({ type: 'success', text: result.message });
-        loadData();
+        console.log('Project deleted, reloading data...');
+        await loadData();
+        console.log('Data reloaded');
       } else {
         setMessage({ type: 'error', text: result.message });
       }
     } catch (error: any) {
+      console.log('Delete error:', error);
       setMessage({ type: 'error', text: error.message });
     } finally {
       setLoading(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm({ show: false, project: '' });
   };
 
   const handleOpenFolder = (name: string) => {
@@ -98,6 +120,32 @@ function ProjectTemplates() {
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Project Templates</h2>
+
+      {/* Custom Delete Confirmation Modal */}
+      {deleteConfirm.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-white">Confirm Delete</h3>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to delete "{deleteConfirm.project}"? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {message && (
         <div className={`p-3 rounded-lg mb-4 ${message.type === 'success' ? 'bg-green-900/50 text-green-300' : 'bg-red-900/50 text-red-300'}`}>

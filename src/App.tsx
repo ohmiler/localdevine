@@ -47,7 +47,13 @@ function App() {
       };
 
       const handleNotification = (event: any, notification: ServiceNotification) => {
-        setNotifications(prev => [...prev.slice(-9), notification]); // Keep last 10
+        const notificationWithId = { ...notification, id: Date.now() };
+        setNotifications(prev => [...prev.slice(-9), notificationWithId]); // Keep last 10
+        
+        // Auto-dismiss after 10 seconds
+        setTimeout(() => {
+          setNotifications(prev => prev.filter(n => (n as any).id !== notificationWithId.id));
+        }, 10000);
       };
 
       window.electronAPI.on('service-status', handleStatus);
@@ -225,7 +231,11 @@ function App() {
       <ConsolePanel logs={logs} />
       
       {/* Notification Panel */}
-      <NotificationPanel notifications={notifications} />
+      <NotificationPanel 
+        notifications={notifications} 
+        onDismiss={(index) => setNotifications(prev => prev.filter((_, i) => i !== index))}
+        onDismissAll={() => setNotifications([])}
+      />
     </div>
   );
 }

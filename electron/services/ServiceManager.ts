@@ -455,6 +455,16 @@ ${vhostBlocks}
 
     log(service: string, message: string | Buffer): void {
         const messageStr = message.toString().trim();
+        
+        // Filter out harmless MariaDB health check warnings
+        if (service === 'mariadb' && (
+            messageStr.includes('unauthenticated') ||
+            messageStr.includes('Got an error reading communication packets') ||
+            messageStr.includes('This connection closed normally without authentication')
+        )) {
+            return; // Skip these messages
+        }
+        
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
             this.mainWindow.webContents.send('log-entry', {
                 time: new Date().toLocaleTimeString(),

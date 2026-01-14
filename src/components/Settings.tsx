@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Config, PHPVersion } from '../types/electron';
-import { useTheme } from '../contexts/ThemeContext';
 
 interface SettingsProps {
   onBack: () => void;
 }
 
 function Settings({ onBack }: SettingsProps) {
-    const { theme, toggleTheme, isLight, isDark } = useTheme();
     const [config, setConfig] = useState<Config>({
         ports: { php: 9000, apache: 80, mariadb: 3306 },
         autoStart: false,
@@ -226,40 +224,6 @@ function Settings({ onBack }: SettingsProps) {
                     </p>
                 </div>
 
-                {/* Theme Settings */}
-                <div className="card p-6">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-lg">
-                            🎨
-                        </div>
-                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Theme Settings</h2>
-                    </div>
-
-                    <div className="space-y-4">
-                        <label className="flex items-center justify-between cursor-pointer p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-                            <div>
-                                <p className="font-semibold" style={{ color: 'var(--text-on-card)' }}>Dark Mode</p>
-                                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Switch between light and dark themes</p>
-                            </div>
-                            <div
-                                onClick={toggleTheme}
-                                className={`relative w-14 h-7 rounded-full transition-all cursor-pointer ${
-                                    isDark ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-400'
-                                }`}
-                            >
-                                <div
-                                    className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform ${
-                                        isDark ? 'translate-x-8' : 'translate-x-1'
-                                    }`}
-                                />
-                            </div>
-                        </label>
-                    </div>
-
-                    <p className="mt-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                        ℹ️ Theme preference is saved automatically.
-                    </p>
-                </div>
             </div>
         </div>
     );

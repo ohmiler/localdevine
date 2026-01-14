@@ -1,6 +1,7 @@
 import { spawn, exec } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import PathResolver from './PathResolver';
 
 // Type definitions
 export type ServiceStatus = 'running' | 'stopped' | 'error';
@@ -64,8 +65,14 @@ export class ServiceManager {
             apache: null,
             mariadb: null
         };
-        this.binDir = path.join(__dirname, '../../bin');
-        this.wwwDir = path.join(__dirname, '../../www');
+        
+        // Use PathResolver for correct paths in both dev and production
+        const pathResolver = PathResolver.getInstance();
+        this.binDir = pathResolver.binDir;
+        this.wwwDir = pathResolver.wwwDir;
+        
+        // Log paths for debugging
+        pathResolver.logPaths();
         
         // Initialize health status
         this.initializeHealthStatus();

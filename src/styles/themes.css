@@ -1,5 +1,5 @@
-/* Light Theme - Clean White & Light Blue Gradient */
-.light {
+/* LocalDevine Theme - Blue & White */
+:root {
   --bg-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
   --bg-secondary: #ffffff;
   --bg-tertiary: #f1f5f9;
@@ -30,45 +30,7 @@
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   
   --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-  --gradient-secondary: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
-  --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  --gradient-error: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-}
-
-/* Dark Theme - Modern Dark */
-.dark {
-  --bg-primary: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
-  --bg-card: #1e293b;
-  --bg-input: #0f172a;
-  --bg-button: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-  --bg-button-hover: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
-  --bg-success: #10b981;
-  --bg-error: #ef4444;
-  --bg-warning: #f59e0b;
-  
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-tertiary: #94a3b8;
-  --text-inverse: #0f172a;
-  --text-muted: #94a3b8;
-  --text-on-card: #f1f5f9;
-  --text-label: #e2e8f0;
-  
-  --border-primary: #334155;
-  --border-secondary: #475569;
-  --border-input: #475569;
-  --border-focus: #3b82f6;
-  
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.25);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
-  
-  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-  --gradient-secondary: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  --gradient-secondary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
   --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --gradient-error: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
@@ -106,13 +68,6 @@ body {
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.dark .text-gradient {
   background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

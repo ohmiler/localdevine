@@ -5,6 +5,9 @@ import { spawn } from 'child_process';
 import { ServiceManager } from './services/ServiceManager';
 import TrayManager from './services/TrayManager';
 import ConfigManager from './services/ConfigManager';
+import HostsManager from './services/HostsManager';
+import ProjectTemplateManager from './services/ProjectTemplateManager';
+import PathResolver from './services/PathResolver';
 import { VHostConfig } from './services/ServiceManager';
 
 // Basic error handling to catch the 'string' issue
@@ -17,8 +20,15 @@ let mainWindow: BrowserWindow | null;
 let serviceManager: ServiceManager | null;
 let trayManager: TrayManager | null;
 let configManager: ConfigManager | null;
+let hostsManager: HostsManager | null;
+let projectTemplateManager: ProjectTemplateManager | null;
 
 function createWindow(): BrowserWindow {
+  const pathResolver = PathResolver.getInstance();
+  const iconPath = app.isPackaged 
+    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'public', 'icon.png')
+    : path.join(__dirname, '../public/icon.png');
+
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
@@ -28,7 +38,7 @@ function createWindow(): BrowserWindow {
       preload: path.join(__dirname, 'preload.js'),
     },
     title: 'LocalDevine',
-    icon: path.join(__dirname, '../public/icon.png'),
+    icon: iconPath,
   });
 
   // In production, load the built file
@@ -50,6 +60,12 @@ app.whenReady().then(() => {
 
   // Pass config to service manager
   serviceManager = new ServiceManager(win, configManager);
+
+  // Initialize hosts manager
+  hostsManager = new HostsManager();
+
+  // Initialize project template manager
+  projectTemplateManager = new ProjectTemplateManager();
 
   // Create system tray
   trayManager = new TrayManager(win, serviceManager, app);
@@ -128,16 +144,17 @@ ipcMain.handle('save-config', async (event: any, config: any) => {
 
 // IPC Handlers - Folder Operations
 ipcMain.on('open-folder', (event: IpcMainEvent, folderType: string) => {
+  const pathResolver = PathResolver.getInstance();
   let folderPath: string;
   switch (folderType) {
     case 'www':
-      folderPath = path.join(__dirname, '../www');
+      folderPath = pathResolver.wwwDir;
       break;
     case 'config':
-      folderPath = path.join(__dirname, '../');
+      folderPath = pathResolver.basePath;
       break;
     case 'bin':
-      folderPath = path.join(__dirname, '../bin');
+      folderPath = pathResolver.binDir;
       break;
     default:
       return;
@@ -146,10 +163,10 @@ ipcMain.on('open-folder', (event: IpcMainEvent, folderType: string) => {
 });
 
 ipcMain.on('open-terminal', () => {
-  const wwwPath = path.join(__dirname, '../www');
+  const pathResolver = PathResolver.getInstance();
   // Open PowerShell in www directory
   spawn('powershell.exe', [], {
-    cwd: wwwPath,
+    cwd: pathResolver.wwwDir,
     detached: true,
     shell: true
   });
@@ -199,4 +216,71 @@ ipcMain.handle('get-php-versions', () => {
 ipcMain.handle('set-php-version', async (event: any, version: string) => {
   if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
   return configManager.setPHPVersion(version);
+});
+
+// IPC Handlers - Hosts File
+ipcMain.handle('get-hosts-entries', () => {
+  if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
+  return hostsManager.readHostsFile();
+});
+
+ipcMain.handle('add-hosts-entry', async (event: any, ip: string, hostname: string, comment?: string) => {
+  if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
+  return hostsManager.addEntry(ip, hostname, comment);
+});
+
+ipcMain.handle('remove-hosts-entry', async (event: any, hostname: string) => {
+  if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
+  return hostsManager.removeEntry(hostname);
+});
+
+ipcMain.handle('toggle-hosts-entry', async (event: any, hostname: string) => {
+  if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
+  return hostsManager.toggleEntry(hostname);
+});
+
+ipcMain.handle('restore-hosts-backup', async () => {
+  if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
+  return hostsManager.restoreBackup();
+});
+
+ipcMain.handle('check-hosts-admin-rights', () => {
+  if (!hostsManager) return false;
+  return hostsManager.checkAdminRights();
+});
+
+ipcMain.on('request-hosts-admin-rights', () => {
+  if (hostsManager) hostsManager.requestAdminRights();
+});
+
+// IPC Handlers - Project Templates
+ipcMain.handle('get-templates', () => {
+  if (!projectTemplateManager) return [];
+  return projectTemplateManager.getTemplates();
+});
+
+ipcMain.handle('get-projects', () => {
+  if (!projectTemplateManager) return [];
+  return projectTemplateManager.getProjects();
+});
+
+ipcMain.handle('create-project', async (event: any, options: any) => {
+  if (!projectTemplateManager) return { success: false, message: 'ProjectTemplateManager not initialized' };
+  return projectTemplateManager.createProject(options);
+});
+
+ipcMain.handle('delete-project', async (event: any, projectName: string) => {
+  if (!projectTemplateManager) return { success: false, message: 'ProjectTemplateManager not initialized' };
+  return projectTemplateManager.deleteProject(projectName);
+});
+
+ipcMain.handle('open-project-folder', async (event: any, projectName: string) => {
+  const pathResolver = PathResolver.getInstance();
+  const projectPath = path.join(pathResolver.wwwDir, projectName);
+  shell.openPath(projectPath);
+});
+
+ipcMain.handle('open-project-browser', async (event: any, projectName: string) => {
+  const port = configManager ? configManager.getPort('apache') : 80;
+  shell.openExternal(`http://localhost:${port}/${projectName}`);
 });

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { VHostConfig } from './ServiceManager';
+import PathResolver from './PathResolver';
 
 export interface Config {
     ports: {
@@ -33,8 +34,10 @@ export default class ConfigManager {
     private config: Config;
 
     constructor() {
-        this.configPath = path.join(__dirname, '../../config.json');
-        this.binDir = path.join(__dirname, '../../bin');
+        // Use PathResolver for correct paths in both dev and production
+        const pathResolver = PathResolver.getInstance();
+        this.configPath = pathResolver.configPath;
+        this.binDir = pathResolver.binDir;
         this.defaultConfig = {
             ports: {
                 php: 9000,

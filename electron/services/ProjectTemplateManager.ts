@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { BrowserWindow } from 'electron';
+import PathResolver from './PathResolver';
 
 export interface ProjectTemplate {
     id: string;
@@ -675,7 +676,9 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     constructor() {
-        this.wwwPath = path.join(__dirname, '../../www');
+        // Use PathResolver for correct paths in both dev and production
+        const pathResolver = PathResolver.getInstance();
+        this.wwwPath = pathResolver.wwwDir;
     }
 
     setMainWindow(window: BrowserWindow) {

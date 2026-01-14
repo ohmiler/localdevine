@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { HostsEntry, HostsFileResult, HostsOperationResult } from '../types/electron';
-import ThemeToggle from './ThemeToggle';
 
 interface HostsEditorProps {
   onBack: () => void;
@@ -141,15 +140,12 @@ function HostsEditor({ onBack }: HostsEditorProps) {
           </h1>
           <p className="text-lg text-gradient">Manage Windows hosts file entries</p>
         </div>
-        <div className="flex items-center gap-4">
-          <ThemeToggle />
-          <button
-            onClick={onBack}
-            className="button-secondary"
-          >
-            ← Back
-          </button>
-        </div>
+        <button
+          onClick={onBack}
+          className="button-secondary"
+        >
+          ← Back
+        </button>
       </header>
 
       {/* Admin Rights Warning */}

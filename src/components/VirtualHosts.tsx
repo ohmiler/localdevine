@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { VHostConfig, CreateVHostInput } from '../types/electron';
-import ThemeToggle from './ThemeToggle';
 
 interface VirtualHostsProps {
   onBack: () => void;
@@ -72,15 +71,12 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
                   </h1>
                     <p className="text-lg text-gradient">Manage multiple projects with custom domains</p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <ThemeToggle />
-                    <button
-                        onClick={onBack}
-                        className="button-secondary"
-                    >
-                        ← Back
-                    </button>
-                </div>
+                <button
+                    onClick={onBack}
+                    className="button-secondary"
+                >
+                    ← Back
+                </button>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

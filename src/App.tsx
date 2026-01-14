@@ -6,8 +6,6 @@ import VirtualHosts from './components/VirtualHosts';
 import HostsEditor from './components/HostsEditor';
 import NotificationPanel from './components/NotificationPanel';
 import ProjectTemplates from './components/ProjectTemplates';
-import ThemeToggle from './components/ThemeToggle';
-import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 import './styles/themes.css';
 
@@ -19,8 +17,7 @@ interface Services {
   mariadb: ServiceStatus;
 }
 
-function AppContent() {
-  const { isLight } = useTheme();
+function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('home');
   const [services, setServices] = useState<Services>({
     php: 'stopped',
@@ -126,15 +123,12 @@ function AppContent() {
             </h1>
             <p className="text-lg text-gradient">Create projects from templates</p>
           </div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <button
-              onClick={() => setCurrentPage('home')}
-              className="button-secondary"
-            >
-              ← Back
-            </button>
-          </div>
+          <button
+            onClick={() => setCurrentPage('home')}
+            className="button-secondary"
+          >
+            ← Back
+          </button>
         </header>
         <ProjectTemplates />
       </div>
@@ -152,7 +146,6 @@ function AppContent() {
           <p className="text-lg font-medium text-gradient">The Modern PHP Development Environment</p>
         </div>
         <div className="flex items-center gap-4">
-          <ThemeToggle />
           <button
             onClick={() => setCurrentPage('templates')}
             className="button-secondary"
@@ -250,14 +243,6 @@ function AppContent() {
         onDismissAll={() => setNotifications([])}
       />
     </div>
-  );
-}
-
-function App() {
-  return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
   );
 }
 

@@ -1,7 +1,9 @@
 {
   "name": "localdevine",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "main": "electron/main.js",
+  "author": "Miler",
+  "description": "A modern Local Development Environment Manager",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -11,6 +13,42 @@
     "build:electron": "tsc -p electron/tsconfig.json",
     "electron:dev": "npm run build:electron && cross-env NODE_ENV=development node_modules/electron/dist/electron.exe .",
     "electron:build": "npm run build && npm run build:electron && electron-builder"
+  },
+  "build": {
+    "appId": "com.localdevine.app",
+    "productName": "LocalDevine",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "dist/**/*",
+      "bin/**/*",
+      "www/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "dist-electron/main.js"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.png",
+      "forceCodeSigning": false,
+      "signAndEditExecutable": false
+    },
+    "asar": true,
+    "asarUnpack": [
+      "bin/**/*",
+      "www/**/*",
+      "public/**/*"
+    ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   },
   "dependencies": {
     "mysql2": "^3.16.0",

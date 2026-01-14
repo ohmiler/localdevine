@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { VHostConfig, CreateVHostInput } from '../types/electron';
+import ThemeToggle from './ThemeToggle';
 
 interface VirtualHostsProps {
   onBack: () => void;
@@ -63,65 +64,73 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white p-8">
+        <div className="min-h-screen p-8">
             <header className="mb-10 flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
-                        Virtual Hosts
-                    </h1>
-                    <p className="text-gray-400">Manage multiple projects with custom domains</p>
+                    <h1 className="text-3xl font-bold mb-2 text-gradient">
+                    🌐 Virtual Hosts
+                  </h1>
+                    <p className="text-lg text-gradient">Manage multiple projects with custom domains</p>
                 </div>
-                <button
-                    onClick={onBack}
-                    className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
-                >
-                    ← Back
-                </button>
+                <div className="flex items-center gap-4">
+                    <ThemeToggle />
+                    <button
+                        onClick={onBack}
+                        className="button-secondary"
+                    >
+                        ← Back
+                    </button>
+                </div>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Add New VHost */}
-                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                    <h2 className="text-xl font-semibold mb-6">Add Virtual Host</h2>
+                <div className="card p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-lg">
+                            ➕
+                        </div>
+                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Add Virtual Host</h2>
+                    </div>
 
                     <div className="space-y-4">
                         <div>
-                            <label className="text-gray-400 text-sm block mb-1">Project Name</label>
+                            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-label)' }}>Project Name</label>
                             <input
                                 type="text"
                                 value={newVHost.name}
                                 onChange={(e) => setNewVHost((prev: CreateVHostInput) => ({ ...prev, name: e.target.value }))}
                                 placeholder="My Project"
-                                className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+                                className="input w-full"
                             />
                         </div>
 
                         <div>
-                            <label className="text-gray-400 text-sm block mb-1">Domain</label>
+                            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-label)' }}>Domain</label>
                             <input
                                 type="text"
                                 value={newVHost.domain}
                                 onChange={(e) => setNewVHost((prev: CreateVHostInput) => ({ ...prev, domain: e.target.value }))}
                                 placeholder="myproject.test"
-                                className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+                                className="input w-full"
                             />
                         </div>
 
                         <div>
-                            <label className="text-gray-400 text-sm block mb-1">Document Root</label>
+                            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-label)' }}>Document Root</label>
                             <div className="flex gap-2">
                                 <input
                                     type="text"
                                     value={newVHost.path}
                                     onChange={(e) => setNewVHost((prev: CreateVHostInput) => ({ ...prev, path: e.target.value }))}
                                     placeholder="C:\Projects\myproject\public"
-                                    className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+                                    className="input flex-1"
                                 />
                                 <button
                                     onClick={handleBrowse}
-                                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                                    className="button-secondary"
                                 >
-                                    Browse
+                                    📁 Browse
                                 </button>
                             </div>
                         </div>
@@ -129,53 +138,66 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
                         <button
                             onClick={handleAdd}
                             disabled={saving}
-                            className={`w-full py-2 rounded-lg font-medium transition-all ${saving
-                                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white'
+                            className={`w-full py-3 rounded-xl font-semibold transition-all ${saving
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
                                 }`}
                         >
-                            {saving ? 'Adding...' : '+ Add Virtual Host'}
+                            {saving ? '⏳ Adding...' : '➕ Add Virtual Host'}
                         </button>
 
                         {message && (
-                            <p className={`text-sm ${message.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>
+                            <div className={`p-3 rounded-lg text-sm ${message.startsWith('✓') ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
                                 {message}
-                            </p>
+                            </div>
                         )}
                     </div>
 
                     {/* Hosts file hint */}
-                    <div className="mt-6 p-4 bg-gray-900 rounded-lg border border-gray-700">
-                        <p className="text-xs text-gray-400 mb-2">📝 Add to hosts file (Run as Admin):</p>
-                        <code className="text-xs text-purple-400 font-mono">
+                    <div className="mt-6 p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                        <p className="text-xs mb-2" style={{ color: 'var(--text-label)' }}>📝 Add to hosts file (Run as Admin):</p>
+                        <code className="text-xs text-blue-400 font-mono">
                             C:\Windows\System32\drivers\etc\hosts
                         </code>
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
                             127.0.0.1  yourdomain.test
                         </p>
                     </div>
                 </div>
 
                 {/* VHost List */}
-                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                    <h2 className="text-xl font-semibold mb-6">Active Virtual Hosts</h2>
+                <div className="card p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-lg">
+                            🌐
+                        </div>
+                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Active Virtual Hosts</h2>
+                    </div>
 
                     {vhosts.length === 0 ? (
-                        <p className="text-gray-500 italic">No virtual hosts configured</p>
+                        <div className="p-8 text-center rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                            <div className="text-4xl mb-3">📭</div>
+                            <p style={{ color: 'var(--text-on-card)' }}>No virtual hosts configured</p>
+                        </div>
                     ) : (
                         <div className="space-y-3">
                             {vhosts.map(vhost => (
-                                <div key={vhost.id} className="flex items-center justify-between p-4 bg-gray-900 rounded-lg border border-gray-700">
-                                    <div>
-                                        <p className="font-medium">{vhost.name}</p>
-                                        <p className="text-sm text-purple-400">{vhost.domain}</p>
-                                        <p className="text-xs text-gray-500 truncate max-w-xs">{vhost.path}</p>
+                                <div key={vhost.id} className="flex items-center justify-between p-4 rounded-xl hover:shadow-md transition-all" style={{ background: 'var(--bg-tertiary)' }}>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-lg">
+                                            🌍
+                                        </div>
+                                        <div>
+                                            <p className="font-bold" style={{ color: 'var(--text-on-card)' }}>{vhost.name}</p>
+                                            <p className="text-sm text-blue-400">{vhost.domain}</p>
+                                            <p className="text-xs truncate max-w-xs" style={{ color: 'var(--text-secondary)' }}>{vhost.path}</p>
+                                        </div>
                                     </div>
                                     <button
                                         onClick={() => handleRemove(vhost.id)}
-                                        className="px-3 py-1 text-red-400 hover:bg-red-900/30 rounded transition-colors"
+                                        className="w-10 h-10 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all"
                                     >
-                                        Delete
+                                        🗑️
                                     </button>
                                 </div>
                             ))}

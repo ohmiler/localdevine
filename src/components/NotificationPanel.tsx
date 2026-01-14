@@ -14,7 +14,12 @@ function NotificationPanel({ notifications, onDismiss, onDismissAll }: Notificat
       {notifications.length > 1 && (
         <button
           onClick={onDismissAll}
-          className="w-full text-xs text-gray-400 hover:text-white bg-gray-800/80 rounded px-2 py-1 text-right"
+          className="w-full text-xs px-3 py-1.5 rounded-lg backdrop-blur-md transition-all hover:scale-[1.02]"
+          style={{ 
+            background: 'var(--bg-card)', 
+            color: 'var(--text-secondary)',
+            border: '1px solid var(--border-primary)'
+          }}
         >
           Clear All ({notifications.length})
         </button>
@@ -22,30 +27,35 @@ function NotificationPanel({ notifications, onDismiss, onDismissAll }: Notificat
       {notifications.map((notification, index) => (
         <div
           key={`${notification.timestamp}-${index}`}
-          className="bg-gray-800 border border-gray-700 rounded-lg p-3 shadow-lg"
+          className="rounded-xl p-4 shadow-xl backdrop-blur-md"
           style={{
             animation: 'slideIn 0.3s ease-out',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-primary)'
           }}
         >
-          <div className="flex items-start gap-2">
-            <div className="flex-shrink-0 w-2 h-2 rounded-full bg-yellow-400 mt-1" />
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white shadow-lg">
+              ⚠️
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
+              <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-on-card)' }}>
                 {notification.title}
               </p>
-              <p className="text-xs text-gray-300 mt-1">
+              <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                 {notification.body}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
                 {new Date(notification.timestamp).toLocaleTimeString()}
               </p>
             </div>
             <button
               onClick={() => onDismiss(index)}
-              className="flex-shrink-0 text-gray-400 hover:text-white transition-colors"
+              className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all hover:scale-110"
+              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
               title="Dismiss"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>

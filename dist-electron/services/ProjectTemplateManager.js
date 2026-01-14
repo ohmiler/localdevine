@@ -181,11 +181,11 @@ class Router {
                         content: `<?php
 class HomeController {
     public function index() {
-        require_once '../app/views/home.php';
+        require_once __DIR__ . '/../views/home.php';
     }
 
     public function about() {
-        require_once '../app/views/about.php';
+        require_once __DIR__ . '/../views/about.php';
     }
 }
 ?>`
@@ -705,7 +705,9 @@ document.addEventListener('DOMContentLoaded', function() {
             fs.mkdirSync(projectPath, { recursive: true });
             // Create database if needed
             if (template.hasDatabase && options.createDatabase !== false) {
+                console.log(`Creating database: ${databaseName} for template: ${template.id}`);
                 const dbResult = await this.createDatabase(databaseName);
+                console.log('Database creation result:', dbResult);
                 if (!dbResult.success) {
                     // Clean up project directory
                     fs.rmSync(projectPath, { recursive: true, force: true });
@@ -751,6 +753,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     async createDatabase(dbName) {
         return new Promise((resolve) => {
+            console.log(`Connecting to database: ${this.dbHost}:${this.dbPort} as ${this.dbUser}`);
             const mysql = require('mysql2');
             const connection = mysql.createConnection({
                 host: this.dbHost,
@@ -760,15 +763,19 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             connection.connect((err) => {
                 if (err) {
+                    console.log('Database connection error:', err);
                     resolve({ success: false, message: `Database connection failed: ${err.message}` });
                     return;
                 }
+                console.log(`Connected to database, creating: ${dbName}`);
                 connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``, (err) => {
                     connection.end();
                     if (err) {
+                        console.log('Database creation error:', err);
                         resolve({ success: false, message: `Failed to create database: ${err.message}` });
                     }
                     else {
+                        console.log(`Database created successfully: ${dbName}`);
                         resolve({ success: true, message: 'Database created' });
                     }
                 });

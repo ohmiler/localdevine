@@ -13,6 +13,7 @@
     "electron:build": "npm run build && npm run build:electron && electron-builder"
   },
   "dependencies": {
+    "mysql2": "^3.16.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

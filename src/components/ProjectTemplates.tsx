@@ -118,27 +118,30 @@ function ProjectTemplates() {
   const selectedTemplateData = templates.find(t => t.id === selectedTemplate);
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Project Templates</h2>
-
+    <div>
       {/* Custom Delete Confirmation Modal */}
       {deleteConfirm.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4 text-white">Confirm Delete</h3>
-            <p className="text-gray-300 mb-6">
-              Are you sure you want to delete "{deleteConfirm.project}"? This action cannot be undone.
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="card p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-xl">
+                🗑️
+              </div>
+              <h3 className="text-lg font-bold" style={{ color: 'var(--text-on-card)' }}>Confirm Delete</h3>
+            </div>
+            <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
+              Are you sure you want to delete "<strong>{deleteConfirm.project}</strong>"? This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={cancelDelete}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors"
+                className="button-secondary"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                className="px-4 py-2 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all"
               >
                 Delete
               </button>
@@ -148,38 +151,45 @@ function ProjectTemplates() {
       )}
 
       {message && (
-        <div className={`p-3 rounded-lg mb-4 ${message.type === 'success' ? 'bg-green-900/50 text-green-300' : 'bg-red-900/50 text-red-300'}`}>
-          {message.text}
+        <div className={`p-4 rounded-xl mb-6 flex items-center gap-3 ${
+          message.type === 'success' 
+            ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30' 
+            : 'bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30'
+        }`}>
+          <span className="text-xl">{message.type === 'success' ? '✅' : '❌'}</span>
+          <span style={{ color: 'var(--text-on-card)' }}>{message.text}</span>
         </div>
       )}
 
       {/* Template Selection */}
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-3">Select Template</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="mb-8">
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-on-card)' }}>
+          📦 Select Template
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {templates.map((template) => (
             <div
               key={template.id}
               onClick={() => setSelectedTemplate(template.id)}
-              className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+              className={`card p-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl ${
                 selectedTemplate === template.id
-                  ? 'border-blue-500 bg-blue-900/30'
-                  : 'border-gray-700 bg-gray-800 hover:border-gray-500'
+                  ? 'ring-2 ring-blue-500 shadow-lg shadow-blue-500/20'
+                  : ''
               }`}
             >
-              <div className="text-2xl mb-2">{template.icon}</div>
-              <div className="font-semibold">{template.name}</div>
-              <div className="text-xs text-gray-400 mt-1">{template.description}</div>
-              <div className="flex gap-2 mt-2">
-                <span className={`text-xs px-2 py-0.5 rounded ${
-                  template.category === 'php' ? 'bg-purple-900 text-purple-300' :
-                  template.category === 'nodejs' ? 'bg-green-900 text-green-300' :
-                  'bg-blue-900 text-blue-300'
+              <div className="text-3xl mb-3">{template.icon}</div>
+              <div className="font-bold" style={{ color: 'var(--text-on-card)' }}>{template.name}</div>
+              <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{template.description}</div>
+              <div className="flex gap-2 mt-3">
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                  template.category === 'php' ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white' :
+                  template.category === 'nodejs' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' :
+                  'bg-gradient-to-r from-blue-500 to-cyan-600 text-white'
                 }`}>
                   {template.category}
                 </span>
                 {template.hasDatabase && (
-                  <span className="text-xs px-2 py-0.5 rounded bg-yellow-900 text-yellow-300">
+                  <span className="text-xs px-2 py-1 rounded-full font-medium bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
                     DB
                   </span>
                 )}
@@ -191,12 +201,16 @@ function ProjectTemplates() {
 
       {/* Create Project Form */}
       {selectedTemplate && (
-        <div className="bg-gray-800 p-4 rounded-lg mb-6">
-          <h3 className="text-lg font-semibold mb-3">Create New Project</h3>
+        <div className="card p-6 mb-8">
+          <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text-on-card)' }}>
+            ✨ Create New Project
+          </h3>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Project Name *</label>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-label)' }}>
+                Project Name *
+              </label>
               <input
                 type="text"
                 value={projectName}
@@ -205,32 +219,34 @@ function ProjectTemplates() {
                   setProjectName(e.target.value);
                 }}
                 placeholder="my-project"
-                className="w-full bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                className="input w-full"
                 autoFocus
               />
-              <p className="text-xs text-gray-500 mt-1">
-                URL: http://localhost/{projectName.toLowerCase().replace(/\s+/g, '-') || 'project-name'}
+              <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
+                🌐 URL: http://localhost/{projectName.toLowerCase().replace(/\s+/g, '-') || 'project-name'}
               </p>
             </div>
 
             {selectedTemplateData?.hasDatabase && (
               <>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
                   <input
                     type="checkbox"
                     id="createDatabase"
                     checked={createDatabase}
                     onChange={(e) => setCreateDatabase(e.target.checked)}
-                    className="rounded"
+                    className="w-5 h-5 rounded"
                   />
-                  <label htmlFor="createDatabase" className="text-sm text-gray-400">
-                    Create Database
+                  <label htmlFor="createDatabase" className="text-sm font-medium" style={{ color: 'var(--text-label)' }}>
+                    🗄️ Create Database
                   </label>
                 </div>
 
                 {createDatabase && (
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">Database Name</label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-label)' }}>
+                      Database Name
+                    </label>
                     <input
                       type="text"
                       value={databaseName}
@@ -239,7 +255,7 @@ function ProjectTemplates() {
                         setDatabaseName(e.target.value);
                       }}
                       placeholder={projectName.toLowerCase().replace(/\s+/g, '_') || 'database_name'}
-                      className="w-full bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      className="input w-full"
                     />
                   </div>
                 )}
@@ -249,9 +265,13 @@ function ProjectTemplates() {
             <button
               onClick={handleCreateProject}
               disabled={loading || !projectName.trim()}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-2 px-4 rounded font-semibold transition-colors"
+              className={`w-full py-3 px-4 rounded-xl font-semibold transition-all ${
+                loading || !projectName.trim()
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
+              }`}
             >
-              {loading ? 'Creating...' : 'Create Project'}
+              {loading ? '⏳ Creating...' : '🚀 Create Project'}
             </button>
           </div>
         </div>
@@ -259,25 +279,32 @@ function ProjectTemplates() {
 
       {/* Existing Projects */}
       <div>
-        <h3 className="text-lg font-semibold mb-3">Your Projects ({projects.length})</h3>
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-on-card)' }}>
+          📂 Your Projects ({projects.length})
+        </h3>
         
         {projects.length === 0 ? (
-          <div className="text-gray-500 text-center py-8">
-            No projects yet. Create one using the templates above!
+          <div className="card p-8 text-center">
+            <div className="text-4xl mb-3">📭</div>
+            <p style={{ color: 'var(--text-on-card)' }}>
+              No projects yet. Create one using the templates above!
+            </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {projects.map((project) => (
               <div
                 key={project}
-                className="flex items-center justify-between bg-gray-800 p-3 rounded-lg"
+                className="card p-4 flex items-center justify-between hover:shadow-lg transition-all"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">📁</span>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-xl shadow-lg">
+                    📁
+                  </div>
                   <div>
-                    <div className="font-semibold">{project}</div>
-                    <div className="text-xs text-gray-400">
-                      http://localhost/{project}
+                    <div className="font-bold" style={{ color: 'var(--text-on-card)' }}>{project}</div>
+                    <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      🌐 http://localhost/{project}
                     </div>
                   </div>
                 </div>
@@ -285,21 +312,21 @@ function ProjectTemplates() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleOpenBrowser(project)}
-                    className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm"
+                    className="w-10 h-10 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all"
                     title="Open in Browser"
                   >
                     🌐
                   </button>
                   <button
                     onClick={() => handleOpenFolder(project)}
-                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
+                    className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all"
                     title="Open Folder"
                   >
                     📂
                   </button>
                   <button
                     onClick={() => handleDeleteProject(project)}
-                    className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
+                    className="w-10 h-10 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all"
                     title="Delete Project"
                   >
                     🗑️

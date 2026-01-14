@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Config, PHPVersion } from '../types/electron';
+import ThemeToggle from './ThemeToggle';
 
 interface SettingsProps {
   onBack: () => void;
@@ -60,58 +61,66 @@ function Settings({ onBack }: SettingsProps) {
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white p-8">
+        <div className="min-h-screen p-8">
             <header className="mb-10 flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
-                        Settings
+                    <h1 className="text-3xl font-bold mb-2 text-gradient">
+                        ⚙️ Settings
                     </h1>
-                    <p className="text-gray-400">Configure your development environment</p>
+                    <p className="text-lg text-gradient">Configure your development environment</p>
                 </div>
-                <button
-                    onClick={onBack}
-                    className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
-                >
-                    ← Back
-                </button>
+                <div className="flex items-center gap-4">
+                    <ThemeToggle />
+                    <button
+                        onClick={onBack}
+                        className="button-secondary"
+                    >
+                        ← Back
+                    </button>
+                </div>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Port Configuration */}
-                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                    <h2 className="text-xl font-semibold mb-6">Port Configuration</h2>
+                <div className="card p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-lg">
+                            🔌
+                        </div>
+                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Port Configuration</h2>
+                    </div>
 
                     <div className="space-y-4">
                         {/* PHP Port */}
-                        <div className="flex items-center justify-between">
-                            <label className="text-gray-300">PHP-CGI Port</label>
+                        <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                            <label style={{ color: 'var(--text-label)' }}>🐘 PHP-CGI Port</label>
                             <input
                                 type="number"
                                 value={config.ports.php}
                                 onChange={(e) => handlePortChange('php', e.target.value)}
-                                className="w-24 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+                                className="input w-24 text-center"
                             />
                         </div>
 
                         {/* Apache Port */}
-                        <div className="flex items-center justify-between">
-                            <label className="text-gray-300">Apache Port</label>
+                        <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                            <label style={{ color: 'var(--text-label)' }}>🪶 Apache Port</label>
                             <input
                                 type="number"
                                 value={config.ports.apache}
                                 onChange={(e) => handlePortChange('apache', e.target.value)}
-                                className="w-24 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+                                className="input w-24 text-center"
                             />
                         </div>
 
                         {/* MariaDB Port */}
-                        <div className="flex items-center justify-between">
-                            <label className="text-gray-300">MariaDB Port</label>
+                        <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                            <label style={{ color: 'var(--text-label)' }}>🗄️ MariaDB Port</label>
                             <input
                                 type="number"
                                 value={config.ports.mariadb}
                                 onChange={(e) => handlePortChange('mariadb', e.target.value)}
-                                className="w-24 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+                                className="input w-24 text-center"
                             />
                         </div>
                     </div>
@@ -120,16 +129,16 @@ function Settings({ onBack }: SettingsProps) {
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            className={`px-6 py-2 rounded-lg font-medium transition-all ${saving
-                                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/25'
+                            className={`px-6 py-3 rounded-xl font-semibold transition-all ${saving
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
                                 }`}
                         >
-                            {saving ? 'Saving...' : 'Save Settings'}
+                            {saving ? '⏳ Saving...' : '💾 Save Settings'}
                         </button>
 
                         {message && (
-                            <span className={`text-sm ${message.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>
+                            <span className={`text-sm font-medium ${message.startsWith('✓') ? 'text-green-500' : 'text-red-500'}`}>
                                 {message}
                             </span>
                         )}
@@ -137,23 +146,30 @@ function Settings({ onBack }: SettingsProps) {
                 </div>
 
                 {/* PHP Version */}
-                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                    <h2 className="text-xl font-semibold mb-6">PHP Version</h2>
+                <div className="card p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-lg">
+                            🐘
+                        </div>
+                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>PHP Version</h2>
+                    </div>
 
                     {phpVersions.length === 0 ? (
-                        <div className="text-gray-500 italic">
-                            <p>No PHP versions found.</p>
-                            <p className="text-xs mt-2">Add PHP folders to bin/ (e.g., php81, php82, php83)</p>
+                        <div className="p-4 rounded-lg text-center" style={{ background: 'var(--bg-tertiary)' }}>
+                            <div className="text-3xl mb-2">📭</div>
+                            <p style={{ color: 'var(--text-on-card)' }}>No PHP versions found.</p>
+                            <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>Add PHP folders to bin/ (e.g., php81, php82, php83)</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
                             {phpVersions.map(version => (
                                 <label
                                     key={version.id}
-                                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${config.phpVersion === version.id
-                                            ? 'border-purple-500 bg-purple-900/20'
-                                            : 'border-gray-700 hover:border-gray-600'
+                                    className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all hover:shadow-md ${config.phpVersion === version.id
+                                            ? 'ring-2 ring-blue-500 shadow-lg'
+                                            : ''
                                         }`}
+                                    style={{ background: 'var(--bg-tertiary)' }}
                                 >
                                     <input
                                         type="radio"
@@ -161,40 +177,45 @@ function Settings({ onBack }: SettingsProps) {
                                         value={version.id}
                                         checked={config.phpVersion === version.id}
                                         onChange={() => handlePHPVersionChange(version.id)}
-                                        className="text-purple-500"
+                                        className="w-5 h-5"
                                     />
                                     <div>
-                                        <p className="font-medium">{version.name}</p>
-                                        <p className="text-xs text-gray-500 truncate max-w-xs">{version.path}</p>
+                                        <p className="font-semibold" style={{ color: 'var(--text-on-card)' }}>{version.name}</p>
+                                        <p className="text-xs truncate max-w-xs" style={{ color: 'var(--text-secondary)' }}>{version.path}</p>
                                     </div>
                                 </label>
                             ))}
                         </div>
                     )}
 
-                    <p className="mt-4 text-xs text-gray-500">
-                        Note: Restart PHP service after changing version.
+                    <p className="mt-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        ℹ️ Note: Restart PHP service after changing version.
                     </p>
                 </div>
 
                 {/* Startup Options */}
-                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                    <h2 className="text-xl font-semibold mb-6">Startup Options</h2>
+                <div className="card p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-lg">
+                            🚀
+                        </div>
+                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Startup Options</h2>
+                    </div>
 
                     <div className="space-y-4">
-                        <label className="flex items-center justify-between cursor-pointer">
+                        <label className="flex items-center justify-between cursor-pointer p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
                             <div>
-                                <p className="text-gray-300">Auto Start Services</p>
-                                <p className="text-xs text-gray-500">Start all services when app launches</p>
+                                <p className="font-semibold" style={{ color: 'var(--text-on-card)' }}>Auto Start Services</p>
+                                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Start all services when app launches</p>
                             </div>
                             <div
                                 onClick={() => setConfig((prev: Config) => ({ ...prev, autoStart: !prev.autoStart }))}
-                                className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer ${
-                                    config.autoStart ? 'bg-purple-600' : 'bg-gray-600'
+                                className={`relative w-14 h-7 rounded-full transition-all cursor-pointer ${
+                                    config.autoStart ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gray-400'
                                 }`}
                             >
                                 <div
-                                    className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ${
+                                    className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform ${
                                         config.autoStart ? 'translate-x-8' : 'translate-x-1'
                                     }`}
                                 />
@@ -202,8 +223,8 @@ function Settings({ onBack }: SettingsProps) {
                         </label>
                     </div>
 
-                    <p className="mt-4 text-xs text-gray-500">
-                        Changes will apply on next app launch.
+                    <p className="mt-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        ℹ️ Changes will apply on next app launch.
                     </p>
                 </div>
             </div>

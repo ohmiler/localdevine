@@ -714,7 +714,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Create database if needed
             if (template.hasDatabase && options.createDatabase !== false) {
+                console.log(`Creating database: ${databaseName} for template: ${template.id}`);
                 const dbResult = await this.createDatabase(databaseName);
+                console.log('Database creation result:', dbResult);
                 if (!dbResult.success) {
                     // Clean up project directory
                     fs.rmSync(projectPath, { recursive: true, force: true });
@@ -767,6 +769,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     private async createDatabase(dbName: string): Promise<CreateProjectResult> {
         return new Promise((resolve) => {
+            console.log(`Connecting to database: ${this.dbHost}:${this.dbPort} as ${this.dbUser}`);
             const mysql = require('mysql2');
             const connection = mysql.createConnection({
                 host: this.dbHost,
@@ -777,15 +780,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
             connection.connect((err: any) => {
                 if (err) {
+                    console.log('Database connection error:', err);
                     resolve({ success: false, message: `Database connection failed: ${err.message}` });
                     return;
                 }
 
+                console.log(`Connected to database, creating: ${dbName}`);
                 connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``, (err: any) => {
                     connection.end();
                     if (err) {
+                        console.log('Database creation error:', err);
                         resolve({ success: false, message: `Failed to create database: ${err.message}` });
                     } else {
+                        console.log(`Database created successfully: ${dbName}`);
                         resolve({ success: true, message: 'Database created' });
                     }
                 });

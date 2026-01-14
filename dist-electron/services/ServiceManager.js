@@ -180,8 +180,16 @@ class ServiceManager {
             const socket = new net.Socket();
             socket.setTimeout(2000);
             socket.connect(port, '127.0.0.1', () => {
-                socket.destroy();
-                resolve();
+                // Wait a bit for MariaDB to respond with handshake
+                socket.once('data', (data) => {
+                    socket.destroy();
+                    resolve();
+                });
+                // If no data received within timeout, consider it unhealthy
+                setTimeout(() => {
+                    socket.destroy();
+                    reject(new Error('MariaDB not responding'));
+                }, 1500);
             });
             socket.on('error', () => {
                 socket.destroy();
@@ -339,6 +347,12 @@ ${vhostBlocks}
     }
     log(service, message) {
         const messageStr = message.toString().trim();
+        // Filter out harmless MariaDB health check warnings
+        if (service === 'mariadb' && (messageStr.includes('unauthenticated') ||
+            messageStr.includes('Got an error reading communication packets') ||
+            messageStr.includes('This connection closed normally without authentication'))) {
+            return; // Skip these messages
+        }
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
             this.mainWindow.webContents.send('log-entry', {
                 time: new Date().toLocaleTimeString(),

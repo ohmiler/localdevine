@@ -252,8 +252,17 @@ export class ServiceManager {
             socket.setTimeout(2000);
             
             socket.connect(port, '127.0.0.1', () => {
-                socket.destroy();
-                resolve();
+                // Wait a bit for MariaDB to respond with handshake
+                socket.once('data', (data: Buffer) => {
+                    socket.destroy();
+                    resolve();
+                });
+                
+                // If no data received within timeout, consider it unhealthy
+                setTimeout(() => {
+                    socket.destroy();
+                    reject(new Error('MariaDB not responding'));
+                }, 1500);
             });
 
             socket.on('error', () => {

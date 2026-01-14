@@ -11,6 +11,9 @@ function ProjectTemplates() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Debug: Log state changes
+  console.log('ProjectTemplates render:', { projectName, selectedTemplate, templates: templates.length });
+
   useEffect(() => {
     loadData();
   }, []);
@@ -149,9 +152,13 @@ function ProjectTemplates() {
               <input
                 type="text"
                 value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
+                onChange={(e) => {
+                  console.log('Project name input change:', e.target.value);
+                  setProjectName(e.target.value);
+                }}
                 placeholder="my-project"
                 className="w-full bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                autoFocus
               />
               <p className="text-xs text-gray-500 mt-1">
                 URL: http://localhost/{projectName.toLowerCase().replace(/\s+/g, '-') || 'project-name'}
@@ -179,7 +186,10 @@ function ProjectTemplates() {
                     <input
                       type="text"
                       value={databaseName}
-                      onChange={(e) => setDatabaseName(e.target.value)}
+                      onChange={(e) => {
+                        console.log('Database name input change:', e.target.value);
+                        setDatabaseName(e.target.value);
+                      }}
                       placeholder={projectName.toLowerCase().replace(/\s+/g, '_') || 'database_name'}
                       className="w-full bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
                     />

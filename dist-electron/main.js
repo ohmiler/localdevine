@@ -61,12 +61,19 @@ function createWindow() {
 // Register all IPC handlers BEFORE app ready
 (0, ipc_1.registerIPCHandlers)();
 electron_1.app.whenReady().then(() => {
-    // Set Content Security Policy
+    // Set Content Security Policy (allow Google Fonts)
     electron_1.session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
         callback({
             responseHeaders: {
                 ...details.responseHeaders,
-                'Content-Security-Policy': ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self';"]
+                'Content-Security-Policy': [
+                    "default-src 'self'; " +
+                        "script-src 'self'; " +
+                        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                        "img-src 'self' data:; " +
+                        "font-src 'self' https://fonts.gstatic.com; " +
+                        "connect-src 'self' https://api.github.com;"
+                ]
             }
         });
     });

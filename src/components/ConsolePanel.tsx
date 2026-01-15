@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { LogEntry } from '../types/electron';
 
 interface ConsolePanelProps {
@@ -11,7 +12,25 @@ const serviceColors: Record<string, string> = {
   system: 'text-blue-400'
 };
 
+// Memoized log entry component
+const LogEntryItem = memo(({ log }: { log: LogEntry }) => (
+    <div className="mb-1.5 leading-relaxed hover:bg-black/10 rounded px-2 py-0.5 -mx-2">
+        <span className="text-blue-400">[{log.time}]</span>{' '}
+        <span className={serviceColors[log.service] || 'text-gray-400'}>
+            [{log.service}]
+        </span>{' '}
+        <span style={{ color: 'var(--text-on-card)' }}>{log.message}</span>
+    </div>
+));
+
+LogEntryItem.displayName = 'LogEntryItem';
+
 function ConsolePanel({ logs }: ConsolePanelProps) {
+    // Memoize log entries to prevent unnecessary re-renders
+    const logEntries = useMemo(() => 
+        logs.map((log, i) => <LogEntryItem key={i} log={log} />),
+        [logs]
+    );
     return (
         <div className="card h-64 flex flex-col overflow-hidden">
             <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border-primary)' }}>
@@ -30,19 +49,11 @@ function ConsolePanel({ logs }: ConsolePanelProps) {
                         💡 Ready to start services...
                     </div>
                 ) : (
-                    logs.map((log, i) => (
-                        <div key={i} className="mb-1.5 leading-relaxed hover:bg-black/10 rounded px-2 py-0.5 -mx-2">
-                            <span className="text-blue-400">[{log.time}]</span>{' '}
-                            <span className={serviceColors[log.service] || 'text-gray-400'}>
-                                [{log.service}]
-                            </span>{' '}
-                            <span style={{ color: 'var(--text-on-card)' }}>{log.message}</span>
-                        </div>
-                    ))
+                    logEntries
                 )}
             </div>
         </div>
     );
 }
 
-export default ConsolePanel;
+export default memo(ConsolePanel);

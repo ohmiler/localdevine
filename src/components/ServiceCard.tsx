@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { ServiceStatus, ServiceHealth } from '../types/electron';
 
 interface ServiceCardProps {
@@ -28,11 +29,21 @@ const statusConfig: Record<ServiceStatus, { label: string; color: string; bgColo
 };
 
 function ServiceCard({ service, status, health, onToggle }: ServiceCardProps) {
-    const displayName = service === 'mariadb' ? 'MariaDB' : service.toUpperCase();
+    // Memoize computed values
+    const displayName = useMemo(() => 
+        service === 'mariadb' ? 'MariaDB' : service.toUpperCase(), 
+        [service]
+    );
+    
     const isRunning = status === 'running';
     const isLoading = status === 'starting' || status === 'stopping';
     const isHealthy = health?.isHealthy;
-    const lastCheck = health?.lastCheck ? new Date(health.lastCheck).toLocaleTimeString() : '';
+    
+    const lastCheck = useMemo(() => 
+        health?.lastCheck ? new Date(health.lastCheck).toLocaleTimeString() : '',
+        [health?.lastCheck]
+    );
+    
     const icon = serviceIcons[service] || '⚙️';
     const gradientColor = serviceColors[service] || 'from-gray-500 to-gray-600';
     const statusInfo = statusConfig[status] || statusConfig.stopped;
@@ -113,4 +124,5 @@ function ServiceCard({ service, status, health, onToggle }: ServiceCardProps) {
     );
 }
 
-export default ServiceCard;
+// Memoize component to prevent unnecessary re-renders
+export default memo(ServiceCard);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import ServiceCard from './components/ServiceCard';
 import ConsolePanel from './components/ConsolePanel';
 import Settings from './components/Settings';
@@ -6,6 +6,7 @@ import VirtualHosts from './components/VirtualHosts';
 import HostsEditor from './components/HostsEditor';
 import NotificationPanel from './components/NotificationPanel';
 import ProjectTemplates from './components/ProjectTemplates';
+import { useKeyboardShortcuts, defaultShortcuts } from './hooks/useKeyboardShortcuts';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 import './styles/themes.css';
 
@@ -73,7 +74,8 @@ function App() {
     }
   }, []);
 
-  const toggleService = (service: keyof Services) => {
+  // Memoized callbacks to prevent unnecessary re-renders
+  const toggleService = useCallback((service: keyof Services) => {
     const currentState = services[service];
     if (window.electronAPI) {
       if (currentState === 'stopped') {
@@ -82,25 +84,78 @@ function App() {
         window.electronAPI.stopService(service);
       }
     }
-  };
+  }, [services]);
 
-  const startAllServices = () => {
+  const startAllServices = useCallback(() => {
     if (window.electronAPI) {
       window.electronAPI.startAllServices();
     }
-  };
+  }, []);
 
-  const stopAllServices = () => {
+  const stopAllServices = useCallback(() => {
     if (window.electronAPI) {
       window.electronAPI.stopAllServices();
     }
-  };
+  }, []);
 
-  const allRunning = Object.values(services).every(s => s === 'running');
-  const allStopped = Object.values(services).every(s => s === 'stopped');
+  // Memoized computed values
+  const allRunning = useMemo(() => 
+    Object.values(services).every(s => s === 'running'), 
+    [services]
+  );
+  
+  const allStopped = useMemo(() => 
+    Object.values(services).every(s => s === 'stopped'), 
+    [services]
+  );
 
   // Check if any service is loading
-  const anyLoading = Object.values(services).some(s => s === 'starting' || s === 'stopping');
+  const anyLoading = useMemo(() => 
+    Object.values(services).some(s => s === 'starting' || s === 'stopping'), 
+    [services]
+  );
+
+  // Keyboard shortcuts
+  const keyboardShortcuts = useMemo(() => [
+    { 
+      ...defaultShortcuts.startAllServices, 
+      action: () => !allRunning && !anyLoading && startAllServices() 
+    },
+    { 
+      ...defaultShortcuts.stopAllServices, 
+      action: () => !allStopped && !anyLoading && stopAllServices() 
+    },
+    { 
+      ...defaultShortcuts.openSettings, 
+      action: () => setCurrentPage('settings') 
+    },
+    { 
+      ...defaultShortcuts.openVHosts, 
+      action: () => setCurrentPage('vhosts') 
+    },
+    { 
+      ...defaultShortcuts.openHosts, 
+      action: () => setCurrentPage('hosts') 
+    },
+    { 
+      ...defaultShortcuts.openProjects, 
+      action: () => setCurrentPage('templates') 
+    },
+    { 
+      ...defaultShortcuts.openLocalhost, 
+      action: () => window.electronAPI?.openProjectBrowser('') 
+    },
+    { 
+      ...defaultShortcuts.openTerminal, 
+      action: () => window.electronAPI?.openTerminal() 
+    },
+    { 
+      ...defaultShortcuts.goHome, 
+      action: () => setCurrentPage('home') 
+    },
+  ], [allRunning, allStopped, anyLoading, startAllServices, stopAllServices]);
+
+  useKeyboardShortcuts(keyboardShortcuts);
 
   // Render Settings page
   if (currentPage === 'settings') {

@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 
-const ThemeToggle = () => {
-  const { theme, toggleTheme, isLight, isDark } = useTheme();
+const ThemeToggle = memo(function ThemeToggle() {
+  const { toggleTheme, isLight } = useTheme();
 
   return (
     <button
@@ -21,6 +22,6 @@ const ThemeToggle = () => {
       )}
     </button>
   );
-};
+});
 
 export default ThemeToggle;

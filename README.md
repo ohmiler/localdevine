@@ -1,18 +1,174 @@
 # LocalDevine
 
-A modern Local Development Environment Manager (like XAMPP/Laragon) built with Electron, React, and TailwindCSS.
+<p align="center">
+  <img src="public/icon.png" alt="LocalDevine Logo" width="128" height="128">
+</p>
+
+<p align="center">
+  <strong>A Modern Local Development Environment for Windows</strong><br>
+  ทางเลือกที่ทันสมัยสำหรับ XAMPP และ Laragon
+</p>
+
+<p align="center">
+  <a href="#features">Features</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#usage">Usage</a> •
+  <a href="#documentation">Documentation</a> •
+  <a href="#contributing">Contributing</a>
+</p>
 
 ---
 
-## React + Vite Template Info
+## ✨ Features
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+- **🚀 One-Click Start** - เริ่มต้น Apache, PHP, MariaDB ด้วยคลิกเดียว
+- **📁 Project Templates** - สร้างโปรเจค PHP/HTML ได้ทันที
+- **🌐 Virtual Hosts** - จัดการ domain ท้องถิ่น (.local, .test) ง่ายๆ
+- **🗄️ Database Management** - เข้าถึง Adminer ได้รวดเร็ว
+- **⚙️ Port Configuration** - ปรับ port Apache, MariaDB ได้ตามต้องการ
+- **🎨 Modern UI** - อินเตอร์เฟสสวยงาม ใช้งานง่าย
+- **📝 Hosts File Editor** - แก้ไข hosts file โดยไม่ต้องเปิด Notepad
 
-Currently, two official plugins are available:
+## 📋 Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Windows 10/11** (64-bit)
+- **4GB RAM** ขั้นต่ำ
+- **500MB** พื้นที่ว่าง
+- **Administrator rights** (สำหรับแก้ไข hosts file)
 
-## React Compiler
+## 📦 Installation
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Option 1: Download Installer (แนะนำ)
+1. ดาวน์โหลด `LocalDevine-Setup.exe` จาก [Releases](https://github.com/ohmiler/localdevine/releases)
+2. รันไฟล์ติดตั้ง
+3. เลือกตำแหน่งติดตั้ง
+4. เสร็จสิ้น!
+
+### Option 2: Build from Source
+```bash
+# Clone repository
+git clone https://github.com/ohmiler/localdevine.git
+cd localdevine
+
+# Install dependencies
+npm install
+
+# Build application
+npm run build
+npm run build:electron
+
+# Run in development mode
+npm run electron:dev
+
+# Build installer
+npm run electron:build
+```
+
+## 🚀 Usage
+
+### เริ่มต้นใช้งาน
+
+1. **เปิด LocalDevine** (Run as Administrator แนะนำสำหรับ Virtual Hosts)
+2. **คลิก Start** บน Apache และ MariaDB
+3. **เปิด Browser** ไปที่ `http://localhost`
+4. **เริ่มพัฒนา!**
+
+### สร้างโปรเจคใหม่
+
+1. ไปที่ **Projects** → **Create New Project**
+2. เลือก Template (PHP Basic / HTML Basic)
+3. ใส่ชื่อโปรเจค
+4. คลิก **Create**
+5. เปิด `http://localhost/project-name`
+
+### สร้าง Virtual Host
+
+1. ไปที่ **Virtual Hosts** → **Add Virtual Host**
+2. ใส่ชื่อ และ domain (เช่น `mysite.local`)
+3. เลือก path ของโปรเจค
+4. คลิก **Add**
+5. เปิด `http://mysite.local`
+
+### จัดการ Database
+
+1. คลิกปุ่ม **🗄️ Database** ที่หน้าแรก
+2. Adminer จะเปิดใน Browser
+3. Login: `root` / `root`
+4. จัดการ database ได้ทันที
+
+## 📁 Project Structure
+
+```
+localdevine/
+├── bin/                    # Apache, PHP, MariaDB binaries
+│   ├── apache/
+│   ├── php/
+│   └── mariadb/
+├── www/                    # Web root (โปรเจคของคุณ)
+├── electron/               # Electron main process
+├── src/                    # React UI
+└── config.json             # Application config
+```
+
+## ⚙️ Configuration
+
+### Default Ports
+| Service | Default Port |
+|---------|--------------|
+| Apache  | 80           |
+| MariaDB | 3306         |
+| PHP     | 9000         |
+
+### Database Credentials
+- **Host:** 127.0.0.1
+- **User:** root
+- **Password:** root
+
+## 🔧 Troubleshooting
+
+### Apache ไม่ start
+- ตรวจสอบว่า port 80 ไม่ถูกใช้งาน
+- ลอง Stop แล้ว Start ใหม่
+- ตรวจสอบ Console logs
+
+### Virtual Host ไม่ทำงาน
+- รัน LocalDevine เป็น Administrator
+- ตรวจสอบว่า domain อยู่ใน hosts file
+- รีสตาร์ท Apache หลังเพิ่ม Virtual Host
+
+### MariaDB ไม่ start
+- ตรวจสอบว่า port 3306 ไม่ถูกใช้งาน
+- ลบไฟล์ `bin/mariadb/data/*.pid` แล้วลองใหม่
+
+## 🛠️ Built With
+
+- [Electron](https://www.electronjs.org/) - Desktop framework
+- [React](https://reactjs.org/) - UI library
+- [TailwindCSS](https://tailwindcss.com/) - CSS framework
+- [Apache](https://httpd.apache.org/) - Web server
+- [PHP](https://www.php.net/) - PHP runtime
+- [MariaDB](https://mariadb.org/) - Database server
+- [Adminer](https://www.adminer.org/) - Database management
+
+## 📝 License
+
+MIT License - ใช้งานได้ฟรี ทั้งส่วนตัวและเชิงพาณิชย์
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📧 Contact
+
+- **GitHub:** [@ohmiler](https://github.com/ohmiler)
+- **Issues:** [Report Bug](https://github.com/ohmiler/localdevine/issues)
+
+---
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/ohmiler">Miler</a>
+</p>

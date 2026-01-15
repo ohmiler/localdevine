@@ -556,6 +556,18 @@ ${vhostBlocks}
                 this.generateConfigs(); // Generate before start
                 cmd = path.join(this.binDir, 'apache/bin/httpd.exe');
                 cwd = path.join(this.binDir, 'apache');
+                
+                // Clean up stale pid file to prevent "Unclean shutdown" warning
+                const pidFile = path.join(this.binDir, 'apache/logs/httpd.pid');
+                if (fs.existsSync(pidFile)) {
+                    try {
+                        fs.unlinkSync(pidFile);
+                        this.log('apache', 'Cleaned up stale PID file');
+                    } catch (e) {
+                        // Ignore if can't delete
+                    }
+                }
+                
                 args = ['-X']; // Run in foreground (single process mode)
                 break;
             case 'mariadb':

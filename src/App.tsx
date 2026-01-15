@@ -6,6 +6,7 @@ import VirtualHosts from './components/VirtualHosts';
 import HostsEditor from './components/HostsEditor';
 import NotificationPanel from './components/NotificationPanel';
 import ProjectTemplates from './components/ProjectTemplates';
+import ThemeToggle from './components/ThemeToggle';
 import { useKeyboardShortcuts, defaultShortcuts } from './hooks/useKeyboardShortcuts';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 import './styles/themes.css';
@@ -230,6 +231,7 @@ function App() {
           >
             ⚙️ Settings
           </button>
+          <ThemeToggle />
           <div className="text-sm text-muted font-mono opacity-75">v{version}</div>
         </div>
       </header>

@@ -19,26 +19,36 @@ const serviceColors: Record<string, string> = {
   mariadb: 'from-blue-600 to-cyan-700'
 };
 
+const statusConfig: Record<ServiceStatus, { label: string; color: string; bgColor: string; animate?: boolean }> = {
+  stopped: { label: 'Stopped', color: 'text-gray-500', bgColor: 'bg-gradient-to-r from-gray-400 to-gray-500' },
+  starting: { label: 'Starting...', color: 'text-blue-500', bgColor: 'bg-gradient-to-r from-blue-400 to-blue-500', animate: true },
+  running: { label: 'Running', color: 'text-green-500', bgColor: 'bg-gradient-to-r from-green-500 to-emerald-600' },
+  stopping: { label: 'Stopping...', color: 'text-orange-500', bgColor: 'bg-gradient-to-r from-orange-400 to-orange-500', animate: true },
+  error: { label: 'Error', color: 'text-red-500', bgColor: 'bg-gradient-to-r from-red-500 to-red-600' },
+};
+
 function ServiceCard({ service, status, health, onToggle }: ServiceCardProps) {
     const displayName = service === 'mariadb' ? 'MariaDB' : service.toUpperCase();
     const isRunning = status === 'running';
+    const isLoading = status === 'starting' || status === 'stopping';
     const isHealthy = health?.isHealthy;
     const lastCheck = health?.lastCheck ? new Date(health.lastCheck).toLocaleTimeString() : '';
     const icon = serviceIcons[service] || '⚙️';
     const gradientColor = serviceColors[service] || 'from-gray-500 to-gray-600';
+    const statusInfo = statusConfig[status] || statusConfig.stopped;
 
     return (
         <div className="card p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
             {/* Header with icon and status */}
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradientColor} flex items-center justify-center text-2xl shadow-lg`}>
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradientColor} flex items-center justify-center text-2xl shadow-lg ${isLoading ? 'animate-pulse' : ''}`}>
                         {icon}
                     </div>
                     <div>
                         <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>{displayName}</h2>
-                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                            {isRunning ? 'Active' : 'Inactive'}
+                        <p className={`text-sm font-medium ${statusInfo.color}`}>
+                            {statusInfo.label}
                         </p>
                     </div>
                 </div>
@@ -47,12 +57,11 @@ function ServiceCard({ service, status, health, onToggle }: ServiceCardProps) {
                         <div className={`w-3 h-3 rounded-full ${isHealthy ? 'bg-green-400' : 'bg-yellow-400'} animate-pulse`} 
                              title={`Health: ${isHealthy ? 'Good' : 'Warning'}`} />
                     )}
+                    {isLoading && (
+                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    )}
                     <span
-                        className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide ${
-                            isRunning 
-                                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' 
-                                : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
-                        }`}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide text-white ${statusInfo.bgColor} ${statusInfo.animate ? 'animate-pulse' : ''}`}
                     >
                         {status}
                     </span>
@@ -83,13 +92,22 @@ function ServiceCard({ service, status, health, onToggle }: ServiceCardProps) {
             {/* Action button */}
             <button
                 onClick={onToggle}
-                className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg hover:scale-[1.02] ${
-                    isRunning
-                        ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white'
-                        : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
+                disabled={isLoading}
+                className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 shadow-md flex items-center justify-center gap-2 ${
+                    isLoading
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : isRunning
+                            ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white hover:shadow-lg hover:scale-[1.02]'
+                            : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:shadow-lg hover:scale-[1.02]'
                 }`}
             >
-                {isRunning ? '■ Stop Service' : '▶ Start Service'}
+                {isLoading && (
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                )}
+                {isLoading 
+                    ? (status === 'starting' ? 'Starting...' : 'Stopping...') 
+                    : (isRunning ? '■ Stop Service' : '▶ Start Service')
+                }
             </button>
         </div>
     );

@@ -213,9 +213,15 @@ function ProjectTemplates() {
       {/* Create Project Form */}
       {selectedTemplate && (
         <div className="card p-6 mb-8">
-          <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text-on-card)' }}>
-            ✨ Create New Project
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold" style={{ color: 'var(--text-on-card)' }}>
+              ✨ Create New Project
+            </h3>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg">
+              <span className="text-xl">{selectedTemplateData?.icon}</span>
+              <span className="font-semibold">{selectedTemplateData?.name}</span>
+            </div>
+          </div>
           
           <div className="space-y-4">
             <div>

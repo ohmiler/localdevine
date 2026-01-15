@@ -14,9 +14,15 @@ class TrayManager {
         this.isQuitting = false;
     }
     create() {
-        // Load tray icon
-        const iconPath = path_1.default.join(__dirname, '../../public/icon.png');
+        // Load tray icon - use correct path for production vs dev
+        const iconPath = this.app.isPackaged
+            ? path_1.default.join(process.resourcesPath, 'app.asar.unpacked', 'public', 'icon.png')
+            : path_1.default.join(__dirname, '../../public/icon.png');
+        console.log('[TrayManager] Icon path:', iconPath);
         const icon = electron_1.nativeImage.createFromPath(iconPath);
+        if (icon.isEmpty()) {
+            console.error('[TrayManager] Icon is empty! Path:', iconPath);
+        }
         // Resize for tray (16x16 on Windows)
         const trayIcon = icon.resize({ width: 16, height: 16 });
         this.tray = new electron_1.Tray(trayIcon);

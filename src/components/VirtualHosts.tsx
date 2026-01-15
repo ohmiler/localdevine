@@ -53,6 +53,29 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
         }
     };
 
+    const handleCopyUrl = async (domain: string) => {
+        const url = `http://${domain}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            setMessage(`✓ URL copied: ${url}`);
+            setTimeout(() => setMessage(''), 2000);
+        } catch (err) {
+            setMessage('✗ Failed to copy URL');
+        }
+    };
+
+    const handleOpenBrowser = (domain: string) => {
+        if (window.electronAPI) {
+            window.electronAPI.openBrowser(`http://${domain}`);
+        }
+    };
+
+    const handleOpenFolder = (folderPath: string) => {
+        if (window.electronAPI) {
+            window.electronAPI.openFolderPath(folderPath);
+        }
+    };
+
     const handleBrowse = async () => {
         if (window.electronAPI) {
             const path = await window.electronAPI.selectFolder();
@@ -67,8 +90,8 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
             <header className="mb-10 flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold mb-2 text-gradient">
-                    🌐 Virtual Hosts
-                  </h1>
+                        🌐 Virtual Hosts
+                    </h1>
                     <p className="text-lg text-gradient">Manage multiple projects with custom domains</p>
                 </div>
                 <button
@@ -189,12 +212,36 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
                                             <p className="text-xs truncate max-w-xs" style={{ color: 'var(--text-secondary)' }}>{vhost.path}</p>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => handleRemove(vhost.id)}
-                                        className="w-10 h-10 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all"
-                                    >
-                                        🗑️
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleCopyUrl(vhost.domain)}
+                                            className="w-10 h-10 rounded-lg bg-gradient-to-r from-purple-500 to-violet-600 text-white flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all"
+                                            title="Copy URL"
+                                        >
+                                            📋
+                                        </button>
+                                        <button
+                                            onClick={() => handleOpenBrowser(vhost.domain)}
+                                            className="w-10 h-10 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all"
+                                            title="Open in Browser"
+                                        >
+                                            🌐
+                                        </button>
+                                        <button
+                                            onClick={() => handleOpenFolder(vhost.path)}
+                                            className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all"
+                                            title="Open Folder"
+                                        >
+                                            📂
+                                        </button>
+                                        <button
+                                            onClick={() => handleRemove(vhost.id)}
+                                            className="w-10 h-10 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all"
+                                            title="Delete"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>

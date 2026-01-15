@@ -18,9 +18,18 @@ export default class TrayManager {
     }
 
     create(): void {
-        // Load tray icon
-        const iconPath = path.join(__dirname, '../../public/icon.png');
+        // Load tray icon - use correct path for production vs dev
+        const iconPath = this.app.isPackaged
+            ? path.join(process.resourcesPath, 'app.asar.unpacked', 'public', 'icon.png')
+            : path.join(__dirname, '../../public/icon.png');
+        
+        console.log('[TrayManager] Icon path:', iconPath);
+        
         const icon = nativeImage.createFromPath(iconPath);
+        
+        if (icon.isEmpty()) {
+            console.error('[TrayManager] Icon is empty! Path:', iconPath);
+        }
 
         // Resize for tray (16x16 on Windows)
         const trayIcon = icon.resize({ width: 16, height: 16 });

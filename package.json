@@ -17,8 +17,10 @@
   "build": {
     "appId": "com.localdevine.app",
     "productName": "LocalDevine",
+    "icon": "build/icon.ico",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "dist-electron/**/*",
@@ -35,8 +37,7 @@
     "win": {
       "target": "nsis",
       "icon": "build/icon.ico",
-      "forceCodeSigning": false,
-      "signAndEditExecutable": false
+      "signAndEditExecutable": true
     },
     "asar": true,
     "asarUnpack": [

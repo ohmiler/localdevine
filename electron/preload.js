@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Folder operations
     openFolder: (folderType) => ipcRenderer.send('open-folder', folderType),
+    openFolderPath: (folderPath) => ipcRenderer.send('open-folder-path', folderPath),
     openTerminal: () => ipcRenderer.send('open-terminal'),
     selectFolder: () => ipcRenderer.invoke('select-folder'),
 
@@ -44,7 +45,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     deleteProject: (projectName) => ipcRenderer.invoke('delete-project', projectName),
     openProjectFolder: (projectName) => ipcRenderer.invoke('open-project-folder', projectName),
     openProjectBrowser: (projectName) => ipcRenderer.invoke('open-project-browser', projectName),
-    openBrowser: (url) => ipcRenderer.invoke('open-browser', url),
+    openBrowser: (url) => ipcRenderer.send('open-browser', url),
 
     // Event listeners
     on: (channel, callback) => {

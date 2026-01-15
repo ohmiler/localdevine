@@ -99,6 +99,9 @@ function App() {
   const allRunning = Object.values(services).every(s => s === 'running');
   const allStopped = Object.values(services).every(s => s === 'stopped');
 
+  // Check if any service is loading
+  const anyLoading = Object.values(services).some(s => s === 'starting' || s === 'stopping');
+
   // Render Settings page
   if (currentPage === 'settings') {
     return <Settings onBack={() => setCurrentPage('home')} />;
@@ -180,22 +183,26 @@ function App() {
       <div className="flex gap-4 mb-8">
         <button
           onClick={startAllServices}
-          disabled={allRunning}
-          className={`px-8 py-3 rounded-xl font-semibold transition-all ${allRunning
-            ? 'bg-tertiary text-muted cursor-not-allowed'
-            : 'bg-gradient-success text-white shadow-lg hover:shadow-xl hover:scale-105'
-            }`}
+          disabled={allRunning || anyLoading}
+          className={`px-8 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
+            allRunning || anyLoading
+              ? 'bg-tertiary text-muted cursor-not-allowed'
+              : 'bg-gradient-success text-white shadow-lg hover:shadow-xl hover:scale-105'
+          }`}
         >
+          {anyLoading && <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
           ▶ Start All Services
         </button>
         <button
           onClick={stopAllServices}
-          disabled={allStopped}
-          className={`px-8 py-3 rounded-xl font-semibold transition-all ${allStopped
-            ? 'bg-tertiary text-muted cursor-not-allowed'
-            : 'bg-gradient-error text-white shadow-lg hover:shadow-xl hover:scale-105'
-            }`}
+          disabled={allStopped || anyLoading}
+          className={`px-8 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
+            allStopped || anyLoading
+              ? 'bg-tertiary text-muted cursor-not-allowed'
+              : 'bg-gradient-error text-white shadow-lg hover:shadow-xl hover:scale-105'
+          }`}
         >
+          {anyLoading && <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
           ■ Stop All Services
         </button>
       </div>
@@ -214,7 +221,19 @@ function App() {
       </div>
 
       {/* Quick Access */}
-      <div className="flex gap-3 mb-8">
+      <div className="flex flex-wrap gap-3 mb-8">
+        <button
+          onClick={() => window.electronAPI?.openProjectBrowser('')}
+          className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all"
+        >
+          🌐 Open localhost
+        </button>
+        <button
+          onClick={() => window.electronAPI?.openProjectBrowser('adminer.php')}
+          className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all"
+        >
+          🗄️ Database
+        </button>
         <button
           onClick={() => window.electronAPI?.openFolder('www')}
           className="button-secondary"
@@ -232,12 +251,6 @@ function App() {
           className="button-secondary"
         >
           💻 Terminal
-        </button>
-        <button
-          onClick={() => window.electronAPI?.openProjectBrowser('adminer.php')}
-          className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all"
-        >
-          🗄️ Database
         </button>
       </div>
 

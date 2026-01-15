@@ -49,6 +49,7 @@ export interface ElectronAPI {
 
     // Folder operations
     openFolder: (folderType: FolderType) => void;
+    openFolderPath: (folderPath: string) => void;
     openTerminal: () => void;
     selectFolder: () => Promise<string | null>;
 

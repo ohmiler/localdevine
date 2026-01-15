@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveConfig: (config) => ipcRenderer.invoke('save-config', config),
     // Folder operations
     openFolder: (folderType) => ipcRenderer.send('open-folder', folderType),
+    openFolderPath: (folderPath) => ipcRenderer.send('open-folder-path', folderPath),
     openTerminal: () => ipcRenderer.send('open-terminal'),
     selectFolder: () => ipcRenderer.invoke('select-folder'),
     // Virtual Hosts
@@ -37,7 +38,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     deleteProject: (projectName) => ipcRenderer.invoke('delete-project', projectName),
     openProjectFolder: (projectName) => ipcRenderer.invoke('open-project-folder', projectName),
     openProjectBrowser: (projectName) => ipcRenderer.invoke('open-project-browser', projectName),
-    openBrowser: (url) => ipcRenderer.invoke('open-browser', url),
+    openBrowser: (url) => ipcRenderer.send('open-browser', url),
     // Event listeners
     on: (channel, callback) => {
         const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification'];

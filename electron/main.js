@@ -125,6 +125,65 @@ app.on('before-quit', async (event) => {
   }
 });
 
+// Update checker
+app.on('ready', async () => {
+  // Check for updates on startup
+  setTimeout(async () => {
+    try {
+      const UpdateManager = require('../scripts/update-manager');
+      const updateManager = new UpdateManager();
+      
+      const updateInfo = await updateManager.checkForUpdates();
+      
+      if (updateInfo.hasUpdate) {
+        const { dialog } = require('electron');
+        
+        const result = await dialog.showMessageBox(mainWindow, {
+          type: 'info',
+          title: 'Update Available',
+          message: `LocalDevine ${updateInfo.version} is available!`,
+          detail: 'Would you like to update now? Your projects and databases will be preserved.',
+          buttons: ['Update Now', 'Later'],
+          defaultId: 0
+        });
+        
+        if (result.response === 0) {
+          // Show progress dialog
+          const progressWindow = new BrowserWindow({
+            width: 400,
+            height: 200,
+            parent: mainWindow,
+            modal: true,
+            show: false,
+            webPreferences: {
+              nodeIntegration: true,
+              contextIsolation: false
+            }
+          });
+          
+          progressWindow.loadURL('data:text/html,<html><body><h2>Updating...</h2><p>Please wait while LocalDevine updates.</p></body></html>');
+          progressWindow.show();
+          
+          // Perform update
+          const updateResult = await updateManager.performUpdate(updateInfo);
+          
+          if (!updateResult.success) {
+            await dialog.showMessageBox(mainWindow, {
+              type: 'error',
+              title: 'Update Failed',
+              message: 'Update failed',
+              detail: updateResult.error
+            });
+            progressWindow.close();
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Update check failed:', error);
+    }
+  }, 5000); // Check after 5 seconds
+});
+
 // Cleanup tray on quit
 app.on('will-quit', () => {
   console.log('App will quit');

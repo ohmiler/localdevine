@@ -40,6 +40,7 @@ exports.ProjectTemplateManager = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const PathResolver_1 = __importDefault(require("./PathResolver"));
+const Logger_1 = __importDefault(require("./Logger"));
 class ProjectTemplateManager {
     constructor() {
         this.mainWindow = null;
@@ -306,9 +307,9 @@ document.addEventListener('DOMContentLoaded', function() {
             fs.mkdirSync(projectPath, { recursive: true });
             // Create database if needed
             if (template.hasDatabase && options.createDatabase !== false) {
-                console.log(`Creating database: ${databaseName} for template: ${template.id}`);
+                Logger_1.default.debug(`Creating database: ${databaseName} for template: ${template.id}`);
                 const dbResult = await this.createDatabase(databaseName);
-                console.log('Database creation result:', dbResult);
+                Logger_1.default.debug(`Database creation result: ${JSON.stringify(dbResult)}`);
                 if (!dbResult.success) {
                     // Clean up project directory
                     fs.rmSync(projectPath, { recursive: true, force: true });
@@ -354,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     async createDatabase(dbName) {
         return new Promise((resolve) => {
-            console.log(`Connecting to database: ${this.dbHost}:${this.dbPort} as ${this.dbUser}`);
+            Logger_1.default.debug(`Connecting to database: ${this.dbHost}:${this.dbPort} as ${this.dbUser}`);
             const mysql = require('mysql2');
             const connection = mysql.createConnection({
                 host: this.dbHost,
@@ -364,19 +365,19 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             connection.connect((err) => {
                 if (err) {
-                    console.log('Database connection error:', err);
+                    Logger_1.default.error(`Database connection error: ${err.message}`);
                     resolve({ success: false, message: `Database connection failed: ${err.message}` });
                     return;
                 }
-                console.log(`Connected to database, creating: ${dbName}`);
+                Logger_1.default.debug(`Connected to database, creating: ${dbName}`);
                 connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``, (err) => {
                     connection.end();
                     if (err) {
-                        console.log('Database creation error:', err);
+                        Logger_1.default.error(`Database creation error: ${err.message}`);
                         resolve({ success: false, message: `Failed to create database: ${err.message}` });
                     }
                     else {
-                        console.log(`Database created successfully: ${dbName}`);
+                        Logger_1.default.debug(`Database created successfully: ${dbName}`);
                         resolve({ success: true, message: 'Database created' });
                     }
                 });
@@ -427,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             catch (rmError) {
                 // If rmSync fails, try alternative method
-                console.log('rmSync failed, trying alternative method:', rmError.message);
+                Logger_1.default.warn(`rmSync failed, trying alternative method: ${rmError.message}`);
                 // Check if folder is locked by another process
                 if (rmError.code === 'EBUSY' || rmError.code === 'ENOTEMPTY') {
                     return { success: false, message: 'Project is in use. Please close any files or processes using this project and try again.' };
@@ -437,7 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return { success: true, message: 'Project deleted successfully' };
         }
         catch (error) {
-            console.error('Delete project error:', error);
+            Logger_1.default.error(`Delete project error: ${error.message}`);
             return { success: false, message: `Error deleting project: ${error.message}` };
         }
     }

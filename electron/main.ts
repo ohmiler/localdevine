@@ -1,18 +1,19 @@
-import { app, BrowserWindow, ipcMain, shell, dialog, IpcMainEvent } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog, IpcMainEvent, IpcMainInvokeEvent } from 'electron';
 import path from 'path';
 import { spawn } from 'child_process';
 
 import { ServiceManager } from './services/ServiceManager';
+import logger from './services/Logger';
 import TrayManager from './services/TrayManager';
-import ConfigManager from './services/ConfigManager';
+import ConfigManager, { Config } from './services/ConfigManager';
 import HostsManager from './services/HostsManager';
-import ProjectTemplateManager from './services/ProjectTemplateManager';
+import ProjectTemplateManager, { CreateProjectOptions } from './services/ProjectTemplateManager';
 import PathResolver from './services/PathResolver';
 import { VHostConfig } from './services/ServiceManager';
 
 // Basic error handling to catch the 'string' issue
 if (typeof app === 'undefined') {
-  console.error('FATAL: electron module returned undefined/string. Exiting.');
+  logger.error('FATAL: electron module returned undefined/string. Exiting.', { forceLog: true });
   process.exit(1);
 }
 
@@ -87,7 +88,7 @@ function registerIPCHandlers() {
     return configManager ? configManager.get() : null;
   });
 
-  ipcMain.handle('save-config', async (event: any, config: any) => {
+  ipcMain.handle('save-config', async (_event: IpcMainInvokeEvent, config: Partial<Config>) => {
     return configManager ? configManager.save(config) : { success: false, error: 'ConfigManager not initialized' };
   });
 
@@ -143,7 +144,7 @@ function registerIPCHandlers() {
     return configManager ? configManager.getVHosts() : [];
   });
 
-  ipcMain.handle('add-vhost', async (event: any, vhost: Omit<VHostConfig, 'id' | 'createdAt'>) => {
+  ipcMain.handle('add-vhost', async (_event: IpcMainInvokeEvent, vhost: Omit<VHostConfig, 'id' | 'createdAt'>) => {
     if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
     const result = configManager.addVHost(vhost);
     
@@ -160,7 +161,7 @@ function registerIPCHandlers() {
       if (hostsManager) {
         const hostsResult = await hostsManager.addEntry('127.0.0.1', vhost.domain, `LocalDevine - ${vhost.name}`);
         if (!hostsResult.success) {
-          console.log('Failed to add hosts entry:', hostsResult.error);
+          logger.warn(`Failed to add hosts entry: ${hostsResult.error}`);
           // Don't fail the whole operation, just log the error
         }
       }
@@ -168,7 +169,7 @@ function registerIPCHandlers() {
     return result;
   });
 
-  ipcMain.handle('remove-vhost', async (event: any, id: string) => {
+  ipcMain.handle('remove-vhost', async (_event: IpcMainInvokeEvent, id: string) => {
     if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
     
     // Get the vhost domain before removing (to remove from hosts file)
@@ -190,7 +191,7 @@ function registerIPCHandlers() {
       if (hostsManager && vhostToRemove) {
         const hostsResult = await hostsManager.removeEntry(vhostToRemove.domain);
         if (!hostsResult.success) {
-          console.log('Failed to remove hosts entry:', hostsResult.error);
+          logger.warn(`Failed to remove hosts entry: ${hostsResult.error}`);
         }
       }
     }
@@ -202,7 +203,7 @@ function registerIPCHandlers() {
     return configManager ? configManager.getPHPVersions() : [];
   });
 
-  ipcMain.handle('set-php-version', async (event: any, version: string) => {
+  ipcMain.handle('set-php-version', async (_event: IpcMainInvokeEvent, version: string) => {
     if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
     return configManager.setPHPVersion(version);
   });
@@ -213,17 +214,17 @@ function registerIPCHandlers() {
     return hostsManager.readHostsFile();
   });
 
-  ipcMain.handle('add-hosts-entry', async (event: any, ip: string, hostname: string, comment?: string) => {
+  ipcMain.handle('add-hosts-entry', async (_event: IpcMainInvokeEvent, ip: string, hostname: string, comment?: string) => {
     if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
     return hostsManager.addEntry(ip, hostname, comment);
   });
 
-  ipcMain.handle('remove-hosts-entry', async (event: any, hostname: string) => {
+  ipcMain.handle('remove-hosts-entry', async (_event: IpcMainInvokeEvent, hostname: string) => {
     if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
     return hostsManager.removeEntry(hostname);
   });
 
-  ipcMain.handle('toggle-hosts-entry', async (event: any, hostname: string) => {
+  ipcMain.handle('toggle-hosts-entry', async (_event: IpcMainInvokeEvent, hostname: string) => {
     if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
     return hostsManager.toggleEntry(hostname);
   });
@@ -253,22 +254,22 @@ function registerIPCHandlers() {
     return projectTemplateManager ? projectTemplateManager.getProjects() : [];
   });
 
-  ipcMain.handle('create-project', async (event: any, options: any) => {
+  ipcMain.handle('create-project', async (_event: IpcMainInvokeEvent, options: CreateProjectOptions) => {
     return projectTemplateManager ? projectTemplateManager.createProject(options) : { success: false, error: 'ProjectTemplateManager not initialized' };
   });
 
-  ipcMain.handle('delete-project', async (event: any, projectName: string) => {
+  ipcMain.handle('delete-project', async (_event: IpcMainInvokeEvent, projectName: string) => {
     return projectTemplateManager ? projectTemplateManager.deleteProject(projectName) : { success: false, error: 'ProjectTemplateManager not initialized' };
   });
 
-  ipcMain.handle('open-project-folder', async (event: any, projectName: string) => {
+  ipcMain.handle('open-project-folder', async (_event: IpcMainInvokeEvent, projectName: string) => {
     if (!projectTemplateManager) return;
     const pathResolver = PathResolver.getInstance();
     const projectPath = path.join(pathResolver.wwwDir, projectName);
     shell.openPath(projectPath);
   });
 
-  ipcMain.handle('open-project-browser', async (event: any, projectName: string) => {
+  ipcMain.handle('open-project-browser', async (_event: IpcMainInvokeEvent, projectName: string) => {
     const port = configManager ? configManager.getPort('apache') : 80;
     shell.openExternal(`http://localhost:${port}/${projectName}`);
   });
@@ -327,7 +328,7 @@ app.on('before-quit', async (event) => {
 
   if (serviceManager && serviceManager.hasRunningServices()) {
     event.preventDefault();
-    console.log('Stopping all services before quit...');
+    logger.info('Stopping all services before quit...');
     await serviceManager.stopAllServices();
     app.quit();
   }

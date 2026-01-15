@@ -3,6 +3,7 @@ import * as path from 'path';
 import { exec } from 'child_process';
 import { BrowserWindow } from 'electron';
 import PathResolver from './PathResolver';
+import logger from './Logger';
 
 export interface ProjectTemplate {
     id: string;
@@ -312,9 +313,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Create database if needed
             if (template.hasDatabase && options.createDatabase !== false) {
-                console.log(`Creating database: ${databaseName} for template: ${template.id}`);
+                logger.debug(`Creating database: ${databaseName} for template: ${template.id}`);
                 const dbResult = await this.createDatabase(databaseName);
-                console.log('Database creation result:', dbResult);
+                logger.debug(`Database creation result: ${JSON.stringify(dbResult)}`);
                 if (!dbResult.success) {
                     // Clean up project directory
                     fs.rmSync(projectPath, { recursive: true, force: true });
@@ -367,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     private async createDatabase(dbName: string): Promise<CreateProjectResult> {
         return new Promise((resolve) => {
-            console.log(`Connecting to database: ${this.dbHost}:${this.dbPort} as ${this.dbUser}`);
+            logger.debug(`Connecting to database: ${this.dbHost}:${this.dbPort} as ${this.dbUser}`);
             const mysql = require('mysql2');
             const connection = mysql.createConnection({
                 host: this.dbHost,
@@ -378,19 +379,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
             connection.connect((err: any) => {
                 if (err) {
-                    console.log('Database connection error:', err);
+                    logger.error(`Database connection error: ${err.message}`);
                     resolve({ success: false, message: `Database connection failed: ${err.message}` });
                     return;
                 }
 
-                console.log(`Connected to database, creating: ${dbName}`);
+                logger.debug(`Connected to database, creating: ${dbName}`);
                 connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``, (err: any) => {
                     connection.end();
                     if (err) {
-                        console.log('Database creation error:', err);
+                        logger.error(`Database creation error: ${err.message}`);
                         resolve({ success: false, message: `Failed to create database: ${err.message}` });
                     } else {
-                        console.log(`Database created successfully: ${dbName}`);
+                        logger.debug(`Database created successfully: ${dbName}`);
                         resolve({ success: true, message: 'Database created' });
                     }
                 });
@@ -446,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 fs.rmSync(projectPath, { recursive: true, force: true, maxRetries: 3 });
             } catch (rmError: any) {
                 // If rmSync fails, try alternative method
-                console.log('rmSync failed, trying alternative method:', rmError.message);
+                logger.warn(`rmSync failed, trying alternative method: ${rmError.message}`);
                 
                 // Check if folder is locked by another process
                 if (rmError.code === 'EBUSY' || rmError.code === 'ENOTEMPTY') {
@@ -458,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             return { success: true, message: 'Project deleted successfully' };
         } catch (error: any) {
-            console.error('Delete project error:', error);
+            logger.error(`Delete project error: ${error.message}`);
             return { success: false, message: `Error deleting project: ${error.message}` };
         }
     }

@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { VHostConfig } from './ServiceManager';
 import PathResolver from './PathResolver';
+import { configLogger as logger } from './Logger';
 
 export interface Config {
     ports: {
@@ -66,7 +67,7 @@ export default class ConfigManager {
                 };
             }
         } catch (error) {
-            console.error('Error loading config:', (error as Error).message);
+            logger.error(`Error loading config: ${(error as Error).message}`);
         }
         return { ...this.defaultConfig };
     }
@@ -83,7 +84,7 @@ export default class ConfigManager {
             fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
             return { success: true };
         } catch (error) {
-            console.error('Error saving config:', (error as Error).message);
+            logger.error(`Error saving config: ${(error as Error).message}`);
             return { success: false, error: (error as Error).message };
         }
     }
@@ -146,7 +147,7 @@ export default class ConfigManager {
                 }
             }
         } catch (error) {
-            console.error('Error scanning PHP versions:', (error as Error).message);
+            logger.error(`Error scanning PHP versions: ${(error as Error).message}`);
         }
         return versions;
     }

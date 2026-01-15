@@ -1,6 +1,7 @@
 import { Tray, Menu, nativeImage, BrowserWindow, app, Event, App } from 'electron';
 import path from 'path';
 import { ServiceManager } from './ServiceManager';
+import { trayLogger as logger } from './Logger';
 
 export default class TrayManager {
     private mainWindow: BrowserWindow;
@@ -23,12 +24,12 @@ export default class TrayManager {
             ? path.join(process.resourcesPath, 'app.asar.unpacked', 'public', 'icon.png')
             : path.join(__dirname, '../../public/icon.png');
         
-        console.log('[TrayManager] Icon path:', iconPath);
+        logger.debug(`Icon path: ${iconPath}`);
         
         const icon = nativeImage.createFromPath(iconPath);
         
         if (icon.isEmpty()) {
-            console.error('[TrayManager] Icon is empty! Path:', iconPath);
+            logger.error(`Icon is empty! Path: ${iconPath}`);
         }
 
         // Resize for tray (16x16 on Windows)

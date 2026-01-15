@@ -7,6 +7,7 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const child_process_1 = require("child_process");
 const electron_1 = require("electron");
+const Logger_1 = require("./Logger");
 class HostsManager {
     constructor() {
         this.hostsPath = path_1.default.join(process.env.WINDIR || 'C:\\Windows', 'System32', 'drivers', 'etc', 'hosts');
@@ -21,7 +22,7 @@ class HostsManager {
         else {
             this.backupPath = path_1.default.join(__dirname, '../../hosts.backup');
         }
-        console.log('[HostsManager] Backup path:', this.backupPath);
+        Logger_1.hostsLogger.debug(`Backup path: ${this.backupPath}`);
     }
     // Read and parse hosts file
     readHostsFile() {

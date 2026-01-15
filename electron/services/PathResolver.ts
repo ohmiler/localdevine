@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { app } from 'electron';
+import { pathLogger as logger } from './Logger';
 
 /**
  * PathResolver - Resolves paths correctly for both development and production modes
@@ -47,7 +48,7 @@ export class PathResolver {
         for (const dir of dirs) {
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
-                console.log(`Created directory: ${dir}`);
+                logger.debug(`Created directory: ${dir}`);
             }
         }
 
@@ -64,7 +65,7 @@ export class PathResolver {
         const adminerDest = path.join(wwwDir, 'adminer.php');
         if (fs.existsSync(adminerSrc) && !fs.existsSync(adminerDest)) {
             fs.copyFileSync(adminerSrc, adminerDest);
-            console.log('Copied adminer.php to www');
+            logger.debug('Copied adminer.php to www');
         }
 
         // Copy updated php.ini to production
@@ -73,7 +74,7 @@ export class PathResolver {
             const destPhpIni = path.join(this._basePath, 'app.asar.unpacked/bin/php/php.ini');
             if (fs.existsSync(sourcePhpIni) && fs.existsSync(destPhpIni)) {
                 fs.copyFileSync(sourcePhpIni, destPhpIni);
-                console.log('Updated php.ini with pdo_mysql extension');
+                logger.debug('Updated php.ini with pdo_mysql extension');
             }
         }
 
@@ -149,14 +150,14 @@ export class PathResolver {
 </body>
 </html>`;
             fs.writeFileSync(indexPath, defaultIndex);
-            console.log('Created default index.php');
+            logger.debug('Created default index.php');
         }
 
         // Create phpinfo.php
         const phpinfoPath = path.join(wwwDir, 'phpinfo.php');
         if (!fs.existsSync(phpinfoPath)) {
             fs.writeFileSync(phpinfoPath, '<?php phpinfo();');
-            console.log('Created phpinfo.php');
+            logger.debug('Created phpinfo.php');
         }
     }
 
@@ -213,13 +214,13 @@ export class PathResolver {
 
     // For debugging
     logPaths(): void {
-        console.log('PathResolver - isPackaged:', app.isPackaged);
-        console.log('PathResolver - basePath:', this._basePath);
-        console.log('PathResolver - userDataPath:', this._userDataPath);
-        console.log('PathResolver - binDir:', this.binDir);
-        console.log('PathResolver - wwwDir:', this.wwwDir);
-        console.log('PathResolver - mariadbDataDir:', this.mariadbDataDir);
-        console.log('PathResolver - configPath:', this.configPath);
+        logger.debug(`isPackaged: ${app.isPackaged}`);
+        logger.debug(`basePath: ${this._basePath}`);
+        logger.debug(`userDataPath: ${this._userDataPath}`);
+        logger.debug(`binDir: ${this.binDir}`);
+        logger.debug(`wwwDir: ${this.wwwDir}`);
+        logger.debug(`mariadbDataDir: ${this.mariadbDataDir}`);
+        logger.debug(`configPath: ${this.configPath}`);
     }
 }
 

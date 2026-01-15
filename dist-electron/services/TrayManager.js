@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
+const Logger_1 = require("./Logger");
 class TrayManager {
     constructor(mainWindow, serviceManager, app) {
         this.mainWindow = mainWindow;
@@ -18,10 +19,10 @@ class TrayManager {
         const iconPath = this.app.isPackaged
             ? path_1.default.join(process.resourcesPath, 'app.asar.unpacked', 'public', 'icon.png')
             : path_1.default.join(__dirname, '../../public/icon.png');
-        console.log('[TrayManager] Icon path:', iconPath);
+        Logger_1.trayLogger.debug(`Icon path: ${iconPath}`);
         const icon = electron_1.nativeImage.createFromPath(iconPath);
         if (icon.isEmpty()) {
-            console.error('[TrayManager] Icon is empty! Path:', iconPath);
+            Logger_1.trayLogger.error(`Icon is empty! Path: ${iconPath}`);
         }
         // Resize for tray (16x16 on Windows)
         const trayIcon = icon.resize({ width: 16, height: 16 });

@@ -2,6 +2,7 @@ import { spawn, exec } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import PathResolver from './PathResolver';
+import { serviceLogger as logger } from './Logger';
 
 // Type definitions
 export type ServiceStatus = 'running' | 'stopped' | 'error';
@@ -134,10 +135,10 @@ export class ServiceManager {
 
         // Send health status to UI
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-            console.log('[ServiceManager] Sending health-status to renderer');
+            logger.debug('Sending health-status to renderer');
             this.mainWindow.webContents.send('health-status', this.healthStatus);
         } else {
-            console.log('[ServiceManager] Cannot send health-status: window is destroyed or null');
+            logger.debug('Cannot send health-status: window is destroyed or null');
         }
     }
 
@@ -498,7 +499,7 @@ ${vhostBlocks}
                 message: messageStr
             } as LogEntry);
         } else {
-            console.log(`[${service}] ${messageStr}`);
+            logger.info(`[${service}] ${messageStr}`);
         }
     }
 
@@ -624,7 +625,7 @@ ${vhostBlocks}
     }
 
     async startService(serviceName: keyof ServiceProcesses): Promise<void> {
-        console.log(`[ServiceManager] startService called for: ${serviceName}`);
+        logger.debug(`startService called for: ${serviceName}`);
         
         if (this.processes[serviceName]) {
             this.log(serviceName, 'Already running.');
@@ -681,17 +682,17 @@ ${vhostBlocks}
         }
 
         this.log(serviceName, `Starting on port ${this.getPort(serviceName)}...`);
-        console.log(`[ServiceManager] Command: ${cmd}`);
-        console.log(`[ServiceManager] Args: ${args.join(' ')}`);
-        console.log(`[ServiceManager] CWD: ${cwd || 'undefined'}`);
+        logger.debug(`Command: ${cmd}`);
+        logger.debug(`Args: ${args.join(' ')}`);
+        logger.debug(`CWD: ${cwd || 'undefined'}`);
 
         if (!fs.existsSync(cmd)) {
             this.log(serviceName, `Executable not found: ${cmd}`);
-            console.log(`[ServiceManager] Executable not found: ${cmd}`);
+            logger.error(`Executable not found: ${cmd}`);
             this.notifyStatus(serviceName, 'stopped');
             return;
         }
-        console.log(`[ServiceManager] Executable exists, spawning...`);
+        logger.debug('Executable exists, spawning...');
 
         try {
             const child = spawn(cmd, args, { cwd });
@@ -771,12 +772,12 @@ ${vhostBlocks}
     }
 
     notifyStatus(service: string, status: ServiceStatus): void {
-        console.log(`[ServiceManager] notifyStatus: ${service} -> ${status}`);
+        logger.debug(`notifyStatus: ${service} -> ${status}`);
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-            console.log(`[ServiceManager] Sending service-status to renderer`);
+            logger.debug('Sending service-status to renderer');
             this.mainWindow.webContents.send('service-status', { service, status });
         } else {
-            console.log(`[ServiceManager] mainWindow not available!`);
+            logger.warn('mainWindow not available!');
         }
     }
 }

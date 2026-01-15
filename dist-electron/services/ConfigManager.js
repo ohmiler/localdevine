@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const PathResolver_1 = __importDefault(require("./PathResolver"));
+const Logger_1 = require("./Logger");
 class ConfigManager {
     constructor() {
         // Use PathResolver for correct paths in both dev and production
@@ -40,7 +41,7 @@ class ConfigManager {
             }
         }
         catch (error) {
-            console.error('Error loading config:', error.message);
+            Logger_1.configLogger.error(`Error loading config: ${error.message}`);
         }
         return { ...this.defaultConfig };
     }
@@ -57,7 +58,7 @@ class ConfigManager {
             return { success: true };
         }
         catch (error) {
-            console.error('Error saving config:', error.message);
+            Logger_1.configLogger.error(`Error saving config: ${error.message}`);
             return { success: false, error: error.message };
         }
     }
@@ -112,7 +113,7 @@ class ConfigManager {
             }
         }
         catch (error) {
-            console.error('Error scanning PHP versions:', error.message);
+            Logger_1.configLogger.error(`Error scanning PHP versions: ${error.message}`);
         }
         return versions;
     }

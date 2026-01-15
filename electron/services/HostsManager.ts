@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
 import { app } from 'electron';
+import { hostsLogger as logger } from './Logger';
 
 export interface HostsEntry {
     ip: string;
@@ -40,7 +41,7 @@ export default class HostsManager {
             this.backupPath = path.join(__dirname, '../../hosts.backup');
         }
         
-        console.log('[HostsManager] Backup path:', this.backupPath);
+        logger.debug(`Backup path: ${this.backupPath}`);
     }
 
     // Read and parse hosts file

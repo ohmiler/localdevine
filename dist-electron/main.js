@@ -7,6 +7,7 @@ const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
 const child_process_1 = require("child_process");
 const ServiceManager_1 = require("./services/ServiceManager");
+const Logger_1 = __importDefault(require("./services/Logger"));
 const TrayManager_1 = __importDefault(require("./services/TrayManager"));
 const ConfigManager_1 = __importDefault(require("./services/ConfigManager"));
 const HostsManager_1 = __importDefault(require("./services/HostsManager"));
@@ -14,7 +15,7 @@ const ProjectTemplateManager_1 = __importDefault(require("./services/ProjectTemp
 const PathResolver_1 = __importDefault(require("./services/PathResolver"));
 // Basic error handling to catch the 'string' issue
 if (typeof electron_1.app === 'undefined') {
-    console.error('FATAL: electron module returned undefined/string. Exiting.');
+    Logger_1.default.error('FATAL: electron module returned undefined/string. Exiting.', { forceLog: true });
     process.exit(1);
 }
 // Set AppUserModelID for Windows
@@ -81,7 +82,7 @@ function registerIPCHandlers() {
     electron_1.ipcMain.handle('get-config', () => {
         return configManager ? configManager.get() : null;
     });
-    electron_1.ipcMain.handle('save-config', async (event, config) => {
+    electron_1.ipcMain.handle('save-config', async (_event, config) => {
         return configManager ? configManager.save(config) : { success: false, error: 'ConfigManager not initialized' };
     });
     // IPC Handlers - Folder Operations
@@ -131,7 +132,7 @@ function registerIPCHandlers() {
     electron_1.ipcMain.handle('get-vhosts', () => {
         return configManager ? configManager.getVHosts() : [];
     });
-    electron_1.ipcMain.handle('add-vhost', async (event, vhost) => {
+    electron_1.ipcMain.handle('add-vhost', async (_event, vhost) => {
         if (!configManager)
             return { success: false, error: 'ConfigManager not initialized' };
         const result = configManager.addVHost(vhost);
@@ -146,14 +147,14 @@ function registerIPCHandlers() {
             if (hostsManager) {
                 const hostsResult = await hostsManager.addEntry('127.0.0.1', vhost.domain, `LocalDevine - ${vhost.name}`);
                 if (!hostsResult.success) {
-                    console.log('Failed to add hosts entry:', hostsResult.error);
+                    Logger_1.default.warn(`Failed to add hosts entry: ${hostsResult.error}`);
                     // Don't fail the whole operation, just log the error
                 }
             }
         }
         return result;
     });
-    electron_1.ipcMain.handle('remove-vhost', async (event, id) => {
+    electron_1.ipcMain.handle('remove-vhost', async (_event, id) => {
         if (!configManager)
             return { success: false, error: 'ConfigManager not initialized' };
         // Get the vhost domain before removing (to remove from hosts file)
@@ -171,7 +172,7 @@ function registerIPCHandlers() {
             if (hostsManager && vhostToRemove) {
                 const hostsResult = await hostsManager.removeEntry(vhostToRemove.domain);
                 if (!hostsResult.success) {
-                    console.log('Failed to remove hosts entry:', hostsResult.error);
+                    Logger_1.default.warn(`Failed to remove hosts entry: ${hostsResult.error}`);
                 }
             }
         }
@@ -181,7 +182,7 @@ function registerIPCHandlers() {
     electron_1.ipcMain.handle('get-php-versions', () => {
         return configManager ? configManager.getPHPVersions() : [];
     });
-    electron_1.ipcMain.handle('set-php-version', async (event, version) => {
+    electron_1.ipcMain.handle('set-php-version', async (_event, version) => {
         if (!configManager)
             return { success: false, error: 'ConfigManager not initialized' };
         return configManager.setPHPVersion(version);
@@ -192,17 +193,17 @@ function registerIPCHandlers() {
             return { success: false, error: 'HostsManager not initialized' };
         return hostsManager.readHostsFile();
     });
-    electron_1.ipcMain.handle('add-hosts-entry', async (event, ip, hostname, comment) => {
+    electron_1.ipcMain.handle('add-hosts-entry', async (_event, ip, hostname, comment) => {
         if (!hostsManager)
             return { success: false, error: 'HostsManager not initialized' };
         return hostsManager.addEntry(ip, hostname, comment);
     });
-    electron_1.ipcMain.handle('remove-hosts-entry', async (event, hostname) => {
+    electron_1.ipcMain.handle('remove-hosts-entry', async (_event, hostname) => {
         if (!hostsManager)
             return { success: false, error: 'HostsManager not initialized' };
         return hostsManager.removeEntry(hostname);
     });
-    electron_1.ipcMain.handle('toggle-hosts-entry', async (event, hostname) => {
+    electron_1.ipcMain.handle('toggle-hosts-entry', async (_event, hostname) => {
         if (!hostsManager)
             return { success: false, error: 'HostsManager not initialized' };
         return hostsManager.toggleEntry(hostname);
@@ -229,20 +230,20 @@ function registerIPCHandlers() {
     electron_1.ipcMain.handle('get-projects', () => {
         return projectTemplateManager ? projectTemplateManager.getProjects() : [];
     });
-    electron_1.ipcMain.handle('create-project', async (event, options) => {
+    electron_1.ipcMain.handle('create-project', async (_event, options) => {
         return projectTemplateManager ? projectTemplateManager.createProject(options) : { success: false, error: 'ProjectTemplateManager not initialized' };
     });
-    electron_1.ipcMain.handle('delete-project', async (event, projectName) => {
+    electron_1.ipcMain.handle('delete-project', async (_event, projectName) => {
         return projectTemplateManager ? projectTemplateManager.deleteProject(projectName) : { success: false, error: 'ProjectTemplateManager not initialized' };
     });
-    electron_1.ipcMain.handle('open-project-folder', async (event, projectName) => {
+    electron_1.ipcMain.handle('open-project-folder', async (_event, projectName) => {
         if (!projectTemplateManager)
             return;
         const pathResolver = PathResolver_1.default.getInstance();
         const projectPath = path_1.default.join(pathResolver.wwwDir, projectName);
         electron_1.shell.openPath(projectPath);
     });
-    electron_1.ipcMain.handle('open-project-browser', async (event, projectName) => {
+    electron_1.ipcMain.handle('open-project-browser', async (_event, projectName) => {
         const port = configManager ? configManager.getPort('apache') : 80;
         electron_1.shell.openExternal(`http://localhost:${port}/${projectName}`);
     });
@@ -289,7 +290,7 @@ electron_1.app.on('before-quit', async (event) => {
     }
     if (serviceManager && serviceManager.hasRunningServices()) {
         event.preventDefault();
-        console.log('Stopping all services before quit...');
+        Logger_1.default.info('Stopping all services before quit...');
         await serviceManager.stopAllServices();
         electron_1.app.quit();
     }

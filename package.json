@@ -28,7 +28,6 @@
       "bin/**/*",
       "www/**/*",
       "public/**/*",
-      "node_modules/**/*",
       "package.json"
     ],
     "extraMetadata": {

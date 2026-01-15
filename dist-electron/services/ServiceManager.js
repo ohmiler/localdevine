@@ -8,6 +8,7 @@ const child_process_1 = require("child_process");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const PathResolver_1 = __importDefault(require("./PathResolver"));
+const Logger_1 = require("./Logger");
 class ServiceManager {
     constructor(mainWindow, configManager) {
         this.healthCheckInterval = null;
@@ -77,11 +78,11 @@ class ServiceManager {
         }
         // Send health status to UI
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-            console.log('[ServiceManager] Sending health-status to renderer');
+            Logger_1.serviceLogger.debug('Sending health-status to renderer');
             this.mainWindow.webContents.send('health-status', this.healthStatus);
         }
         else {
-            console.log('[ServiceManager] Cannot send health-status: window is destroyed or null');
+            Logger_1.serviceLogger.debug('Cannot send health-status: window is destroyed or null');
         }
     }
     async checkServiceHealth(serviceName) {
@@ -385,7 +386,7 @@ ${vhostBlocks}
             });
         }
         else {
-            console.log(`[${service}] ${messageStr}`);
+            Logger_1.serviceLogger.info(`[${service}] ${messageStr}`);
         }
     }
     hasRunningServices() {
@@ -495,7 +496,7 @@ ${vhostBlocks}
         });
     }
     async startService(serviceName) {
-        console.log(`[ServiceManager] startService called for: ${serviceName}`);
+        Logger_1.serviceLogger.debug(`startService called for: ${serviceName}`);
         if (this.processes[serviceName]) {
             this.log(serviceName, 'Already running.');
             return;
@@ -547,16 +548,16 @@ ${vhostBlocks}
                 return;
         }
         this.log(serviceName, `Starting on port ${this.getPort(serviceName)}...`);
-        console.log(`[ServiceManager] Command: ${cmd}`);
-        console.log(`[ServiceManager] Args: ${args.join(' ')}`);
-        console.log(`[ServiceManager] CWD: ${cwd || 'undefined'}`);
+        Logger_1.serviceLogger.debug(`Command: ${cmd}`);
+        Logger_1.serviceLogger.debug(`Args: ${args.join(' ')}`);
+        Logger_1.serviceLogger.debug(`CWD: ${cwd || 'undefined'}`);
         if (!fs_1.default.existsSync(cmd)) {
             this.log(serviceName, `Executable not found: ${cmd}`);
-            console.log(`[ServiceManager] Executable not found: ${cmd}`);
+            Logger_1.serviceLogger.error(`Executable not found: ${cmd}`);
             this.notifyStatus(serviceName, 'stopped');
             return;
         }
-        console.log(`[ServiceManager] Executable exists, spawning...`);
+        Logger_1.serviceLogger.debug('Executable exists, spawning...');
         try {
             const child = (0, child_process_1.spawn)(cmd, args, { cwd });
             this.processes[serviceName] = child;
@@ -632,13 +633,13 @@ ${vhostBlocks}
         });
     }
     notifyStatus(service, status) {
-        console.log(`[ServiceManager] notifyStatus: ${service} -> ${status}`);
+        Logger_1.serviceLogger.debug(`notifyStatus: ${service} -> ${status}`);
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-            console.log(`[ServiceManager] Sending service-status to renderer`);
+            Logger_1.serviceLogger.debug('Sending service-status to renderer');
             this.mainWindow.webContents.send('service-status', { service, status });
         }
         else {
-            console.log(`[ServiceManager] mainWindow not available!`);
+            Logger_1.serviceLogger.warn('mainWindow not available!');
         }
     }
 }

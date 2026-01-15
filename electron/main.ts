@@ -42,11 +42,12 @@ function createWindow(): BrowserWindow {
   });
 
   // In production, load the built file
-  // In dev, load localhost
+  // In dev, load localhost (but use built version for testing)
   if (app.isPackaged) {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   } else {
-    mainWindow.loadURL('http://localhost:5173');
+    // Use built version instead of dev server for testing
+    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 
   return mainWindow;
@@ -191,19 +192,43 @@ ipcMain.handle('get-vhosts', () => {
 ipcMain.handle('add-vhost', async (event: any, vhost: Omit<VHostConfig, 'id' | 'createdAt'>) => {
   if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
   const result = configManager.addVHost(vhost);
-  // Notify to regenerate nginx config
+  
   if (result.success && serviceManager) {
+    // Regenerate Apache config
     serviceManager.generateConfigs();
+    
+    // Auto-add to hosts file
+    if (hostsManager) {
+      const hostsResult = hostsManager.addEntry('127.0.0.1', vhost.domain, `LocalDevine - ${vhost.name}`);
+      if (!hostsResult.success) {
+        console.log('Failed to add hosts entry:', hostsResult.error);
+        // Don't fail the whole operation, just log the error
+      }
+    }
   }
   return result;
 });
 
 ipcMain.handle('remove-vhost', async (event: any, id: string) => {
   if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
+  
+  // Get the vhost domain before removing (to remove from hosts file)
+  const vhosts = configManager.getVHosts();
+  const vhostToRemove = vhosts.find(v => v.id === id);
+  
   const result = configManager.removeVHost(id);
-  // Notify to regenerate nginx config
+  
   if (result.success && serviceManager) {
+    // Regenerate Apache config
     serviceManager.generateConfigs();
+    
+    // Auto-remove from hosts file
+    if (hostsManager && vhostToRemove) {
+      const hostsResult = hostsManager.removeEntry(vhostToRemove.domain);
+      if (!hostsResult.success) {
+        console.log('Failed to remove hosts entry:', hostsResult.error);
+      }
+    }
   }
   return result;
 });
@@ -283,4 +308,8 @@ ipcMain.handle('open-project-folder', async (event: any, projectName: string) =>
 ipcMain.handle('open-project-browser', async (event: any, projectName: string) => {
   const port = configManager ? configManager.getPort('apache') : 80;
   shell.openExternal(`http://localhost:${port}/${projectName}`);
+});
+
+ipcMain.handle('open-browser', async (event: any, url: string) => {
+  shell.openExternal(url);
 });

@@ -231,6 +231,12 @@ function App() {
         >
           💻 Terminal
         </button>
+        <button
+          onClick={() => window.electronAPI?.openProjectBrowser('adminer.php')}
+          className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all"
+        >
+          🗄️ Database
+        </button>
       </div>
 
       {/* Console / Logs Area */}

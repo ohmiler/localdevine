@@ -115,6 +115,17 @@ function ProjectTemplates() {
     window.electronAPI.openProjectBrowser(name);
   };
 
+  const handleCopyUrl = async (name: string) => {
+    const url = `http://localhost/${name}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setMessage({ type: 'success', text: `URL copied: ${url}` });
+      setTimeout(() => setMessage(null), 2000);
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to copy URL' });
+    }
+  };
+
   const selectedTemplateData = templates.find(t => t.id === selectedTemplate);
 
   return (
@@ -310,6 +321,13 @@ function ProjectTemplates() {
                 </div>
                 
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => handleCopyUrl(project)}
+                    className="w-10 h-10 rounded-lg bg-gradient-to-r from-purple-500 to-violet-600 text-white flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all"
+                    title="Copy URL"
+                  >
+                    📋
+                  </button>
                   <button
                     onClick={() => handleOpenBrowser(project)}
                     className="w-10 h-10 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all"

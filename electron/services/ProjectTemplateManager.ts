@@ -428,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    async deleteProject(projectName: string): Promise<CreateProjectResult> {
+    deleteProject(projectName: string): CreateProjectResult {
         const projectPath = path.join(this.wwwPath, projectName);
         
         try {
@@ -436,9 +436,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 return { success: false, message: 'Project not found' };
             }
 
-            fs.rmSync(projectPath, { recursive: true, force: true });
+            // Additional check: ensure we're not deleting system folders
+            if (projectName === '.' || projectName === '..' || projectName.includes('..')) {
+                return { success: false, message: 'Invalid project name' };
+            }
+
+            // Try to delete with more robust error handling
+            try {
+                fs.rmSync(projectPath, { recursive: true, force: true, maxRetries: 3 });
+            } catch (rmError: any) {
+                // If rmSync fails, try alternative method
+                console.log('rmSync failed, trying alternative method:', rmError.message);
+                
+                // Check if folder is locked by another process
+                if (rmError.code === 'EBUSY' || rmError.code === 'ENOTEMPTY') {
+                    return { success: false, message: 'Project is in use. Please close any files or processes using this project and try again.' };
+                }
+                
+                throw rmError; // Re-throw other errors
+            }
+
             return { success: true, message: 'Project deleted successfully' };
         } catch (error: any) {
+            console.error('Delete project error:', error);
             return { success: false, message: `Error deleting project: ${error.message}` };
         }
     }

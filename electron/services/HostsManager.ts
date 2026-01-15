@@ -133,21 +133,27 @@ export default class HostsManager {
         }
     }
 
-    // Add new entry
+    // Add new entry - append directly to file
     addEntry(ip: string, hostname: string, comment?: string): HostsOperationResult {
         try {
-            const result = this.readHostsFile();
-            if (!result.success || !result.entries) {
-                return result;
+            // Create backup first
+            const backupResult = this.createBackup();
+            if (!backupResult.success) {
+                return backupResult;
             }
 
+            // Read current content
+            const currentContent = fs.readFileSync(this.hostsPath, 'utf8');
+            
             // Check if hostname already exists
-            const existing = result.entries.find(e => 
-                e.hostname.toLowerCase() === hostname.toLowerCase()
-            );
-
-            if (existing) {
-                return { success: false, error: `Hostname ${hostname} already exists` };
+            const lines = currentContent.split('\n');
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#')) continue;
+                const parts = trimmed.split(/\s+/);
+                if (parts.length >= 2 && parts[1].toLowerCase() === hostname.toLowerCase()) {
+                    return { success: false, error: `Hostname ${hostname} already exists` };
+                }
             }
 
             // Validate IP
@@ -155,17 +161,19 @@ export default class HostsManager {
                 return { success: false, error: 'Invalid IP address format' };
             }
 
-            // Add new entry at the end
-            const newEntry: HostsEntry = {
-                ip,
-                hostname,
-                comment,
-                enabled: true,
-                line: result.entries.length
-            };
+            // Build new line
+            let newLine = `${ip}\t${hostname}`;
+            if (comment) {
+                newLine += `\t# ${comment}`;
+            }
 
-            result.entries.push(newEntry);
-            return this.writeHostsFile(result.entries);
+            // Append to file (ensure newline before if needed)
+            const needsNewline = !currentContent.endsWith('\n');
+            const contentToAppend = (needsNewline ? '\n' : '') + newLine + '\n';
+            
+            fs.appendFileSync(this.hostsPath, contentToAppend, 'utf8');
+            
+            return { success: true };
         } catch (error) {
             return { 
                 success: false, 
@@ -174,23 +182,40 @@ export default class HostsManager {
         }
     }
 
-    // Remove entry
+    // Remove entry - rewrite file without the entry
     removeEntry(hostname: string): HostsOperationResult {
         try {
-            const result = this.readHostsFile();
-            if (!result.success || !result.entries) {
-                return result;
+            // Create backup first
+            const backupResult = this.createBackup();
+            if (!backupResult.success) {
+                return backupResult;
             }
 
-            const filteredEntries = result.entries.filter(e => 
-                e.hostname.toLowerCase() !== hostname.toLowerCase()
-            );
+            // Read current content
+            const currentContent = fs.readFileSync(this.hostsPath, 'utf8');
+            const lines = currentContent.split('\n');
+            
+            let found = false;
+            const newLines = lines.filter(line => {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#')) return true;
+                
+                const parts = trimmed.split(/\s+/);
+                if (parts.length >= 2 && parts[1].toLowerCase() === hostname.toLowerCase()) {
+                    found = true;
+                    return false; // Remove this line
+                }
+                return true;
+            });
 
-            if (filteredEntries.length === result.entries.length) {
+            if (!found) {
                 return { success: false, error: `Hostname ${hostname} not found` };
             }
 
-            return this.writeHostsFile(filteredEntries);
+            // Write back
+            fs.writeFileSync(this.hostsPath, newLines.join('\n'), 'utf8');
+            
+            return { success: true };
         } catch (error) {
             return { 
                 success: false, 

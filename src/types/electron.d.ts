@@ -77,6 +77,7 @@ export interface ElectronAPI {
     deleteProject: (projectName: string) => Promise<CreateProjectResult>;
     openProjectFolder: (projectName: string) => Promise<void>;
     openProjectBrowser: (projectName: string) => Promise<void>;
+    openBrowser: (url: string) => Promise<void>;
 
     // Event listeners
     on: (channel: 'service-status' | 'log-entry' | 'health-status' | 'service-notification', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;

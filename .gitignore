@@ -22,3 +22,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# LocalDevine specific
+bin/mariadb/data/*
+bin/apache/logs/*
+bin/php/logs/*
+tmp/*
+hosts.backup
+release/
+dist-electron/
+
+# Database files
+*.frm
+*.MYD
+*.MYI
+*.ibd
+*.MAD
+*.MAI

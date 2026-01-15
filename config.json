@@ -1,0 +1,10 @@
+{
+  "ports": {
+    "php": 9000,
+    "apache": 80,
+    "mariadb": 3306
+  },
+  "autoStart": false,
+  "vhosts": [],
+  "phpVersion": "php"
+}

@@ -158,7 +158,7 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
                             onClick={handleAdd}
                             disabled={saving}
                             className={`w-full py-3 rounded-xl font-semibold transition-all ${saving
-                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    ? 'bg-disabled text-disabled cursor-not-allowed'
                                     : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
                                 }`}
                         >

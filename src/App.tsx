@@ -243,7 +243,7 @@ function App() {
           disabled={allRunning || anyLoading}
           className={`px-8 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
             allRunning || anyLoading
-              ? 'bg-tertiary text-muted cursor-not-allowed'
+              ? 'bg-disabled text-disabled cursor-not-allowed'
               : 'bg-gradient-success text-white shadow-lg hover:shadow-xl hover:scale-105'
           }`}
         >
@@ -255,7 +255,7 @@ function App() {
           disabled={allStopped || anyLoading}
           className={`px-8 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
             allStopped || anyLoading
-              ? 'bg-tertiary text-muted cursor-not-allowed'
+              ? 'bg-disabled text-disabled cursor-not-allowed'
               : 'bg-gradient-error text-white shadow-lg hover:shadow-xl hover:scale-105'
           }`}
         >

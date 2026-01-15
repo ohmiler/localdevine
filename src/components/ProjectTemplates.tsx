@@ -284,7 +284,7 @@ function ProjectTemplates() {
               disabled={loading || !projectName.trim()}
               className={`w-full py-3 px-4 rounded-xl font-semibold transition-all ${
                 loading || !projectName.trim()
-                  ? 'bg-gray-400 cursor-not-allowed'
+                  ? 'bg-disabled text-disabled cursor-not-allowed'
                   : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
               }`}
             >

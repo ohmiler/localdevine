@@ -106,7 +106,7 @@ function ServiceCard({ service, status, health, onToggle }: ServiceCardProps) {
                 disabled={isLoading}
                 className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 shadow-md flex items-center justify-center gap-2 ${
                     isLoading
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        ? 'bg-disabled text-disabled cursor-not-allowed'
                         : isRunning
                             ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white hover:shadow-lg hover:scale-[1.02]'
                             : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:shadow-lg hover:scale-[1.02]'

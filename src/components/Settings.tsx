@@ -160,7 +160,7 @@ function Settings({ onBack }: SettingsProps) {
                             onClick={handleSave}
                             disabled={saving}
                             className={`px-6 py-3 rounded-xl font-semibold transition-all ${saving
-                                ? 'bg-gray-400 cursor-not-allowed'
+                                ? 'bg-disabled text-disabled cursor-not-allowed'
                                 : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
                                 }`}
                         >
@@ -240,9 +240,8 @@ function Settings({ onBack }: SettingsProps) {
                             </div>
                             <div
                                 onClick={() => setConfig((prev: Config) => ({ ...prev, autoStart: !prev.autoStart }))}
-                                className={`relative w-14 h-7 rounded-full transition-all cursor-pointer ${
-                                    config.autoStart ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gray-400'
-                                }`}
+                                className="relative w-14 h-7 rounded-full transition-all cursor-pointer"
+                                style={{ background: config.autoStart ? 'var(--gradient-success)' : 'var(--bg-disabled)' }}
                             >
                                 <div
                                     className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform ${
@@ -271,13 +270,13 @@ function Settings({ onBack }: SettingsProps) {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="font-semibold" style={{ color: 'var(--text-on-card)' }}>Current Version</p>
-                                <p className="text-2xl font-heading text-gradient" style={{ fontFamily: "'JetBrains Mono', monospace" }}>v{version}</p>
+                                <p className="text-2xl font-heading" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-primary)' }}>v{version}</p>
                             </div>
                             <button
                                 onClick={checkForUpdate}
                                 disabled={checkingUpdate}
                                 className={`px-6 py-3 rounded-xl font-semibold transition-all ${checkingUpdate
-                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    ? 'bg-disabled text-disabled cursor-not-allowed'
                                     : 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
                                 }`}
                             >

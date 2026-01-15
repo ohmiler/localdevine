@@ -142,7 +142,7 @@ function HostsEditor({ onBack }: HostsEditorProps) {
         <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30">
           <div className="flex items-center gap-3 mb-3">
             <span className="text-2xl">⚠️</span>
-            <p className="text-gradient">Admin rights required to edit hosts file</p>
+            <p className="font-semibold text-red-400">Admin rights required to edit hosts file</p>
           </div>
           <button
             onClick={requestAdminRights}
@@ -157,7 +157,7 @@ function HostsEditor({ onBack }: HostsEditorProps) {
       {error && (
         <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30 flex items-center gap-3">
           <span className="text-xl">❌</span>
-          <p className="text-gradient">{error}</p>
+          <p className="font-semibold text-red-400">{error}</p>
         </div>
       )}
 
@@ -197,7 +197,7 @@ function HostsEditor({ onBack }: HostsEditorProps) {
               disabled={saving || !newEntry.hostname.trim()}
               className={`px-4 py-2 rounded-xl font-semibold transition-all ${
                 saving || !newEntry.hostname.trim()
-                  ? 'bg-gray-400 cursor-not-allowed'
+                  ? 'bg-disabled text-disabled cursor-not-allowed'
                   : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
               }`}
             >

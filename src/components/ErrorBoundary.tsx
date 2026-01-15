@@ -55,20 +55,20 @@ class ErrorBoundary extends Component<Props, State> {
         <div className="min-h-screen flex items-center justify-center p-8">
           <div className="card max-w-lg w-full text-center">
             <div className="text-6xl mb-4">⚠️</div>
-            <h1 className="text-2xl font-bold mb-2 text-gradient">
+            <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-on-card)' }}>
               Something went wrong
             </h1>
-            <p className="text-muted mb-6">
+            <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
               An unexpected error occurred. Please try again.
             </p>
             
             {process.env.NODE_ENV === 'development' && this.state.error && (
-              <div className="bg-tertiary rounded-lg p-4 mb-6 text-left overflow-auto max-h-48">
+              <div className="rounded-lg p-4 mb-6 text-left overflow-auto max-h-48" style={{ background: 'var(--bg-tertiary)' }}>
                 <p className="text-red-400 font-mono text-sm">
                   {this.state.error.toString()}
                 </p>
                 {this.state.errorInfo && (
-                  <pre className="text-xs text-muted mt-2 whitespace-pre-wrap">
+                  <pre className="text-xs mt-2 whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>
                     {this.state.errorInfo.componentStack}
                   </pre>
                 )}

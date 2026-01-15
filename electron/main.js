@@ -20,6 +20,14 @@ let configManager;
 
 function createWindow() {
   console.log('Creating Electron window...');
+  
+  // Use .ico for Windows for better taskbar support
+  const iconPath = app.isPackaged 
+    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'public', 'icon.ico')
+    : path.join(__dirname, '../public/icon.ico');
+  
+  console.log('Icon path:', iconPath);
+  
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
@@ -30,7 +38,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
     title: 'LocalDevine',
-    icon: path.join(__dirname, '../public/icon.png'),
+    icon: iconPath,
   });
 
   console.log('Window created, loading URL...');

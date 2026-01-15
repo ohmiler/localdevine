@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "main": "electron/main.js",
   "author": "Miler",
-  "description": "A modern Local Development Environment Manager",
+  "description": "A Modern Local Development Environment Manager",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -25,6 +25,7 @@
       "dist/**/*",
       "bin/**/*",
       "www/**/*",
+      "public/**/*",
       "node_modules/**/*",
       "package.json"
     ],
@@ -33,21 +34,25 @@
     },
     "win": {
       "target": "nsis",
-      "icon": "public/icon.ico",
+      "icon": "build/icon.ico",
       "forceCodeSigning": false,
       "signAndEditExecutable": false
     },
     "asar": true,
     "asarUnpack": [
-      "bin/**/*",
-      "www/**/*",
-      "public/**/*"
+      "bin/**",
+      "www/**",
+      "public/**"
     ],
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "uninstallDisplayName": "LocalDevine"
     }
   },
   "dependencies": {

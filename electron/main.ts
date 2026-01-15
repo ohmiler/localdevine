@@ -1,15 +1,15 @@
-import { app, BrowserWindow, ipcMain, shell, dialog, IpcMainEvent, IpcMainInvokeEvent } from 'electron';
+import { app, BrowserWindow, session } from 'electron';
 import path from 'path';
-import { spawn } from 'child_process';
 
 import { ServiceManager } from './services/ServiceManager';
 import logger from './services/Logger';
 import TrayManager from './services/TrayManager';
-import ConfigManager, { Config } from './services/ConfigManager';
+import ConfigManager from './services/ConfigManager';
 import HostsManager from './services/HostsManager';
-import ProjectTemplateManager, { CreateProjectOptions } from './services/ProjectTemplateManager';
+import ProjectTemplateManager from './services/ProjectTemplateManager';
 import PathResolver from './services/PathResolver';
-import { VHostConfig } from './services/ServiceManager';
+import AutoUpdater from './services/AutoUpdater';
+import { registerIPCHandlers, initializeIPC } from './ipc';
 
 // Basic error handling to catch the 'string' issue
 if (typeof app === 'undefined') {
@@ -28,6 +28,7 @@ let trayManager: TrayManager | null;
 let configManager: ConfigManager | null;
 let hostsManager: HostsManager | null;
 let projectTemplateManager: ProjectTemplateManager | null;
+let autoUpdater: AutoUpdater | null;
 
 function createWindow(): BrowserWindow {
   const pathResolver = PathResolver.getInstance();
@@ -61,244 +62,39 @@ function createWindow(): BrowserWindow {
 }
 
 // Register all IPC handlers BEFORE app ready
-function registerIPCHandlers() {
-  // All IPC handlers will be moved here
-  ipcMain.on('start-service', (event: IpcMainEvent, serviceName: 'php' | 'apache' | 'mariadb') => {
-    if (serviceManager) serviceManager.startService(serviceName);
-  });
-
-  ipcMain.on('stop-service', (event: IpcMainEvent, serviceName: 'php' | 'apache' | 'mariadb') => {
-    if (serviceManager) serviceManager.stopService(serviceName);
-  });
-
-  ipcMain.on('start-all-services', () => {
-    if (serviceManager) serviceManager.startAllServices();
-  });
-
-  ipcMain.on('stop-all-services', () => {
-    if (serviceManager) serviceManager.stopAllServices();
-  });
-
-  // IPC Handlers - Config
-  ipcMain.handle('get-version', () => {
-    return app.getVersion();
-  });
-
-  ipcMain.handle('get-config', () => {
-    return configManager ? configManager.get() : null;
-  });
-
-  ipcMain.handle('save-config', async (_event: IpcMainInvokeEvent, config: Partial<Config>) => {
-    return configManager ? configManager.save(config) : { success: false, error: 'ConfigManager not initialized' };
-  });
-
-  // IPC Handlers - Folder Operations
-  ipcMain.on('open-folder', (event: IpcMainEvent, folderType: string) => {
-    const pathResolver = PathResolver.getInstance();
-    let folderPath: string;
-    switch (folderType) {
-      case 'www':
-        folderPath = pathResolver.wwwDir;
-        break;
-      case 'config':
-        folderPath = pathResolver.basePath;
-        break;
-      case 'bin':
-        folderPath = pathResolver.binDir;
-        break;
-      default:
-        return;
-    }
-    shell.openPath(folderPath);
-  });
-
-  ipcMain.on('open-folder-path', (event: IpcMainEvent, folderPath: string) => {
-    if (folderPath) {
-      shell.openPath(folderPath);
-    }
-  });
-
-  ipcMain.on('open-terminal', () => {
-    const pathResolver = PathResolver.getInstance();
-    // Open PowerShell in www directory
-    spawn('powershell.exe', [], {
-      cwd: pathResolver.wwwDir,
-      detached: true,
-      shell: true
-    });
-  });
-
-  // IPC Handlers - Folder Selection
-  ipcMain.handle('select-folder', async () => {
-    const result = await dialog.showOpenDialog(mainWindow!, {
-      properties: ['openDirectory']
-    });
-    if (!result.canceled && result.filePaths.length > 0) {
-      return result.filePaths[0];
-    }
-    return null;
-  });
-
-  // IPC Handlers - Virtual Hosts
-  ipcMain.handle('get-vhosts', () => {
-    return configManager ? configManager.getVHosts() : [];
-  });
-
-  ipcMain.handle('add-vhost', async (_event: IpcMainInvokeEvent, vhost: Omit<VHostConfig, 'id' | 'createdAt'>) => {
-    if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
-    const result = configManager.addVHost(vhost);
-    
-    if (result.success && serviceManager) {
-      // Regenerate Apache config
-      serviceManager.generateConfigs();
-      
-      // Restart Apache to apply new config
-      await serviceManager.stopService('apache');
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await serviceManager.startService('apache');
-      
-      // Auto-add to hosts file
-      if (hostsManager) {
-        const hostsResult = await hostsManager.addEntry('127.0.0.1', vhost.domain, `LocalDevine - ${vhost.name}`);
-        if (!hostsResult.success) {
-          logger.warn(`Failed to add hosts entry: ${hostsResult.error}`);
-          // Don't fail the whole operation, just log the error
-        }
-      }
-    }
-    return result;
-  });
-
-  ipcMain.handle('remove-vhost', async (_event: IpcMainInvokeEvent, id: string) => {
-    if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
-    
-    // Get the vhost domain before removing (to remove from hosts file)
-    const vhosts = configManager.getVHosts();
-    const vhostToRemove = vhosts.find(v => v.id === id);
-    
-    const result = configManager.removeVHost(id);
-    
-    if (result.success && serviceManager) {
-      // Regenerate Apache config
-      serviceManager.generateConfigs();
-      
-      // Restart Apache to apply new config
-      await serviceManager.stopService('apache');
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await serviceManager.startService('apache');
-      
-      // Auto-remove from hosts file
-      if (hostsManager && vhostToRemove) {
-        const hostsResult = await hostsManager.removeEntry(vhostToRemove.domain);
-        if (!hostsResult.success) {
-          logger.warn(`Failed to remove hosts entry: ${hostsResult.error}`);
-        }
-      }
-    }
-    return result;
-  });
-
-  // IPC Handlers - PHP Versions
-  ipcMain.handle('get-php-versions', () => {
-    return configManager ? configManager.getPHPVersions() : [];
-  });
-
-  ipcMain.handle('set-php-version', async (_event: IpcMainInvokeEvent, version: string) => {
-    if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
-    return configManager.setPHPVersion(version);
-  });
-
-  // IPC Handlers - Hosts File
-  ipcMain.handle('get-hosts-entries', () => {
-    if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
-    return hostsManager.readHostsFile();
-  });
-
-  ipcMain.handle('add-hosts-entry', async (_event: IpcMainInvokeEvent, ip: string, hostname: string, comment?: string) => {
-    if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
-    return hostsManager.addEntry(ip, hostname, comment);
-  });
-
-  ipcMain.handle('remove-hosts-entry', async (_event: IpcMainInvokeEvent, hostname: string) => {
-    if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
-    return hostsManager.removeEntry(hostname);
-  });
-
-  ipcMain.handle('toggle-hosts-entry', async (_event: IpcMainInvokeEvent, hostname: string) => {
-    if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
-    return hostsManager.toggleEntry(hostname);
-  });
-
-  ipcMain.handle('restore-hosts-backup', async () => {
-    if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
-    return hostsManager.restoreBackup();
-  });
-
-  ipcMain.handle('check-hosts-admin-rights', () => {
-    if (!hostsManager) return false;
-    return hostsManager.checkAdminRights();
-  });
-
-  ipcMain.on('request-hosts-admin-rights', () => {
-    if (hostsManager) {
-      hostsManager.requestAdminRights();
-    }
-  });
-
-  // IPC Handlers - Project Templates
-  ipcMain.handle('get-templates', () => {
-    return projectTemplateManager ? projectTemplateManager.getTemplates() : [];
-  });
-
-  ipcMain.handle('get-projects', () => {
-    return projectTemplateManager ? projectTemplateManager.getProjects() : [];
-  });
-
-  ipcMain.handle('create-project', async (_event: IpcMainInvokeEvent, options: CreateProjectOptions) => {
-    return projectTemplateManager ? projectTemplateManager.createProject(options) : { success: false, error: 'ProjectTemplateManager not initialized' };
-  });
-
-  ipcMain.handle('delete-project', async (_event: IpcMainInvokeEvent, projectName: string) => {
-    return projectTemplateManager ? projectTemplateManager.deleteProject(projectName) : { success: false, error: 'ProjectTemplateManager not initialized' };
-  });
-
-  ipcMain.handle('open-project-folder', async (_event: IpcMainInvokeEvent, projectName: string) => {
-    if (!projectTemplateManager) return;
-    const pathResolver = PathResolver.getInstance();
-    const projectPath = path.join(pathResolver.wwwDir, projectName);
-    shell.openPath(projectPath);
-  });
-
-  ipcMain.handle('open-project-browser', async (_event: IpcMainInvokeEvent, projectName: string) => {
-    const port = configManager ? configManager.getPort('apache') : 80;
-    shell.openExternal(`http://localhost:${port}/${projectName}`);
-  });
-
-  ipcMain.on('open-browser', (event: IpcMainEvent, url: string) => {
-    shell.openExternal(url);
-  });
-}
-
 registerIPCHandlers();
 
 app.whenReady().then(() => {
+  // Set Content Security Policy
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self';"]
+      }
+    });
+  });
+
   const win = createWindow();
 
-  // Initialize config manager first
+  // Initialize managers
   configManager = new ConfigManager();
-
-  // Pass config to service manager
   serviceManager = new ServiceManager(win, configManager);
-
-  // Initialize hosts manager
   hostsManager = new HostsManager();
-
-  // Initialize project template manager
   projectTemplateManager = new ProjectTemplateManager();
+
+  // Initialize IPC with manager references
+  initializeIPC(win, serviceManager, configManager, hostsManager, projectTemplateManager);
 
   // Create system tray
   trayManager = new TrayManager(win, serviceManager, app);
   trayManager.create();
+
+  // Initialize auto updater (only in production)
+  if (app.isPackaged) {
+    autoUpdater = new AutoUpdater(win);
+    autoUpdater.checkOnStartup(10000); // Check for updates 10 seconds after startup
+  }
 });
 
 // Properly quit when all windows are closed (Windows & Linux)
@@ -314,6 +110,11 @@ app.on('activate', () => {
     const win = createWindow();
     configManager = new ConfigManager();
     serviceManager = new ServiceManager(win, configManager);
+    hostsManager = new HostsManager();
+    projectTemplateManager = new ProjectTemplateManager();
+    
+    initializeIPC(win, serviceManager, configManager, hostsManager, projectTemplateManager);
+    
     trayManager = new TrayManager(win, serviceManager, app);
     trayManager.create();
   }
@@ -340,5 +141,3 @@ app.on('will-quit', () => {
     trayManager.destroy();
   }
 });
-
-// All IPC handlers moved to registerIPCHandlers function

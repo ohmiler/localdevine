@@ -1,0 +1,278 @@
+/**
+ * IPC Handlers - Organized by module
+ * Centralizes all IPC communication between main and renderer processes
+ */
+
+import { ipcMain, shell, dialog, IpcMainEvent, IpcMainInvokeEvent, app, BrowserWindow } from 'electron';
+import { spawn } from 'child_process';
+import path from 'path';
+
+import { ServiceManager, VHostConfig } from '../services/ServiceManager';
+import ConfigManager, { Config } from '../services/ConfigManager';
+import HostsManager from '../services/HostsManager';
+import ProjectTemplateManager, { CreateProjectOptions } from '../services/ProjectTemplateManager';
+import PathResolver from '../services/PathResolver';
+import logger from '../services/Logger';
+
+// Module references - will be set during initialization
+let mainWindow: BrowserWindow | null = null;
+let serviceManager: ServiceManager | null = null;
+let configManager: ConfigManager | null = null;
+let hostsManager: HostsManager | null = null;
+let projectTemplateManager: ProjectTemplateManager | null = null;
+
+/**
+ * Initialize IPC handlers with module references
+ */
+export function initializeIPC(
+  win: BrowserWindow,
+  services: ServiceManager,
+  config: ConfigManager,
+  hosts: HostsManager,
+  projects: ProjectTemplateManager
+): void {
+  mainWindow = win;
+  serviceManager = services;
+  configManager = config;
+  hostsManager = hosts;
+  projectTemplateManager = projects;
+}
+
+/**
+ * Register all IPC handlers - call this BEFORE app.whenReady()
+ */
+export function registerIPCHandlers(): void {
+  registerServiceHandlers();
+  registerConfigHandlers();
+  registerFolderHandlers();
+  registerVHostHandlers();
+  registerHostsHandlers();
+  registerProjectHandlers();
+}
+
+// ============================================
+// Service Handlers
+// ============================================
+function registerServiceHandlers(): void {
+  ipcMain.on('start-service', (_event: IpcMainEvent, serviceName: 'php' | 'apache' | 'mariadb') => {
+    if (serviceManager) serviceManager.startService(serviceName);
+  });
+
+  ipcMain.on('stop-service', (_event: IpcMainEvent, serviceName: 'php' | 'apache' | 'mariadb') => {
+    if (serviceManager) serviceManager.stopService(serviceName);
+  });
+
+  ipcMain.on('start-all-services', () => {
+    if (serviceManager) serviceManager.startAllServices();
+  });
+
+  ipcMain.on('stop-all-services', () => {
+    if (serviceManager) serviceManager.stopAllServices();
+  });
+}
+
+// ============================================
+// Config Handlers
+// ============================================
+function registerConfigHandlers(): void {
+  ipcMain.handle('get-version', () => {
+    return app.getVersion();
+  });
+
+  ipcMain.handle('get-config', () => {
+    return configManager ? configManager.get() : null;
+  });
+
+  ipcMain.handle('save-config', async (_event: IpcMainInvokeEvent, config: Partial<Config>) => {
+    return configManager ? configManager.save(config) : { success: false, error: 'ConfigManager not initialized' };
+  });
+
+  ipcMain.handle('get-php-versions', () => {
+    return configManager ? configManager.getPHPVersions() : [];
+  });
+
+  ipcMain.handle('set-php-version', async (_event: IpcMainInvokeEvent, version: string) => {
+    if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
+    return configManager.setPHPVersion(version);
+  });
+}
+
+// ============================================
+// Folder Handlers
+// ============================================
+function registerFolderHandlers(): void {
+  ipcMain.on('open-folder', (_event: IpcMainEvent, folderType: string) => {
+    const pathResolver = PathResolver.getInstance();
+    let folderPath: string;
+    switch (folderType) {
+      case 'www':
+        folderPath = pathResolver.wwwDir;
+        break;
+      case 'config':
+        folderPath = pathResolver.basePath;
+        break;
+      case 'bin':
+        folderPath = pathResolver.binDir;
+        break;
+      default:
+        return;
+    }
+    shell.openPath(folderPath);
+  });
+
+  ipcMain.on('open-folder-path', (_event: IpcMainEvent, folderPath: string) => {
+    if (folderPath) {
+      shell.openPath(folderPath);
+    }
+  });
+
+  ipcMain.on('open-terminal', () => {
+    const pathResolver = PathResolver.getInstance();
+    spawn('powershell.exe', [], {
+      cwd: pathResolver.wwwDir,
+      detached: true,
+      shell: true
+    });
+  });
+
+  ipcMain.handle('select-folder', async () => {
+    const result = await dialog.showOpenDialog(mainWindow!, {
+      properties: ['openDirectory']
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0];
+    }
+    return null;
+  });
+
+  ipcMain.on('open-browser', (_event: IpcMainEvent, url: string) => {
+    shell.openExternal(url);
+  });
+}
+
+// ============================================
+// Virtual Hosts Handlers
+// ============================================
+function registerVHostHandlers(): void {
+  ipcMain.handle('get-vhosts', () => {
+    return configManager ? configManager.getVHosts() : [];
+  });
+
+  ipcMain.handle('add-vhost', async (_event: IpcMainInvokeEvent, vhost: Omit<VHostConfig, 'id' | 'createdAt'>) => {
+    if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
+    const result = configManager.addVHost(vhost);
+    
+    if (result.success && serviceManager) {
+      serviceManager.generateConfigs();
+      await serviceManager.stopService('apache');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await serviceManager.startService('apache');
+      
+      if (hostsManager) {
+        const hostsResult = await hostsManager.addEntry('127.0.0.1', vhost.domain, `LocalDevine - ${vhost.name}`);
+        if (!hostsResult.success) {
+          logger.warn(`Failed to add hosts entry: ${hostsResult.error}`);
+        }
+      }
+    }
+    return result;
+  });
+
+  ipcMain.handle('remove-vhost', async (_event: IpcMainInvokeEvent, id: string) => {
+    if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
+    
+    const vhosts = configManager.getVHosts();
+    const vhostToRemove = vhosts.find(v => v.id === id);
+    
+    const result = configManager.removeVHost(id);
+    
+    if (result.success && serviceManager) {
+      serviceManager.generateConfigs();
+      await serviceManager.stopService('apache');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await serviceManager.startService('apache');
+      
+      if (hostsManager && vhostToRemove) {
+        const hostsResult = await hostsManager.removeEntry(vhostToRemove.domain);
+        if (!hostsResult.success) {
+          logger.warn(`Failed to remove hosts entry: ${hostsResult.error}`);
+        }
+      }
+    }
+    return result;
+  });
+}
+
+// ============================================
+// Hosts File Handlers
+// ============================================
+function registerHostsHandlers(): void {
+  ipcMain.handle('get-hosts-entries', () => {
+    if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
+    return hostsManager.readHostsFile();
+  });
+
+  ipcMain.handle('add-hosts-entry', async (_event: IpcMainInvokeEvent, ip: string, hostname: string, comment?: string) => {
+    if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
+    return hostsManager.addEntry(ip, hostname, comment);
+  });
+
+  ipcMain.handle('remove-hosts-entry', async (_event: IpcMainInvokeEvent, hostname: string) => {
+    if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
+    return hostsManager.removeEntry(hostname);
+  });
+
+  ipcMain.handle('toggle-hosts-entry', async (_event: IpcMainInvokeEvent, hostname: string) => {
+    if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
+    return hostsManager.toggleEntry(hostname);
+  });
+
+  ipcMain.handle('restore-hosts-backup', async () => {
+    if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
+    return hostsManager.restoreBackup();
+  });
+
+  ipcMain.handle('check-hosts-admin-rights', () => {
+    if (!hostsManager) return false;
+    return hostsManager.checkAdminRights();
+  });
+
+  ipcMain.on('request-hosts-admin-rights', () => {
+    if (hostsManager) {
+      hostsManager.requestAdminRights();
+    }
+  });
+}
+
+// ============================================
+// Project Template Handlers
+// ============================================
+function registerProjectHandlers(): void {
+  ipcMain.handle('get-templates', () => {
+    return projectTemplateManager ? projectTemplateManager.getTemplates() : [];
+  });
+
+  ipcMain.handle('get-projects', () => {
+    return projectTemplateManager ? projectTemplateManager.getProjects() : [];
+  });
+
+  ipcMain.handle('create-project', async (_event: IpcMainInvokeEvent, options: CreateProjectOptions) => {
+    return projectTemplateManager ? projectTemplateManager.createProject(options) : { success: false, error: 'ProjectTemplateManager not initialized' };
+  });
+
+  ipcMain.handle('delete-project', async (_event: IpcMainInvokeEvent, projectName: string) => {
+    return projectTemplateManager ? projectTemplateManager.deleteProject(projectName) : { success: false, error: 'ProjectTemplateManager not initialized' };
+  });
+
+  ipcMain.handle('open-project-folder', async (_event: IpcMainInvokeEvent, projectName: string) => {
+    if (!projectTemplateManager) return;
+    const pathResolver = PathResolver.getInstance();
+    const projectPath = path.join(pathResolver.wwwDir, projectName);
+    shell.openPath(projectPath);
+  });
+
+  ipcMain.handle('open-project-browser', async (_event: IpcMainInvokeEvent, projectName: string) => {
+    const port = configManager ? configManager.getPort('apache') : 80;
+    shell.openExternal(`http://localhost:${port}/${projectName}`);
+  });
+}

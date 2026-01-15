@@ -39,9 +39,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openProjectFolder: (projectName) => ipcRenderer.invoke('open-project-folder', projectName),
     openProjectBrowser: (projectName) => ipcRenderer.invoke('open-project-browser', projectName),
     openBrowser: (url) => ipcRenderer.send('open-browser', url),
+    // Auto Update
+    checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+    downloadUpdate: () => ipcRenderer.invoke('download-update'),
+    installUpdate: () => ipcRenderer.invoke('install-update'),
+    getUpdateStatus: () => ipcRenderer.invoke('get-update-status'),
     // Event listeners
     on: (channel, callback) => {
-        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification'];
+        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status'];
         if (allowedChannels.includes(channel)) {
             ipcRenderer.on(channel, (event, ...args) => callback(event, ...args));
         }

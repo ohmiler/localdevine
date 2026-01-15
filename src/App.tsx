@@ -36,6 +36,7 @@ function App() {
       window.electronAPI.getVersion().then(v => setVersion(v));
 
       const handleStatus = (event: any, { service, status }: { service: keyof Services; status: ServiceStatus }) => {
+        console.log('[React] Received service-status:', service, status);
         setServices(prev => ({ ...prev, [service]: status }));
       };
 

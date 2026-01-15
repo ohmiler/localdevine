@@ -36,13 +36,13 @@ function createWindow() {
   console.log('Window created, loading URL...');
 
   // In production, load the built file
-  // In dev, load localhost
+  // In dev, load built version for consistent behavior
   if (app.isPackaged) {
     console.log('Loading production file...');
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   } else {
-    console.log('Loading development URL: http://localhost:5173');
-    mainWindow.loadURL('http://localhost:5173');
+    console.log('Loading built version...');
+    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 
   // Add debug logging

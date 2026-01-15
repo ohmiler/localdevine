@@ -536,6 +536,8 @@ ${vhostBlocks}
     }
 
     async startService(serviceName: keyof ServiceProcesses): Promise<void> {
+        console.log(`[ServiceManager] startService called for: ${serviceName}`);
+        
         if (this.processes[serviceName]) {
             this.log(serviceName, 'Already running.');
             return;
@@ -590,12 +592,17 @@ ${vhostBlocks}
         }
 
         this.log(serviceName, `Starting on port ${this.getPort(serviceName)}...`);
+        console.log(`[ServiceManager] Command: ${cmd}`);
+        console.log(`[ServiceManager] Args: ${args.join(' ')}`);
+        console.log(`[ServiceManager] CWD: ${cwd || 'undefined'}`);
 
         if (!fs.existsSync(cmd)) {
-            this.log(serviceName, `Executable not found! Please run setup script.`);
+            this.log(serviceName, `Executable not found: ${cmd}`);
+            console.log(`[ServiceManager] Executable not found: ${cmd}`);
             this.notifyStatus(serviceName, 'stopped');
             return;
         }
+        console.log(`[ServiceManager] Executable exists, spawning...`);
 
         try {
             const child = spawn(cmd, args, { cwd });
@@ -675,8 +682,12 @@ ${vhostBlocks}
     }
 
     notifyStatus(service: string, status: ServiceStatus): void {
+        console.log(`[ServiceManager] notifyStatus: ${service} -> ${status}`);
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            console.log(`[ServiceManager] Sending service-status to renderer`);
             this.mainWindow.webContents.send('service-status', { service, status });
+        } else {
+            console.log(`[ServiceManager] mainWindow not available!`);
         }
     }
 }

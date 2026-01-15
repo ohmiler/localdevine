@@ -52,6 +52,8 @@
       "installerHeaderIcon": "build/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
+      "shortcutName": "LocalDevine",
+      "perMachine": true,
       "uninstallDisplayName": "LocalDevine"
     }
   },

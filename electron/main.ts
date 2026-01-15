@@ -197,9 +197,14 @@ ipcMain.handle('add-vhost', async (event: any, vhost: Omit<VHostConfig, 'id' | '
     // Regenerate Apache config
     serviceManager.generateConfigs();
     
+    // Restart Apache to apply new config
+    await serviceManager.stopService('apache');
+    await new Promise(resolve => setTimeout(resolve, 500));
+    await serviceManager.startService('apache');
+    
     // Auto-add to hosts file
     if (hostsManager) {
-      const hostsResult = hostsManager.addEntry('127.0.0.1', vhost.domain, `LocalDevine - ${vhost.name}`);
+      const hostsResult = await hostsManager.addEntry('127.0.0.1', vhost.domain, `LocalDevine - ${vhost.name}`);
       if (!hostsResult.success) {
         console.log('Failed to add hosts entry:', hostsResult.error);
         // Don't fail the whole operation, just log the error
@@ -222,9 +227,14 @@ ipcMain.handle('remove-vhost', async (event: any, id: string) => {
     // Regenerate Apache config
     serviceManager.generateConfigs();
     
+    // Restart Apache to apply new config
+    await serviceManager.stopService('apache');
+    await new Promise(resolve => setTimeout(resolve, 500));
+    await serviceManager.startService('apache');
+    
     // Auto-remove from hosts file
     if (hostsManager && vhostToRemove) {
-      const hostsResult = hostsManager.removeEntry(vhostToRemove.domain);
+      const hostsResult = await hostsManager.removeEntry(vhostToRemove.domain);
       if (!hostsResult.success) {
         console.log('Failed to remove hosts entry:', hostsResult.error);
       }

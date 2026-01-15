@@ -5,10 +5,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const PathResolver_1 = __importDefault(require("./PathResolver"));
 class ConfigManager {
     constructor() {
-        this.configPath = path_1.default.join(__dirname, '../../config.json');
-        this.binDir = path_1.default.join(__dirname, '../../bin');
+        // Use PathResolver for correct paths in both dev and production
+        const pathResolver = PathResolver_1.default.getInstance();
+        this.configPath = pathResolver.configPath;
+        this.binDir = pathResolver.binDir;
         this.defaultConfig = {
             ports: {
                 php: 9000,

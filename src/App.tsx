@@ -45,6 +45,7 @@ function App() {
       };
 
       const handleHealth = (event: any, healthData: Record<string, ServiceHealth>) => {
+        console.log('[React] Received health-status:', healthData);
         setHealthStatus(healthData);
       };
 

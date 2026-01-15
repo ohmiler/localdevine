@@ -95,17 +95,6 @@ function HostsEditor({ onBack }: HostsEditorProps) {
     }
   };
 
-  const toggleEntry = async (hostname: string) => {
-    if (window.electronAPI) {
-      const result = await window.electronAPI.toggleHostsEntry(hostname);
-      if (result.success) {
-        await loadHostsFile();
-      } else {
-        alert(`Error: ${result.error}`);
-      }
-    }
-  };
-
   const restoreBackup = async () => {
     if (!window.confirm('Restore hosts file from backup? This will overwrite current entries.')) return;
 
@@ -252,31 +241,13 @@ function HostsEditor({ onBack }: HostsEditorProps) {
             {entries.map((entry) => (
               <div
                 key={entry.hostname}
-                className={`flex items-center justify-between p-4 rounded-xl transition-all ${
-                  entry.enabled
-                    ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30'
-                    : ''
-                }`}
-                style={{ background: entry.enabled ? undefined : 'var(--bg-tertiary)' }}
+                className="flex items-center justify-between p-4 rounded-xl transition-all"
+                style={{ background: 'var(--bg-tertiary)' }}
               >
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => toggleEntry(entry.hostname)}
-                    disabled={!hasAdminRights}
-                    className={`w-12 h-6 rounded-full transition-colors ${
-                      !hasAdminRights ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                    } ${
-                      entry.enabled
-                        ? 'bg-green-500 hover:bg-green-600'
-                        : 'bg-gray-500 hover:bg-gray-600'
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                        entry.enabled ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-lg">
+                    🌐
+                  </div>
                   <div>
                     <div className="font-bold" style={{ color: 'var(--text-on-card)' }}>{entry.hostname}</div>
                     <div className="text-sm text-blue-400">{entry.ip}</div>

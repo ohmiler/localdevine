@@ -33,7 +33,7 @@
     },
     "win": {
       "target": "nsis",
-      "icon": "public/icon.png",
+      "icon": "public/icon.ico",
       "forceCodeSigning": false,
       "signAndEditExecutable": false
     },

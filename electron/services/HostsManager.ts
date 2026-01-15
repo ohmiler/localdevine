@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
+import { app } from 'electron';
 
 export interface HostsEntry {
     ip: string;
@@ -27,7 +28,19 @@ export default class HostsManager {
 
     constructor() {
         this.hostsPath = path.join(process.env.WINDIR || 'C:\\Windows', 'System32', 'drivers', 'etc', 'hosts');
-        this.backupPath = path.join(__dirname, '../../hosts.backup');
+        
+        // Use C:\LocalDevine for backup in production, project root in dev
+        if (app.isPackaged) {
+            const localDevinePath = 'C:\\LocalDevine';
+            if (!fs.existsSync(localDevinePath)) {
+                fs.mkdirSync(localDevinePath, { recursive: true });
+            }
+            this.backupPath = path.join(localDevinePath, 'hosts.backup');
+        } else {
+            this.backupPath = path.join(__dirname, '../../hosts.backup');
+        }
+        
+        console.log('[HostsManager] Backup path:', this.backupPath);
     }
 
     // Read and parse hosts file
@@ -133,8 +146,8 @@ export default class HostsManager {
         }
     }
 
-    // Add new entry - append directly to file
-    addEntry(ip: string, hostname: string, comment?: string): HostsOperationResult {
+    // Add new entry - using elevated PowerShell
+    async addEntry(ip: string, hostname: string, comment?: string): Promise<HostsOperationResult> {
         try {
             // Create backup first
             const backupResult = this.createBackup();
@@ -167,13 +180,15 @@ export default class HostsManager {
                 newLine += `\t# ${comment}`;
             }
 
-            // Append to file (ensure newline before if needed)
+            // Write new content to temp file
             const needsNewline = !currentContent.endsWith('\n');
-            const contentToAppend = (needsNewline ? '\n' : '') + newLine + '\n';
+            const newContent = currentContent + (needsNewline ? '\n' : '') + newLine + '\n';
             
-            fs.appendFileSync(this.hostsPath, contentToAppend, 'utf8');
-            
-            return { success: true };
+            const tempFile = path.join(this.backupPath.replace('hosts.backup', 'hosts.temp'));
+            fs.writeFileSync(tempFile, newContent, 'utf8');
+
+            // Use elevated PowerShell to copy temp file to hosts
+            return await this.elevatedCopyToHosts(tempFile);
         } catch (error) {
             return { 
                 success: false, 
@@ -182,8 +197,8 @@ export default class HostsManager {
         }
     }
 
-    // Remove entry - rewrite file without the entry
-    removeEntry(hostname: string): HostsOperationResult {
+    // Remove entry - rewrite file without the entry (using elevated PowerShell)
+    async removeEntry(hostname: string): Promise<HostsOperationResult> {
         try {
             // Create backup first
             const backupResult = this.createBackup();
@@ -212,16 +227,60 @@ export default class HostsManager {
                 return { success: false, error: `Hostname ${hostname} not found` };
             }
 
-            // Write back
-            fs.writeFileSync(this.hostsPath, newLines.join('\n'), 'utf8');
-            
-            return { success: true };
+            // Write to temp file first
+            const tempFile = path.join(this.backupPath.replace('hosts.backup', 'hosts.temp'));
+            fs.writeFileSync(tempFile, newLines.join('\n'), 'utf8');
+
+            // Use elevated PowerShell to copy temp file to hosts
+            return await this.elevatedCopyToHosts(tempFile);
         } catch (error) {
             return { 
                 success: false, 
                 error: `Failed to remove entry: ${(error as Error).message}` 
             };
         }
+    }
+
+    // Use elevated PowerShell to write to hosts file
+    private elevatedCopyToHosts(sourceFile: string): Promise<HostsOperationResult> {
+        return new Promise((resolve) => {
+            // Escape paths for PowerShell
+            const srcPath = sourceFile.replace(/\\/g, '/');
+            const destPath = this.hostsPath.replace(/\\/g, '/');
+            
+            // Create a PowerShell script that copies the file
+            const scriptContent = `Copy-Item -Path '${srcPath}' -Destination '${destPath}' -Force`;
+            const scriptPath = sourceFile.replace('.temp', '.ps1');
+            
+            try {
+                fs.writeFileSync(scriptPath, scriptContent, 'utf8');
+            } catch (e) {
+                resolve({ success: false, error: `Failed to create script: ${(e as Error).message}` });
+                return;
+            }
+
+            // Run PowerShell as Admin
+            const command = `powershell -Command "Start-Process powershell -Verb RunAs -Wait -ArgumentList '-ExecutionPolicy Bypass -File \\"${scriptPath.replace(/\\/g, '/')}\\"'"`;
+            
+            exec(command, (error) => {
+                // Clean up temp files
+                try {
+                    if (fs.existsSync(sourceFile)) fs.unlinkSync(sourceFile);
+                    if (fs.existsSync(scriptPath)) fs.unlinkSync(scriptPath);
+                } catch (e) {
+                    // Ignore cleanup errors
+                }
+
+                if (error) {
+                    resolve({ 
+                        success: false, 
+                        error: `Failed to write hosts file. Please run LocalDevine as Administrator.` 
+                    });
+                } else {
+                    resolve({ success: true });
+                }
+            });
+        });
     }
 
     // Toggle entry enabled/disabled

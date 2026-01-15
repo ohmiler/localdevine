@@ -32,10 +32,14 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProjectTemplateManager = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
+const PathResolver_1 = __importDefault(require("./PathResolver"));
 class ProjectTemplateManager {
     constructor() {
         this.mainWindow = null;
@@ -65,411 +69,6 @@ echo "<p>Your PHP project is ready.</p>";
 echo "<p>PHP Version: " . phpversion() . "</p>";
 echo "<p>Server Time: " . date('Y-m-d H:i:s') . "</p>";
 ?>`
-                    },
-                    {
-                        path: '.htaccess',
-                        content: `RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php [QSA,L]`
-                    }
-                ]
-            },
-            {
-                id: 'php-mvc',
-                name: 'PHP MVC',
-                description: 'MVC pattern with routing and database',
-                icon: '🏗️',
-                category: 'php',
-                hasDatabase: true,
-                files: [
-                    {
-                        path: 'index.php',
-                        content: `<?php
-/**
- * {{PROJECT_NAME}} - PHP MVC Project
- * Created with LocalDevine
- */
-
-require_once 'config/database.php';
-require_once 'app/Router.php';
-
-$router = new Router();
-$router->run();
-?>`
-                    },
-                    {
-                        path: 'config/database.php',
-                        content: `<?php
-define('DB_HOST', '127.0.0.1');
-define('DB_PORT', 3306);
-define('DB_NAME', '{{DATABASE_NAME}}');
-define('DB_USER', 'root');
-define('DB_PASS', 'root');
-
-class Database {
-    private static $instance = null;
-    private $conn;
-
-    private function __construct() {
-        try {
-            $this->conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
-            if ($this->conn->connect_error) {
-                throw new Exception("Connection failed: " . $this->conn->connect_error);
-            }
-            $this->conn->set_charset("utf8mb4");
-        } catch (Exception $e) {
-            die("Database connection error: " . $e->getMessage());
-        }
-    }
-
-    public static function getInstance() {
-        if (self::$instance === null) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
-
-    public function getConnection() {
-        return $this->conn;
-    }
-}
-?>`
-                    },
-                    {
-                        path: 'app/Router.php',
-                        content: `<?php
-class Router {
-    private $routes = [];
-
-    public function __construct() {
-        $this->routes = [
-            '/' => 'HomeController@index',
-            '/about' => 'HomeController@about',
-        ];
-    }
-
-    public function run() {
-        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        
-        // Remove project folder name from URI
-        $parts = explode('/', trim($uri, '/'));
-        if (!empty($parts[0])) {
-            // Remove first part (project folder name)
-            $uri = '/' . implode('/', array_slice($parts, 1));
-        }
-        
-        if (isset($this->routes[$uri])) {
-            list($controller, $method) = explode('@', $this->routes[$uri]);
-            require_once "controllers/{$controller}.php";
-            $controllerInstance = new $controller();
-            $controllerInstance->$method();
-        } else {
-            $this->notFound();
-        }
-    }
-
-    private function notFound() {
-        http_response_code(404);
-        echo "<h1>404 - Page Not Found</h1>";
-    }
-}
-?>`
-                    },
-                    {
-                        path: 'app/controllers/HomeController.php',
-                        content: `<?php
-class HomeController {
-    public function index() {
-        require_once __DIR__ . '/../views/home.php';
-    }
-
-    public function about() {
-        require_once __DIR__ . '/../views/about.php';
-    }
-}
-?>`
-                    },
-                    {
-                        path: 'app/views/home.php',
-                        content: `<!DOCTYPE html>
-<html>
-<head>
-    <title>{{PROJECT_NAME}}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1 { color: #333; }
-        a { color: #007bff; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Welcome to {{PROJECT_NAME}}!</h1>
-        <p>Your PHP MVC project is ready.</p>
-        <p><a href="about">About</a></p>
-    </div>
-</body>
-</html>`
-                    },
-                    {
-                        path: 'app/views/about.php',
-                        content: `<!DOCTYPE html>
-<html>
-<head>
-    <title>About - {{PROJECT_NAME}}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1 { color: #333; }
-        a { color: #007bff; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>About {{PROJECT_NAME}}</h1>
-        <p>This is a PHP MVC project created with LocalDevine.</p>
-        <p><a href="./">Home</a></p>
-    </div>
-</body>
-</html>`
-                    },
-                    {
-                        path: 'app/models/.gitkeep',
-                        content: ''
-                    },
-                    {
-                        path: '.htaccess',
-                        content: `RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php [QSA,L]`
-                    }
-                ]
-            },
-            {
-                id: 'php-api',
-                name: 'PHP REST API',
-                description: 'REST API with JSON responses',
-                icon: '🔌',
-                category: 'php',
-                hasDatabase: true,
-                files: [
-                    {
-                        path: 'index.php',
-                        content: `<?php
-/**
- * {{PROJECT_NAME}} - REST API
- * Created with LocalDevine
- */
-
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
-
-require_once 'config/database.php';
-require_once 'api/Router.php';
-
-$router = new ApiRouter();
-$router->handleRequest();
-?>`
-                    },
-                    {
-                        path: 'config/database.php',
-                        content: `<?php
-class Database {
-    private $host = '127.0.0.1';
-    private $port = 3306;
-    private $db_name = '{{DATABASE_NAME}}';
-    private $username = 'root';
-    private $password = 'root';
-    public $conn;
-
-    public function getConnection() {
-        $this->conn = null;
-        try {
-            $this->conn = new mysqli($this->host, $this->username, $this->password, $this->db_name, $this->port);
-            $this->conn->set_charset("utf8mb4");
-        } catch (Exception $e) {
-            echo json_encode(['error' => 'Connection error: ' . $e->getMessage()]);
-        }
-        return $this->conn;
-    }
-}
-?>`
-                    },
-                    {
-                        path: 'api/Router.php',
-                        content: `<?php
-class ApiRouter {
-    public function handleRequest() {
-        $method = $_SERVER['REQUEST_METHOD'];
-        
-        // Use query parameters for routing (works with Nginx without rewrite)
-        $resource = $_GET['r'] ?? $_GET['resource'] ?? '';
-        $id = $_GET['id'] ?? null;
-
-        switch ($resource) {
-            case 'users':
-                require_once 'controllers/UserController.php';
-                $controller = new UserController();
-                $this->route($controller, $method, $id);
-                break;
-            case '':
-                $this->welcome();
-                break;
-            default:
-                $this->notFound();
-        }
-    }
-
-    private function route($controller, $method, $id) {
-        switch ($method) {
-            case 'GET':
-                $id ? $controller->show($id) : $controller->index();
-                break;
-            case 'POST':
-                $controller->store();
-                break;
-            case 'PUT':
-                $controller->update($id);
-                break;
-            case 'DELETE':
-                $controller->destroy($id);
-                break;
-            default:
-                $this->methodNotAllowed();
-        }
-    }
-
-    private function welcome() {
-        echo json_encode([
-            'message' => 'Welcome to {{PROJECT_NAME}} API',
-            'version' => '1.0.0',
-            'endpoints' => [
-                'GET ?r=users' => 'List all users',
-                'GET ?r=users&id=1' => 'Get user by ID',
-                'POST ?r=users' => 'Create user',
-                'PUT ?r=users&id=1' => 'Update user',
-                'DELETE ?r=users&id=1' => 'Delete user'
-            ]
-        ]);
-    }
-
-    private function notFound() {
-        http_response_code(404);
-        echo json_encode(['error' => 'Resource not found']);
-    }
-
-    private function methodNotAllowed() {
-        http_response_code(405);
-        echo json_encode(['error' => 'Method not allowed']);
-    }
-}
-?>`
-                    },
-                    {
-                        path: 'api/controllers/UserController.php',
-                        content: `<?php
-require_once __DIR__ . '/../../config/database.php';
-
-class UserController {
-    private $conn;
-
-    public function __construct() {
-        $database = new Database();
-        $this->conn = $database->getConnection();
-    }
-
-    public function index() {
-        $result = $this->conn->query("SELECT * FROM users ORDER BY id DESC");
-        $users = [];
-        while ($row = $result->fetch_assoc()) {
-            $users[] = $row;
-        }
-        echo json_encode(['data' => $users]);
-    }
-
-    public function show($id) {
-        $stmt = $this->conn->prepare("SELECT * FROM users WHERE id = ?");
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($user = $result->fetch_assoc()) {
-            echo json_encode(['data' => $user]);
-        } else {
-            http_response_code(404);
-            echo json_encode(['error' => 'User not found']);
-        }
-    }
-
-    public function store() {
-        $data = json_decode(file_get_contents('php://input'), true);
-        
-        $stmt = $this->conn->prepare("INSERT INTO users (name, email) VALUES (?, ?)");
-        $stmt->bind_param("ss", $data['name'], $data['email']);
-        
-        if ($stmt->execute()) {
-            http_response_code(201);
-            echo json_encode(['message' => 'User created', 'id' => $this->conn->insert_id]);
-        } else {
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to create user']);
-        }
-    }
-
-    public function update($id) {
-        $data = json_decode(file_get_contents('php://input'), true);
-        
-        $stmt = $this->conn->prepare("UPDATE users SET name = ?, email = ? WHERE id = ?");
-        $stmt->bind_param("ssi", $data['name'], $data['email'], $id);
-        
-        if ($stmt->execute()) {
-            echo json_encode(['message' => 'User updated']);
-        } else {
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to update user']);
-        }
-    }
-
-    public function destroy($id) {
-        $stmt = $this->conn->prepare("DELETE FROM users WHERE id = ?");
-        $stmt->bind_param("i", $id);
-        
-        if ($stmt->execute()) {
-            echo json_encode(['message' => 'User deleted']);
-        } else {
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to delete user']);
-        }
-    }
-}
-?>`
-                    },
-                    {
-                        path: 'database/schema.sql',
-                        content: `-- {{PROJECT_NAME}} Database Schema
--- Run this SQL to create the necessary tables
-
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- Sample data
-INSERT INTO users (name, email) VALUES 
-('John Doe', 'john@example.com'),
-('Jane Smith', 'jane@example.com');`
                     },
                     {
                         path: '.htaccess',
@@ -675,7 +274,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 ]
             }
         ];
-        this.wwwPath = path.join(__dirname, '../../www');
+        // Use PathResolver for correct paths in both dev and production
+        const pathResolver = PathResolver_1.default.getInstance();
+        this.wwwPath = pathResolver.wwwDir;
     }
     setMainWindow(window) {
         this.mainWindow = window;
@@ -810,16 +411,33 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-    async deleteProject(projectName) {
+    deleteProject(projectName) {
         const projectPath = path.join(this.wwwPath, projectName);
         try {
             if (!fs.existsSync(projectPath)) {
                 return { success: false, message: 'Project not found' };
             }
-            fs.rmSync(projectPath, { recursive: true, force: true });
+            // Additional check: ensure we're not deleting system folders
+            if (projectName === '.' || projectName === '..' || projectName.includes('..')) {
+                return { success: false, message: 'Invalid project name' };
+            }
+            // Try to delete with more robust error handling
+            try {
+                fs.rmSync(projectPath, { recursive: true, force: true, maxRetries: 3 });
+            }
+            catch (rmError) {
+                // If rmSync fails, try alternative method
+                console.log('rmSync failed, trying alternative method:', rmError.message);
+                // Check if folder is locked by another process
+                if (rmError.code === 'EBUSY' || rmError.code === 'ENOTEMPTY') {
+                    return { success: false, message: 'Project is in use. Please close any files or processes using this project and try again.' };
+                }
+                throw rmError; // Re-throw other errors
+            }
             return { success: true, message: 'Project deleted successfully' };
         }
         catch (error) {
+            console.error('Delete project error:', error);
             return { success: false, message: `Error deleting project: ${error.message}` };
         }
     }

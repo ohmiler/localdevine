@@ -7,6 +7,7 @@ exports.ServiceManager = void 0;
 const child_process_1 = require("child_process");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
+const PathResolver_1 = __importDefault(require("./PathResolver"));
 class ServiceManager {
     constructor(mainWindow, configManager) {
         this.healthCheckInterval = null;
@@ -19,8 +20,12 @@ class ServiceManager {
             apache: null,
             mariadb: null
         };
-        this.binDir = path_1.default.join(__dirname, '../../bin');
-        this.wwwDir = path_1.default.join(__dirname, '../../www');
+        // Use PathResolver for correct paths in both dev and production
+        this.pathResolver = PathResolver_1.default.getInstance();
+        this.binDir = this.pathResolver.binDir;
+        this.wwwDir = this.pathResolver.wwwDir;
+        // Log paths for debugging
+        this.pathResolver.logPaths();
         // Initialize health status
         this.initializeHealthStatus();
     }
@@ -72,7 +77,11 @@ class ServiceManager {
         }
         // Send health status to UI
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            console.log('[ServiceManager] Sending health-status to renderer');
             this.mainWindow.webContents.send('health-status', this.healthStatus);
+        }
+        else {
+            console.log('[ServiceManager] Cannot send health-status: window is destroyed or null');
         }
     }
     async checkServiceHealth(serviceName) {
@@ -339,6 +348,21 @@ LogLevel warn
     LogFormat "%h %l %u %t \\"%r\\" %>s %b" common
     CustomLog "logs/access.log" common
 </IfModule>
+
+# Enable NameVirtualHost
+NameVirtualHost *:${apachePort}
+
+# Default VirtualHost for localhost (must be first!)
+<VirtualHost *:${apachePort}>
+    ServerName localhost
+    ServerAlias 127.0.0.1
+    DocumentRoot "${wwwPath}"
+    <Directory "${wwwPath}">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
 ${vhostBlocks}
 `;
         fs_1.default.writeFileSync(apacheConfPath, confContent.trim());
@@ -383,17 +407,24 @@ ${vhostBlocks}
         await Promise.all(stopPromises);
     }
     async initMariaDB(cwd) {
-        const dataDir = path_1.default.join(cwd, 'data');
-        if (!fs_1.default.existsSync(dataDir)) {
-            this.log('mariadb', 'Initializing data directory... (This may take a moment)');
+        const dataDir = this.pathResolver.mariadbDataDir;
+        if (!fs_1.default.existsSync(dataDir) || fs_1.default.readdirSync(dataDir).length === 0) {
+            this.log('mariadb', `Initializing data directory at ${dataDir}...`);
             const initCmd = path_1.default.join(cwd, 'bin/mysql_install_db.exe');
+            // Ensure directory exists
+            if (!fs_1.default.existsSync(dataDir)) {
+                fs_1.default.mkdirSync(dataDir, { recursive: true });
+            }
             return new Promise((resolve, reject) => {
-                const initProcess = (0, child_process_1.spawn)(initCmd, ['--datadir=data'], { cwd });
+                const initProcess = (0, child_process_1.spawn)(initCmd, [`--datadir=${dataDir}`], { cwd });
                 initProcess.stdout.on('data', (data) => this.log('mariadb', data));
                 initProcess.stderr.on('data', (data) => this.log('mariadb', data));
-                initProcess.on('close', (code) => {
+                initProcess.on('close', async (code) => {
                     if (code === 0) {
                         this.log('mariadb', 'Data directory initialized.');
+                        // Set root password after initialization
+                        await this.setRootPassword(cwd, dataDir);
+                        this.log('mariadb', 'Root password set to "root"');
                         resolve();
                     }
                     else {
@@ -409,7 +440,62 @@ ${vhostBlocks}
         }
         return Promise.resolve();
     }
+    // Set root password after MariaDB initialization
+    async setRootPassword(cwd, dataDir) {
+        return new Promise((resolve, reject) => {
+            const mysqldCmd = path_1.default.join(cwd, 'bin/mysqld.exe');
+            const mysqlCmd = path_1.default.join(cwd, 'bin/mysql.exe');
+            const port = 3307; // Temporary port for setup
+            // Start MariaDB temporarily
+            this.log('mariadb', 'Starting temporary MariaDB to set password...');
+            const tempServer = (0, child_process_1.spawn)(mysqldCmd, [
+                '--console',
+                `--port=${port}`,
+                `--datadir=${dataDir}`,
+                '--skip-grant-tables'
+            ], { cwd });
+            // Wait for server to start
+            setTimeout(async () => {
+                try {
+                    // Run SQL to set password
+                    const sqlProcess = (0, child_process_1.spawn)(mysqlCmd, [
+                        '-u', 'root',
+                        '-P', port.toString(),
+                        '-e', "FLUSH PRIVILEGES; ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'; FLUSH PRIVILEGES;"
+                    ], { cwd });
+                    sqlProcess.on('close', (code) => {
+                        // Kill temp server
+                        tempServer.kill();
+                        if (code === 0) {
+                            this.log('mariadb', 'Password set successfully');
+                            resolve();
+                        }
+                        else {
+                            // If ALTER USER fails, try UPDATE
+                            const sqlProcess2 = (0, child_process_1.spawn)(mysqlCmd, [
+                                '-u', 'root',
+                                '-P', port.toString(),
+                                '-e', "FLUSH PRIVILEGES; UPDATE mysql.user SET Password=PASSWORD('root') WHERE User='root'; FLUSH PRIVILEGES;"
+                            ], { cwd });
+                            sqlProcess2.on('close', () => {
+                                tempServer.kill();
+                                resolve();
+                            });
+                        }
+                    });
+                }
+                catch (e) {
+                    tempServer.kill();
+                    resolve(); // Continue even if password setting fails
+                }
+            }, 3000);
+            tempServer.on('error', () => {
+                resolve(); // Continue even if failed
+            });
+        });
+    }
     async startService(serviceName) {
+        console.log(`[ServiceManager] startService called for: ${serviceName}`);
         if (this.processes[serviceName]) {
             this.log(serviceName, 'Already running.');
             return;
@@ -428,6 +514,17 @@ ${vhostBlocks}
                 this.generateConfigs(); // Generate before start
                 cmd = path_1.default.join(this.binDir, 'apache/bin/httpd.exe');
                 cwd = path_1.default.join(this.binDir, 'apache');
+                // Clean up stale pid file to prevent "Unclean shutdown" warning
+                const pidFile = path_1.default.join(this.binDir, 'apache/logs/httpd.pid');
+                if (fs_1.default.existsSync(pidFile)) {
+                    try {
+                        fs_1.default.unlinkSync(pidFile);
+                        this.log('apache', 'Cleaned up stale PID file');
+                    }
+                    catch (e) {
+                        // Ignore if can't delete
+                    }
+                }
                 args = ['-X']; // Run in foreground (single process mode)
                 break;
             case 'mariadb':
@@ -442,18 +539,24 @@ ${vhostBlocks}
                     this.notifyStatus(serviceName, 'stopped');
                     return;
                 }
-                args = ['--console', `--port=${mariadbPort}`];
+                // Use external data directory at C:\LocalDevine\data\mariadb
+                args = ['--console', `--port=${mariadbPort}`, `--datadir=${this.pathResolver.mariadbDataDir}`];
                 break;
             default:
                 this.log('system', `Unknown service: ${serviceName}`);
                 return;
         }
         this.log(serviceName, `Starting on port ${this.getPort(serviceName)}...`);
+        console.log(`[ServiceManager] Command: ${cmd}`);
+        console.log(`[ServiceManager] Args: ${args.join(' ')}`);
+        console.log(`[ServiceManager] CWD: ${cwd || 'undefined'}`);
         if (!fs_1.default.existsSync(cmd)) {
-            this.log(serviceName, `Executable not found! Please run setup script.`);
+            this.log(serviceName, `Executable not found: ${cmd}`);
+            console.log(`[ServiceManager] Executable not found: ${cmd}`);
             this.notifyStatus(serviceName, 'stopped');
             return;
         }
+        console.log(`[ServiceManager] Executable exists, spawning...`);
         try {
             const child = (0, child_process_1.spawn)(cmd, args, { cwd });
             this.processes[serviceName] = child;
@@ -529,8 +632,13 @@ ${vhostBlocks}
         });
     }
     notifyStatus(service, status) {
+        console.log(`[ServiceManager] notifyStatus: ${service} -> ${status}`);
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            console.log(`[ServiceManager] Sending service-status to renderer`);
             this.mainWindow.webContents.send('service-status', { service, status });
+        }
+        else {
+            console.log(`[ServiceManager] mainWindow not available!`);
         }
     }
 }

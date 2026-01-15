@@ -5,10 +5,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const child_process_1 = require("child_process");
+const electron_1 = require("electron");
 class HostsManager {
     constructor() {
         this.hostsPath = path_1.default.join(process.env.WINDIR || 'C:\\Windows', 'System32', 'drivers', 'etc', 'hosts');
-        this.backupPath = path_1.default.join(__dirname, '../../hosts.backup');
+        // Use C:\LocalDevine for backup in production, project root in dev
+        if (electron_1.app.isPackaged) {
+            const localDevinePath = 'C:\\LocalDevine';
+            if (!fs_1.default.existsSync(localDevinePath)) {
+                fs_1.default.mkdirSync(localDevinePath, { recursive: true });
+            }
+            this.backupPath = path_1.default.join(localDevinePath, 'hosts.backup');
+        }
+        else {
+            this.backupPath = path_1.default.join(__dirname, '../../hosts.backup');
+        }
+        console.log('[HostsManager] Backup path:', this.backupPath);
     }
     // Read and parse hosts file
     readHostsFile() {
@@ -98,32 +111,43 @@ class HostsManager {
             };
         }
     }
-    // Add new entry
-    addEntry(ip, hostname, comment) {
+    // Add new entry - using elevated PowerShell
+    async addEntry(ip, hostname, comment) {
         try {
-            const result = this.readHostsFile();
-            if (!result.success || !result.entries) {
-                return result;
+            // Create backup first
+            const backupResult = this.createBackup();
+            if (!backupResult.success) {
+                return backupResult;
             }
+            // Read current content
+            const currentContent = fs_1.default.readFileSync(this.hostsPath, 'utf8');
             // Check if hostname already exists
-            const existing = result.entries.find(e => e.hostname.toLowerCase() === hostname.toLowerCase());
-            if (existing) {
-                return { success: false, error: `Hostname ${hostname} already exists` };
+            const lines = currentContent.split('\n');
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#'))
+                    continue;
+                const parts = trimmed.split(/\s+/);
+                if (parts.length >= 2 && parts[1].toLowerCase() === hostname.toLowerCase()) {
+                    return { success: false, error: `Hostname ${hostname} already exists` };
+                }
             }
             // Validate IP
             if (!this.isValidIP(ip)) {
                 return { success: false, error: 'Invalid IP address format' };
             }
-            // Add new entry at the end
-            const newEntry = {
-                ip,
-                hostname,
-                comment,
-                enabled: true,
-                line: result.entries.length
-            };
-            result.entries.push(newEntry);
-            return this.writeHostsFile(result.entries);
+            // Build new line
+            let newLine = `${ip}\t${hostname}`;
+            if (comment) {
+                newLine += `\t# ${comment}`;
+            }
+            // Write new content to temp file
+            const needsNewline = !currentContent.endsWith('\n');
+            const newContent = currentContent + (needsNewline ? '\n' : '') + newLine + '\n';
+            const tempFile = path_1.default.join(this.backupPath.replace('hosts.backup', 'hosts.temp'));
+            fs_1.default.writeFileSync(tempFile, newContent, 'utf8');
+            // Use elevated PowerShell to copy temp file to hosts
+            return await this.elevatedCopyToHosts(tempFile);
         }
         catch (error) {
             return {
@@ -132,18 +156,37 @@ class HostsManager {
             };
         }
     }
-    // Remove entry
-    removeEntry(hostname) {
+    // Remove entry - rewrite file without the entry (using elevated PowerShell)
+    async removeEntry(hostname) {
         try {
-            const result = this.readHostsFile();
-            if (!result.success || !result.entries) {
-                return result;
+            // Create backup first
+            const backupResult = this.createBackup();
+            if (!backupResult.success) {
+                return backupResult;
             }
-            const filteredEntries = result.entries.filter(e => e.hostname.toLowerCase() !== hostname.toLowerCase());
-            if (filteredEntries.length === result.entries.length) {
+            // Read current content
+            const currentContent = fs_1.default.readFileSync(this.hostsPath, 'utf8');
+            const lines = currentContent.split('\n');
+            let found = false;
+            const newLines = lines.filter(line => {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#'))
+                    return true;
+                const parts = trimmed.split(/\s+/);
+                if (parts.length >= 2 && parts[1].toLowerCase() === hostname.toLowerCase()) {
+                    found = true;
+                    return false; // Remove this line
+                }
+                return true;
+            });
+            if (!found) {
                 return { success: false, error: `Hostname ${hostname} not found` };
             }
-            return this.writeHostsFile(filteredEntries);
+            // Write to temp file first
+            const tempFile = path_1.default.join(this.backupPath.replace('hosts.backup', 'hosts.temp'));
+            fs_1.default.writeFileSync(tempFile, newLines.join('\n'), 'utf8');
+            // Use elevated PowerShell to copy temp file to hosts
+            return await this.elevatedCopyToHosts(tempFile);
         }
         catch (error) {
             return {
@@ -151,6 +194,47 @@ class HostsManager {
                 error: `Failed to remove entry: ${error.message}`
             };
         }
+    }
+    // Use elevated PowerShell to write to hosts file
+    elevatedCopyToHosts(sourceFile) {
+        return new Promise((resolve) => {
+            // Escape paths for PowerShell
+            const srcPath = sourceFile.replace(/\\/g, '/');
+            const destPath = this.hostsPath.replace(/\\/g, '/');
+            // Create a PowerShell script that copies the file
+            const scriptContent = `Copy-Item -Path '${srcPath}' -Destination '${destPath}' -Force`;
+            const scriptPath = sourceFile.replace('.temp', '.ps1');
+            try {
+                fs_1.default.writeFileSync(scriptPath, scriptContent, 'utf8');
+            }
+            catch (e) {
+                resolve({ success: false, error: `Failed to create script: ${e.message}` });
+                return;
+            }
+            // Run PowerShell as Admin
+            const command = `powershell -Command "Start-Process powershell -Verb RunAs -Wait -ArgumentList '-ExecutionPolicy Bypass -File \\"${scriptPath.replace(/\\/g, '/')}\\"'"`;
+            (0, child_process_1.exec)(command, (error) => {
+                // Clean up temp files
+                try {
+                    if (fs_1.default.existsSync(sourceFile))
+                        fs_1.default.unlinkSync(sourceFile);
+                    if (fs_1.default.existsSync(scriptPath))
+                        fs_1.default.unlinkSync(scriptPath);
+                }
+                catch (e) {
+                    // Ignore cleanup errors
+                }
+                if (error) {
+                    resolve({
+                        success: false,
+                        error: `Failed to write hosts file. Please run LocalDevine as Administrator.`
+                    });
+                }
+                else {
+                    resolve({ success: true });
+                }
+            });
+        });
     }
     // Toggle entry enabled/disabled
     toggleEntry(hostname) {

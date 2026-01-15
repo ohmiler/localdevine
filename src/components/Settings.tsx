@@ -15,6 +15,9 @@ function Settings({ onBack }: SettingsProps) {
     const [phpVersions, setPHPVersions] = useState<PHPVersion[]>([]);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
+    const [version, setVersion] = useState('0.0.0');
+    const [checkingUpdate, setCheckingUpdate] = useState(false);
+    const [updateStatus, setUpdateStatus] = useState('');
 
     useEffect(() => {
         if (window.electronAPI) {
@@ -24,8 +27,39 @@ function Settings({ onBack }: SettingsProps) {
             window.electronAPI.getPHPVersions().then(versions => {
                 setPHPVersions(versions || []);
             });
+            window.electronAPI.getVersion().then(v => setVersion(v));
         }
     }, []);
+
+    const checkForUpdate = async () => {
+        setCheckingUpdate(true);
+        setUpdateStatus('Checking for updates...');
+        
+        try {
+            const response = await fetch('https://api.github.com/repos/ohmiler/localdevine/releases/latest', {
+                headers: { 'User-Agent': 'LocalDevine-Update-Checker' }
+            });
+            
+            if (response.status === 404) {
+                setUpdateStatus('✓ You have the latest version (no releases yet)');
+            } else if (response.ok) {
+                const release = await response.json();
+                const latestVersion = release.tag_name.replace('v', '');
+                
+                if (latestVersion > version) {
+                    setUpdateStatus(`🎉 Update available: v${latestVersion}`);
+                } else {
+                    setUpdateStatus('✓ You have the latest version');
+                }
+            } else {
+                setUpdateStatus('⚠️ Could not check for updates');
+            }
+        } catch (error) {
+            setUpdateStatus('⚠️ Network error - please try again');
+        }
+        
+        setCheckingUpdate(false);
+    };
 
     const handlePortChange = (service: keyof Config['ports'], value: string) => {
         const port = parseInt(value, 10) || 0;
@@ -221,6 +255,49 @@ function Settings({ onBack }: SettingsProps) {
 
                     <p className="mt-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
                         ℹ️ Changes will apply on next app launch.
+                    </p>
+                </div>
+
+                {/* Update Check */}
+                <div className="card p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-lg">
+                            🔄
+                        </div>
+                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Updates</h2>
+                    </div>
+
+                    <div className="p-4 rounded-xl mb-4" style={{ background: 'var(--bg-tertiary)' }}>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="font-semibold" style={{ color: 'var(--text-on-card)' }}>Current Version</p>
+                                <p className="text-2xl font-bold text-gradient">v{version}</p>
+                            </div>
+                            <button
+                                onClick={checkForUpdate}
+                                disabled={checkingUpdate}
+                                className={`px-6 py-3 rounded-xl font-semibold transition-all ${checkingUpdate
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
+                                }`}
+                            >
+                                {checkingUpdate ? '⏳ Checking...' : '🔍 Check for Updates'}
+                            </button>
+                        </div>
+                    </div>
+
+                    {updateStatus && (
+                        <div className={`p-3 rounded-lg text-sm font-medium ${
+                            updateStatus.includes('✓') ? 'bg-green-500/20 text-green-400' :
+                            updateStatus.includes('🎉') ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                            {updateStatus}
+                        </div>
+                    )}
+
+                    <p className="mt-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        ℹ️ LocalDevine checks for updates automatically on startup.
                     </p>
                 </div>
 

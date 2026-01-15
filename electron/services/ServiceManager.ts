@@ -51,6 +51,7 @@ export class ServiceManager {
     private mainWindow: MainWindow;
     private configManager: ConfigManager | null;
     private processes: ServiceProcesses;
+    private pathResolver: PathResolver;
     private binDir: string;
     private wwwDir: string;
     private healthCheckInterval: NodeJS.Timeout | null = null;
@@ -67,12 +68,12 @@ export class ServiceManager {
         };
         
         // Use PathResolver for correct paths in both dev and production
-        const pathResolver = PathResolver.getInstance();
-        this.binDir = pathResolver.binDir;
-        this.wwwDir = pathResolver.wwwDir;
+        this.pathResolver = PathResolver.getInstance();
+        this.binDir = this.pathResolver.binDir;
+        this.wwwDir = this.pathResolver.wwwDir;
         
         // Log paths for debugging
-        pathResolver.logPaths();
+        this.pathResolver.logPaths();
         
         // Initialize health status
         this.initializeHealthStatus();
@@ -133,7 +134,10 @@ export class ServiceManager {
 
         // Send health status to UI
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            console.log('[ServiceManager] Sending health-status to renderer');
             this.mainWindow.webContents.send('health-status', this.healthStatus);
+        } else {
+            console.log('[ServiceManager] Cannot send health-status: window is destroyed or null');
         }
     }
 
@@ -453,6 +457,21 @@ LogLevel warn
     LogFormat "%h %l %u %t \\"%r\\" %>s %b" common
     CustomLog "logs/access.log" common
 </IfModule>
+
+# Enable NameVirtualHost
+NameVirtualHost *:${apachePort}
+
+# Default VirtualHost for localhost (must be first!)
+<VirtualHost *:${apachePort}>
+    ServerName localhost
+    ServerAlias 127.0.0.1
+    DocumentRoot "${wwwPath}"
+    <Directory "${wwwPath}">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
 ${vhostBlocks}
 `;
         fs.writeFileSync(apacheConfPath, confContent.trim());
@@ -505,20 +524,30 @@ ${vhostBlocks}
     }
 
     async initMariaDB(cwd: string): Promise<void> {
-        const dataDir = path.join(cwd, 'data');
-        if (!fs.existsSync(dataDir)) {
-            this.log('mariadb', 'Initializing data directory... (This may take a moment)');
+        const dataDir = this.pathResolver.mariadbDataDir;
+        if (!fs.existsSync(dataDir) || fs.readdirSync(dataDir).length === 0) {
+            this.log('mariadb', `Initializing data directory at ${dataDir}...`);
             const initCmd = path.join(cwd, 'bin/mysql_install_db.exe');
 
+            // Ensure directory exists
+            if (!fs.existsSync(dataDir)) {
+                fs.mkdirSync(dataDir, { recursive: true });
+            }
+
             return new Promise((resolve, reject) => {
-                const initProcess = spawn(initCmd, ['--datadir=data'], { cwd });
+                const initProcess = spawn(initCmd, [`--datadir=${dataDir}`], { cwd });
 
                 initProcess.stdout.on('data', (data) => this.log('mariadb', data));
                 initProcess.stderr.on('data', (data) => this.log('mariadb', data));
 
-                initProcess.on('close', (code) => {
+                initProcess.on('close', async (code) => {
                     if (code === 0) {
                         this.log('mariadb', 'Data directory initialized.');
+                        
+                        // Set root password after initialization
+                        await this.setRootPassword(cwd, dataDir);
+                        
+                        this.log('mariadb', 'Root password set to "root"');
                         resolve();
                     } else {
                         this.log('mariadb', `Initialization failed with code ${code}`);
@@ -533,6 +562,65 @@ ${vhostBlocks}
             });
         }
         return Promise.resolve();
+    }
+
+    // Set root password after MariaDB initialization
+    private async setRootPassword(cwd: string, dataDir: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const mysqldCmd = path.join(cwd, 'bin/mysqld.exe');
+            const mysqlCmd = path.join(cwd, 'bin/mysql.exe');
+            const port = 3307; // Temporary port for setup
+
+            // Start MariaDB temporarily
+            this.log('mariadb', 'Starting temporary MariaDB to set password...');
+            const tempServer = spawn(mysqldCmd, [
+                '--console',
+                `--port=${port}`,
+                `--datadir=${dataDir}`,
+                '--skip-grant-tables'
+            ], { cwd });
+
+            // Wait for server to start
+            setTimeout(async () => {
+                try {
+                    // Run SQL to set password
+                    const sqlProcess = spawn(mysqlCmd, [
+                        '-u', 'root',
+                        '-P', port.toString(),
+                        '-e', "FLUSH PRIVILEGES; ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'; FLUSH PRIVILEGES;"
+                    ], { cwd });
+
+                    sqlProcess.on('close', (code) => {
+                        // Kill temp server
+                        tempServer.kill();
+                        
+                        if (code === 0) {
+                            this.log('mariadb', 'Password set successfully');
+                            resolve();
+                        } else {
+                            // If ALTER USER fails, try UPDATE
+                            const sqlProcess2 = spawn(mysqlCmd, [
+                                '-u', 'root',
+                                '-P', port.toString(),
+                                '-e', "FLUSH PRIVILEGES; UPDATE mysql.user SET Password=PASSWORD('root') WHERE User='root'; FLUSH PRIVILEGES;"
+                            ], { cwd });
+
+                            sqlProcess2.on('close', () => {
+                                tempServer.kill();
+                                resolve();
+                            });
+                        }
+                    });
+                } catch (e) {
+                    tempServer.kill();
+                    resolve(); // Continue even if password setting fails
+                }
+            }, 3000);
+
+            tempServer.on('error', () => {
+                resolve(); // Continue even if failed
+            });
+        });
     }
 
     async startService(serviceName: keyof ServiceProcesses): Promise<void> {
@@ -584,7 +672,8 @@ ${vhostBlocks}
                     this.notifyStatus(serviceName, 'stopped');
                     return;
                 }
-                args = ['--console', `--port=${mariadbPort}`];
+                // Use external data directory at C:\LocalDevine\data\mariadb
+                args = ['--console', `--port=${mariadbPort}`, `--datadir=${this.pathResolver.mariadbDataDir}`];
                 break;
             default:
                 this.log('system', `Unknown service: ${serviceName}`);

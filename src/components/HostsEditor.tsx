@@ -124,10 +124,10 @@ function HostsEditor({ onBack }: HostsEditorProps) {
     <div className="min-h-screen p-8">
       <header className="mb-10 flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold mb-2 text-gradient">
+          <h1 className="text-3xl font-display mb-2 text-gradient">
             📝 Hosts File Editor
           </h1>
-          <p className="text-lg text-gradient">Manage Windows hosts file entries</p>
+          <p className="text-lg text-gradient opacity-90">Manage Windows hosts file entries</p>
         </div>
         <button
           onClick={onBack}

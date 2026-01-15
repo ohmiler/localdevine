@@ -138,7 +138,7 @@ function ProjectTemplates() {
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-xl">
                 🗑️
               </div>
-              <h3 className="text-lg font-bold" style={{ color: 'var(--text-on-card)' }}>Confirm Delete</h3>
+              <h3 className="text-lg font-heading" style={{ color: 'var(--text-on-card)' }}>Confirm Delete</h3>
             </div>
             <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
               Are you sure you want to delete "<strong>{deleteConfirm.project}</strong>"? This action cannot be undone.
@@ -214,7 +214,7 @@ function ProjectTemplates() {
       {selectedTemplate && (
         <div className="card p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold" style={{ color: 'var(--text-on-card)' }}>
+            <h3 className="text-lg font-heading" style={{ color: 'var(--text-on-card)' }}>
               ✨ Create New Project
             </h3>
             <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg">

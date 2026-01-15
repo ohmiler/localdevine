@@ -97,10 +97,10 @@ function Settings({ onBack }: SettingsProps) {
         <div className="min-h-screen p-8">
             <header className="mb-10 flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold mb-2 text-gradient">
+                    <h1 className="text-3xl font-display mb-2 text-gradient">
                         ⚙️ Settings
                     </h1>
-                    <p className="text-lg text-gradient">Configure your development environment</p>
+                    <p className="text-lg text-gradient opacity-90">Configure your development environment</p>
                 </div>
                 <button
                     onClick={onBack}
@@ -117,7 +117,7 @@ function Settings({ onBack }: SettingsProps) {
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-lg">
                             🔌
                         </div>
-                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Port Configuration</h2>
+                        <h2 className="text-xl font-heading" style={{ color: 'var(--text-on-card)' }}>Port Configuration</h2>
                     </div>
 
                     <div className="space-y-4">
@@ -181,7 +181,7 @@ function Settings({ onBack }: SettingsProps) {
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-lg">
                             🐘
                         </div>
-                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>PHP Version</h2>
+                        <h2 className="text-xl font-heading" style={{ color: 'var(--text-on-card)' }}>PHP Version</h2>
                     </div>
 
                     {phpVersions.length === 0 ? (
@@ -229,7 +229,7 @@ function Settings({ onBack }: SettingsProps) {
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-lg">
                             🚀
                         </div>
-                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Startup Options</h2>
+                        <h2 className="text-xl font-heading" style={{ color: 'var(--text-on-card)' }}>Startup Options</h2>
                     </div>
 
                     <div className="space-y-4">
@@ -264,14 +264,14 @@ function Settings({ onBack }: SettingsProps) {
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-lg">
                             🔄
                         </div>
-                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Updates</h2>
+                        <h2 className="text-xl font-heading" style={{ color: 'var(--text-on-card)' }}>Updates</h2>
                     </div>
 
                     <div className="p-4 rounded-xl mb-4" style={{ background: 'var(--bg-tertiary)' }}>
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="font-semibold" style={{ color: 'var(--text-on-card)' }}>Current Version</p>
-                                <p className="text-2xl font-bold text-gradient">v{version}</p>
+                                <p className="text-2xl font-heading text-gradient" style={{ fontFamily: "'JetBrains Mono', monospace" }}>v{version}</p>
                             </div>
                             <button
                                 onClick={checkForUpdate}

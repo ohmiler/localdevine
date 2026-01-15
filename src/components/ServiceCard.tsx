@@ -57,7 +57,7 @@ function ServiceCard({ service, status, health, onToggle }: ServiceCardProps) {
                         {icon}
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>{displayName}</h2>
+                        <h2 className="text-xl font-heading" style={{ color: 'var(--text-on-card)' }}>{displayName}</h2>
                         <p className={`text-sm font-medium ${statusInfo.color}`}>
                             {statusInfo.label}
                         </p>

@@ -178,10 +178,10 @@ function App() {
       <div className="min-h-screen p-8">
         <header className="mb-10 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold mb-2 text-gradient">
+            <h1 className="text-3xl font-display mb-2 text-gradient">
               📦 Project Templates
             </h1>
-            <p className="text-lg text-gradient">Create projects from templates</p>
+            <p className="text-lg text-gradient opacity-90">Create projects from templates</p>
           </div>
           <button
             onClick={() => setCurrentPage('home')}
@@ -200,10 +200,10 @@ function App() {
     <div className="min-h-screen p-8">
       <header className="mb-10 flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-bold mb-2 text-gradient">
+          <h1 className="text-4xl font-display mb-2 text-gradient">
             LocalDevine
           </h1>
-          <p className="text-lg font-medium text-gradient">The Modern PHP Development Environment</p>
+          <p className="text-lg font-medium text-gradient opacity-90">The Modern PHP Development Environment</p>
         </div>
         <div className="flex items-center gap-4">
           <button
@@ -230,7 +230,7 @@ function App() {
           >
             ⚙️ Settings
           </button>
-          <div className="text-sm text-muted font-mono">v{version}</div>
+          <div className="text-sm text-muted font-mono opacity-75">v{version}</div>
         </div>
       </header>
 

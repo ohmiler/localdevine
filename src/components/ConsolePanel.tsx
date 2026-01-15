@@ -39,11 +39,11 @@ function ConsolePanel({ logs }: ConsolePanelProps) {
                     <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                     <div className="w-3 h-3 rounded-full bg-green-500"></div>
                 </div>
-                <span className="text-sm font-medium ml-2" style={{ color: 'var(--text-on-card)' }}>
+                <span className="text-sm font-semibold ml-2" style={{ color: 'var(--text-on-card)' }}>
                     Console Output
                 </span>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 font-mono text-xs" style={{ background: 'var(--bg-tertiary)' }}>
+            <div className="flex-1 overflow-y-auto p-4 text-[13px] leading-relaxed" style={{ background: 'var(--bg-tertiary)', fontFamily: "'JetBrains Mono', monospace" }}>
                 {logs.length === 0 ? (
                     <div className="italic" style={{ color: 'var(--text-secondary)' }}>
                         💡 Ready to start services...

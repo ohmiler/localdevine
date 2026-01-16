@@ -14,7 +14,7 @@
   <a href="#installation">Installation</a> •
   <a href="#usage">Usage</a> •
   <a href="#documentation">Documentation</a> •
-  <a href="#contributing">Contributing</a>
+  <a href="#license">License</a>
 </p>
 
 ---
@@ -154,13 +154,20 @@ localdevine/
 
 MIT License - ใช้งานได้ฟรี ทั้งส่วนตัวและเชิงพาณิชย์
 
-## 🤝 Contributing
+**หมายเหตุ:** 
+- ✅ คุณสามารถใช้โปรแกรมนี้ในการทำงานหาเงินได้ (เช่น รับงานลูกค้า, ใช้ในบริษัท)
+- ✅ คุณสามารถแก้ไข แจกจ่าย และรวมในโปรเจคของคุณได้
+- ⚠️ โปรดระวัง: ห้ามขายโปรแกรมนี้เองเป็นผลิตภัณฑ์ หรือแจกจ่ายแบบมีค่าใช้จ่าย
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+See [LICENSE](LICENSE) file for full terms.
+
+## 🚫 Contributing
+
+**This project does not accept contributions.**
+
+This is a personal project maintained by the author. While the source code is available for learning and reference, we are not accepting pull requests, feature requests, or code contributions at this time.
+
+If you find a bug, please [open an issue](https://github.com/ohmiler/localdevine/issues) to report it. Thank you for understanding!
 
 ## 📧 Contact
 

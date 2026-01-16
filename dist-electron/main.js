@@ -19,6 +19,15 @@ if (typeof electron_1.app === 'undefined') {
     Logger_1.default.error('FATAL: electron module returned undefined/string. Exiting.', { forceLog: true });
     process.exit(1);
 }
+// Global error handlers
+process.on('uncaughtException', (error) => {
+    Logger_1.default.error(`Uncaught Exception: ${error.message}`, { forceLog: true });
+    if (error.stack)
+        Logger_1.default.error(error.stack, { forceLog: true });
+});
+process.on('unhandledRejection', (reason) => {
+    Logger_1.default.error(`Unhandled Rejection: ${reason}`, { forceLog: true });
+});
 // Set AppUserModelID for Windows
 if (process.platform === 'win32') {
     electron_1.app.setAppUserModelId('com.localdevine.app');
@@ -46,6 +55,13 @@ function createWindow() {
         },
         title: 'LocalDevine',
         icon: iconPath,
+    });
+    // Window error handlers
+    mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
+        Logger_1.default.error(`Window failed to load: ${errorCode} - ${errorDescription}`, { forceLog: true });
+    });
+    mainWindow.webContents.on('render-process-gone', (_event, details) => {
+        Logger_1.default.error(`Renderer process gone: ${details.reason}`, { forceLog: true });
     });
     // In production, load the built file
     // In dev, load localhost (but use built version for testing)
@@ -85,6 +101,8 @@ electron_1.app.whenReady().then(() => {
     projectTemplateManager = new ProjectTemplateManager_1.default();
     // Initialize IPC with manager references
     (0, ipc_1.initializeIPC)(win, serviceManager, configManager, hostsManager, projectTemplateManager);
+    // Start health monitoring
+    serviceManager.startHealthMonitoring(5000);
     // Create system tray
     trayManager = new TrayManager_1.default(win, serviceManager, electron_1.app);
     trayManager.create();

@@ -32,6 +32,9 @@ export class PathResolver {
             this._basePath = path.join(__dirname, '../..');
             this._resourcesPath = this._basePath;
             this._userDataPath = this._basePath;
+            
+            // Also ensure directories in dev mode (for tmp, data, etc.)
+            this.ensureDirectories();
         }
     }
 

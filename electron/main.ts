@@ -17,6 +17,16 @@ if (typeof app === 'undefined') {
   process.exit(1);
 }
 
+// Global error handlers
+process.on('uncaughtException', (error) => {
+  logger.error(`Uncaught Exception: ${error.message}`, { forceLog: true });
+  if (error.stack) logger.error(error.stack, { forceLog: true });
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error(`Unhandled Rejection: ${reason}`, { forceLog: true });
+});
+
 // Set AppUserModelID for Windows
 if (process.platform === 'win32') {
   app.setAppUserModelId('com.localdevine.app');
@@ -47,6 +57,15 @@ function createWindow(): BrowserWindow {
     },
     title: 'LocalDevine',
     icon: iconPath,
+  });
+
+  // Window error handlers
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
+    logger.error(`Window failed to load: ${errorCode} - ${errorDescription}`, { forceLog: true });
+  });
+
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    logger.error(`Renderer process gone: ${details.reason}`, { forceLog: true });
   });
 
   // In production, load the built file
@@ -92,6 +111,9 @@ app.whenReady().then(() => {
 
   // Initialize IPC with manager references
   initializeIPC(win, serviceManager, configManager, hostsManager, projectTemplateManager);
+
+  // Start health monitoring
+  serviceManager.startHealthMonitoring(5000);
 
   // Create system tray
   trayManager = new TrayManager(win, serviceManager, app);

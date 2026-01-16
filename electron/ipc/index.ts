@@ -63,7 +63,13 @@ function registerServiceHandlers(): void {
   });
 
   ipcMain.on('start-all-services', () => {
-    if (serviceManager) serviceManager.startAllServices();
+    logger.debug('IPC: start-all-services received');
+    if (serviceManager) {
+      logger.debug('IPC: calling serviceManager.startAllServices()');
+      serviceManager.startAllServices();
+    } else {
+      logger.error('IPC: serviceManager is null!');
+    }
   });
 
   ipcMain.on('stop-all-services', () => {

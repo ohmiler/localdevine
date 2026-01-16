@@ -756,7 +756,9 @@ ${vhostBlocks}
                     }
                 }
                 
-                args = ['-X']; // Run in foreground (single process mode)
+                // Use -f to specify config file path explicitly, -X for foreground mode
+                const apacheConfPath = path.join(this.binDir, 'apache/conf/httpd.conf');
+                args = ['-X', '-f', apacheConfPath];
                 break;
             case 'mariadb':
                 cmd = path.join(this.binDir, 'mariadb/bin/mysqld.exe');
@@ -795,7 +797,9 @@ ${vhostBlocks}
             // Spawn with Windows-specific options for better compatibility
             const spawnOptions: import('child_process').SpawnOptions = {
                 cwd,
+                stdio: ['ignore', 'pipe', 'pipe'], // stdin ignored, stdout/stderr piped
                 windowsHide: true, // Hide console window on Windows
+                detached: false, // Keep child attached to parent
                 env: {
                     ...process.env,
                     // Ensure proper PATH for DLL resolution
@@ -803,7 +807,20 @@ ${vhostBlocks}
                 }
             };
             
+            logger.debug(`Spawning ${serviceName} with options: cwd=${cwd}, cmd=${cmd}, args=${args.join(' ')}`);
+            
             const child = spawn(cmd, args, spawnOptions);
+            
+            // Check if spawn was successful
+            if (!child.pid) {
+                this.log(serviceName, 'Failed to spawn process - no PID returned');
+                this.notifyStatus(serviceName, 'stopped');
+                return;
+            }
+            
+            logger.debug(`${serviceName} spawned with PID: ${child.pid}`);
+            this.log(serviceName, `Started with PID: ${child.pid}`);
+            
             this.processes[serviceName] = child;
             this.serviceStartTime[serviceName] = Date.now(); // Track service start time for warmup period
             this.notifyStatus(serviceName, 'running');
@@ -829,6 +846,7 @@ ${vhostBlocks}
 
         } catch (e) {
             this.log(serviceName, `Error: ${(e as Error).message}`);
+            logger.error(`${serviceName} catch error: ${(e as Error).message}`);
         }
     }
 

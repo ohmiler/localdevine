@@ -32,10 +32,20 @@
       "bin/**/*",
       "www/**/*",
       "public/**/*",
-      "package.json"
+      "package.json",
+      "!bin/**/*_temp",
+      "!bin/**/*_temp/**/*",
+      "!bin/**/include/**/*",
+      "!bin/**/*.h",
+      "!bin/**/*.pdb",
+      "!bin/**/*.lib",
+      "!bin/**/man/**/*",
+      "!bin/**/docs/**/*",
+      "!bin/**/dev/**/*"
     ],
     "extraMetadata": {
-      "main": "dist-electron/main.js"
+      "main": "dist-electron/main.js",
+      "type": "commonjs"
     },
     "win": {
       "target": "nsis",
@@ -46,7 +56,16 @@
     "asarUnpack": [
       "bin/**",
       "www/**",
-      "public/**"
+      "public/**",
+      "!bin/**/*_temp",
+      "!bin/**/*_temp/**",
+      "!bin/**/include/**",
+      "!bin/**/*.h",
+      "!bin/**/*.pdb",
+      "!bin/**/*.lib",
+      "!bin/**/man/**",
+      "!bin/**/docs/**",
+      "!bin/**/dev/**"
     ],
     "nsis": {
       "oneClick": false,

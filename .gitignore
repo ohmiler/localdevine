@@ -27,6 +27,7 @@ dist-ssr
 bin/mariadb/data/*
 bin/apache/logs/*
 bin/php/logs/*
+data/mariadb/*
 tmp/*
 hosts.backup
 release/

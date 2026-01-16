@@ -582,12 +582,12 @@ ${vhostBlocks}
 
     // Set root password after MariaDB initialization
     private async setRootPassword(cwd: string, dataDir: string): Promise<void> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const mysqldCmd = path.join(cwd, 'bin/mysqld.exe');
             const mysqlCmd = path.join(cwd, 'bin/mysql.exe');
             const port = 3307; // Temporary port for setup
 
-            // Start MariaDB temporarily
+            // Start MariaDB temporarily with skip-grant-tables
             this.log('mariadb', 'Starting temporary MariaDB to set password...');
             const tempServer = spawn(mysqldCmd, [
                 '--console',
@@ -596,45 +596,73 @@ ${vhostBlocks}
                 '--skip-grant-tables'
             ], { cwd });
 
-            // Wait for server to start
+            let serverKilled = false;
+            const killServer = () => {
+                if (!serverKilled) {
+                    serverKilled = true;
+                    tempServer.kill();
+                    // Also kill by taskkill to be sure
+                    exec(`taskkill /F /PID ${tempServer.pid} /T`, () => {});
+                }
+            };
+
+            // Wait for server to start (5 seconds)
             setTimeout(async () => {
                 try {
-                    // Run SQL to set password
+                    // For MariaDB 10.4+, use SET PASSWORD syntax
+                    const sql = "FLUSH PRIVILEGES; SET PASSWORD FOR 'root'@'localhost' = PASSWORD('root'); FLUSH PRIVILEGES;";
+                    
+                    this.log('mariadb', 'Setting root password...');
+                    
                     const sqlProcess = spawn(mysqlCmd, [
                         '-u', 'root',
                         '-P', port.toString(),
-                        '-e', "FLUSH PRIVILEGES; ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'; FLUSH PRIVILEGES;"
+                        '--host=127.0.0.1',
+                        '-e', sql
                     ], { cwd });
 
+                    sqlProcess.stdout.on('data', (data) => this.log('mariadb', data));
+                    sqlProcess.stderr.on('data', (data) => this.log('mariadb', data));
+
                     sqlProcess.on('close', (code) => {
-                        // Kill temp server
-                        tempServer.kill();
+                        killServer();
                         
                         if (code === 0) {
-                            this.log('mariadb', 'Password set successfully');
-                            resolve();
+                            this.log('mariadb', 'Root password set to "root" successfully');
                         } else {
-                            // If ALTER USER fails, try UPDATE
+                            this.log('mariadb', `Password setting returned code ${code}, trying alternative method...`);
+                            
+                            // Try alternative: ALTER USER
                             const sqlProcess2 = spawn(mysqlCmd, [
                                 '-u', 'root',
                                 '-P', port.toString(),
-                                '-e', "FLUSH PRIVILEGES; UPDATE mysql.user SET Password=PASSWORD('root') WHERE User='root'; FLUSH PRIVILEGES;"
+                                '--host=127.0.0.1',
+                                '-e', "FLUSH PRIVILEGES; ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'; FLUSH PRIVILEGES;"
                             ], { cwd });
 
-                            sqlProcess2.on('close', () => {
-                                tempServer.kill();
+                            sqlProcess2.on('close', (code2) => {
+                                killServer();
+                                if (code2 === 0) {
+                                    this.log('mariadb', 'Root password set via ALTER USER');
+                                } else {
+                                    this.log('mariadb', 'Warning: Could not set root password automatically');
+                                }
                                 resolve();
                             });
+                            return;
                         }
+                        resolve();
                     });
                 } catch (e) {
-                    tempServer.kill();
-                    resolve(); // Continue even if password setting fails
+                    this.log('mariadb', `Error setting password: ${(e as Error).message}`);
+                    killServer();
+                    resolve();
                 }
-            }, 3000);
+            }, 5000);
 
-            tempServer.on('error', () => {
-                resolve(); // Continue even if failed
+            tempServer.on('error', (err) => {
+                this.log('mariadb', `Temp server error: ${err.message}`);
+                resolve();
             });
         });
     }

@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { exec } from 'child_process';
 import { BrowserWindow } from 'electron';
 import PathResolver from './PathResolver';
 import logger from './Logger';

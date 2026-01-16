@@ -1,4 +1,4 @@
-import { Tray, Menu, nativeImage, BrowserWindow, app, Event, App } from 'electron';
+import { Tray, Menu, nativeImage, BrowserWindow, Event, App } from 'electron';
 import path from 'path';
 import { ServiceManager } from './ServiceManager';
 import { trayLogger as logger } from './Logger';

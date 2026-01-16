@@ -11,13 +11,15 @@ const Logger_1 = require("./Logger");
 class HostsManager {
     constructor() {
         this.hostsPath = path_1.default.join(process.env.WINDIR || 'C:\\Windows', 'System32', 'drivers', 'etc', 'hosts');
-        // Use C:\LocalDevine for backup in production, project root in dev
+        // Use user-configured data path for backup
         if (electron_1.app.isPackaged) {
-            const localDevinePath = 'C:\\LocalDevine';
-            if (!fs_1.default.existsSync(localDevinePath)) {
-                fs_1.default.mkdirSync(localDevinePath, { recursive: true });
+            const PathResolver = require('./PathResolver').default;
+            const pathResolver = PathResolver.getInstance();
+            const dataPath = pathResolver.getDataPath();
+            if (!fs_1.default.existsSync(dataPath)) {
+                fs_1.default.mkdirSync(dataPath, { recursive: true });
             }
-            this.backupPath = path_1.default.join(localDevinePath, 'hosts.backup');
+            this.backupPath = path_1.default.join(dataPath, 'hosts.backup');
         }
         else {
             this.backupPath = path_1.default.join(__dirname, '../../hosts.backup');
@@ -208,8 +210,8 @@ class HostsManager {
             try {
                 fs_1.default.writeFileSync(scriptPath, scriptContent, 'utf8');
             }
-            catch (e) {
-                resolve({ success: false, error: `Failed to create script: ${e.message}` });
+            catch (err) {
+                resolve({ success: false, error: `Failed to create script: ${err.message}` });
                 return;
             }
             // Run PowerShell as Admin
@@ -222,7 +224,7 @@ class HostsManager {
                     if (fs_1.default.existsSync(scriptPath))
                         fs_1.default.unlinkSync(scriptPath);
                 }
-                catch (e) {
+                catch {
                     // Ignore cleanup errors
                 }
                 if (error) {
@@ -281,7 +283,7 @@ class HostsManager {
             fs_1.default.readFileSync(this.hostsPath, 'utf8');
             return true;
         }
-        catch (error) {
+        catch {
             return false;
         }
     }

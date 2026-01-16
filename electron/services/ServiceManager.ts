@@ -267,7 +267,7 @@ export class ServiceManager {
             
             socket.connect(port, '127.0.0.1', () => {
                 // Wait a bit for MariaDB to respond with handshake
-                socket.once('data', (data: Buffer) => {
+                socket.once('data', (_data: Buffer) => {
                     socket.destroy();
                     resolve();
                 });
@@ -777,7 +777,7 @@ ${vhostBlocks}
                     try {
                         fs.unlinkSync(pidFile);
                         this.log('apache', 'Cleaned up stale PID file');
-                    } catch (e) {
+                    } catch {
                         // Ignore if can't delete
                     }
                 }

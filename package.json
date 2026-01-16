@@ -1,6 +1,7 @@
 {
   "name": "localdevine",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "type": "module",
   "main": "electron/main.js",
   "author": "Miler",
   "description": "A Modern Local Development Environment Manager",

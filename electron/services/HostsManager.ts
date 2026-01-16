@@ -30,13 +30,15 @@ export default class HostsManager {
     constructor() {
         this.hostsPath = path.join(process.env.WINDIR || 'C:\\Windows', 'System32', 'drivers', 'etc', 'hosts');
         
-        // Use C:\LocalDevine for backup in production, project root in dev
+        // Use user-configured data path for backup
         if (app.isPackaged) {
-            const localDevinePath = 'C:\\LocalDevine';
-            if (!fs.existsSync(localDevinePath)) {
-                fs.mkdirSync(localDevinePath, { recursive: true });
+            const PathResolver = require('./PathResolver').default;
+            const pathResolver = PathResolver.getInstance();
+            const dataPath = pathResolver.getDataPath();
+            if (!fs.existsSync(dataPath)) {
+                fs.mkdirSync(dataPath, { recursive: true });
             }
-            this.backupPath = path.join(localDevinePath, 'hosts.backup');
+            this.backupPath = path.join(dataPath, 'hosts.backup');
         } else {
             this.backupPath = path.join(__dirname, '../../hosts.backup');
         }
@@ -255,8 +257,8 @@ export default class HostsManager {
             
             try {
                 fs.writeFileSync(scriptPath, scriptContent, 'utf8');
-            } catch (e) {
-                resolve({ success: false, error: `Failed to create script: ${(e as Error).message}` });
+            } catch (err) {
+                resolve({ success: false, error: `Failed to create script: ${(err as Error).message}` });
                 return;
             }
 
@@ -268,7 +270,7 @@ export default class HostsManager {
                 try {
                     if (fs.existsSync(sourceFile)) fs.unlinkSync(sourceFile);
                     if (fs.existsSync(scriptPath)) fs.unlinkSync(scriptPath);
-                } catch (e) {
+                } catch {
                     // Ignore cleanup errors
                 }
 
@@ -333,7 +335,7 @@ export default class HostsManager {
             // Try to read the hosts file
             fs.readFileSync(this.hostsPath, 'utf8');
             return true;
-        } catch (error) {
+        } catch {
             return false;
         }
     }

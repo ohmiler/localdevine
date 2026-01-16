@@ -12,7 +12,7 @@ export interface ServiceStatusEvent {
     status: ServiceStatus;
 }
 
-export interface LogEntryEvent extends LogEntry {}
+export type LogEntryEvent = LogEntry;
 
 // Folder types
 export type FolderType = 'www' | 'config' | 'bin';
@@ -61,6 +61,10 @@ export interface ElectronAPI {
     // PHP Versions
     getPHPVersions: () => Promise<PHPVersion[]>;
     setPHPVersion: (version: string) => Promise<{ success: boolean; error?: string }>;
+
+    // Data Path
+    getDataPath: () => Promise<{ current: string; default: string; isCustom: boolean }>;
+    setDataPath: (path: string) => Promise<{ success: boolean; needsRestart?: boolean; error?: string }>;
 
     // Hosts File
     getHostsEntries: () => Promise<HostsFileResult>;

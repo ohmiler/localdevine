@@ -101,6 +101,26 @@ function registerConfigHandlers(): void {
     if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
     return configManager.setPHPVersion(version);
   });
+
+  // Data Path handlers
+  ipcMain.handle('get-data-path', () => {
+    const pathResolver = PathResolver.getInstance();
+    return {
+      current: pathResolver.getDataPath(),
+      default: PathResolver.getDefaultDataPath(),
+      isCustom: pathResolver.isUsingCustomPath()
+    };
+  });
+
+  ipcMain.handle('set-data-path', async (_event: IpcMainInvokeEvent, newPath: string) => {
+    const pathResolver = PathResolver.getInstance();
+    const result = pathResolver.saveDataPath(newPath);
+    if (result.success) {
+      // Note: App needs to restart for path change to take effect
+      return { success: true, needsRestart: true };
+    }
+    return result;
+  });
 }
 
 // ============================================

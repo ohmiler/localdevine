@@ -8,13 +8,20 @@ import { pathLogger as logger } from './Logger';
  * In development: paths are relative to project root
  * In production: 
  *   - bin (Apache, PHP, MariaDB) stays in app resources
- *   - www, data, config goes to C:\LocalDevine for easy access (like XAMPP)
+ *   - www, data, config goes to user-configurable path (default: C:\LocalDevine)
  */
+
+interface AppSettings {
+    dataPath: string;
+}
+
 export class PathResolver {
     private static _instance: PathResolver;
     private _basePath: string;
     private _resourcesPath: string;
-    private _userDataPath: string; // C:\LocalDevine
+    private _userDataPath: string;
+    private _settingsPath: string;
+    private static readonly DEFAULT_DATA_PATH = 'C:\\LocalDevine';
 
     private constructor() {
         if (app.isPackaged) {
@@ -22,8 +29,11 @@ export class PathResolver {
             this._resourcesPath = process.resourcesPath;
             this._basePath = path.join(this._resourcesPath, 'app.asar.unpacked');
             
-            // User data at C:\LocalDevine (like XAMPP)
-            this._userDataPath = 'C:\\LocalDevine';
+            // Settings stored in %APPDATA%\LocalDevine\settings.json
+            this._settingsPath = path.join(app.getPath('appData'), 'LocalDevine', 'settings.json');
+            
+            // Load user data path from settings (or use default)
+            this._userDataPath = this.loadDataPath();
             
             // Create directories if they don't exist
             this.ensureDirectories();
@@ -31,11 +41,92 @@ export class PathResolver {
             // Development mode - use project root
             this._basePath = path.join(__dirname, '../..');
             this._resourcesPath = this._basePath;
+            this._settingsPath = path.join(this._basePath, 'settings.json');
             this._userDataPath = this._basePath;
             
             // Also ensure directories in dev mode (for tmp, data, etc.)
             this.ensureDirectories();
         }
+    }
+
+    /**
+     * Load data path from settings file, or return default
+     */
+    private loadDataPath(): string {
+        try {
+            // Ensure settings directory exists
+            const settingsDir = path.dirname(this._settingsPath);
+            if (!fs.existsSync(settingsDir)) {
+                fs.mkdirSync(settingsDir, { recursive: true });
+            }
+
+            if (fs.existsSync(this._settingsPath)) {
+                const settings: AppSettings = JSON.parse(fs.readFileSync(this._settingsPath, 'utf8'));
+                if (settings.dataPath && fs.existsSync(settings.dataPath)) {
+                    logger.debug(`Using custom data path: ${settings.dataPath}`);
+                    return settings.dataPath;
+                }
+            }
+        } catch (error) {
+            logger.error(`Failed to load settings: ${(error as Error).message}`);
+        }
+        
+        logger.debug(`Using default data path: ${PathResolver.DEFAULT_DATA_PATH}`);
+        return PathResolver.DEFAULT_DATA_PATH;
+    }
+
+    /**
+     * Save data path to settings file
+     */
+    saveDataPath(newPath: string): { success: boolean; error?: string } {
+        try {
+            // Validate path
+            if (!newPath || newPath.trim() === '') {
+                return { success: false, error: 'Path cannot be empty' };
+            }
+
+            // Create directory if it doesn't exist
+            if (!fs.existsSync(newPath)) {
+                fs.mkdirSync(newPath, { recursive: true });
+            }
+
+            // Ensure settings directory exists
+            const settingsDir = path.dirname(this._settingsPath);
+            if (!fs.existsSync(settingsDir)) {
+                fs.mkdirSync(settingsDir, { recursive: true });
+            }
+
+            // Save settings
+            const settings: AppSettings = { dataPath: newPath };
+            fs.writeFileSync(this._settingsPath, JSON.stringify(settings, null, 2));
+            
+            logger.debug(`Saved data path: ${newPath}`);
+            return { success: true };
+        } catch (error) {
+            logger.error(`Failed to save settings: ${(error as Error).message}`);
+            return { success: false, error: (error as Error).message };
+        }
+    }
+
+    /**
+     * Get the current data path
+     */
+    getDataPath(): string {
+        return this._userDataPath;
+    }
+
+    /**
+     * Get the default data path
+     */
+    static getDefaultDataPath(): string {
+        return PathResolver.DEFAULT_DATA_PATH;
+    }
+
+    /**
+     * Check if using custom data path
+     */
+    isUsingCustomPath(): boolean {
+        return this._userDataPath !== PathResolver.DEFAULT_DATA_PATH;
     }
 
     private ensureDirectories(): void {
@@ -143,7 +234,7 @@ export class PathResolver {
             <strong>Document Root:</strong> <?php echo \$_SERVER['DOCUMENT_ROOT']; ?>
         </div>
         
-        <p>Create your projects in <code>C:\\LocalDevine\\www</code></p>
+        <p>Create your projects in the <code>www</code> folder</p>
         
         <div class="links">
             <a href="/adminer.php">📊 Database (Adminer)</a>
@@ -185,12 +276,12 @@ export class PathResolver {
     }
 
     get wwwDir(): string {
-        // www goes to C:\LocalDevine\www for easy access
+        // www goes to userDataPath/www for easy access
         return path.join(this._userDataPath, 'www');
     }
 
     get configPath(): string {
-        // Config at C:\LocalDevine\config\config.json
+        // Config at userDataPath/config/config.json
         return path.join(this._userDataPath, 'config', 'config.json');
     }
 
@@ -199,8 +290,12 @@ export class PathResolver {
     }
 
     get mariadbDataDir(): string {
-        // MariaDB data at C:\LocalDevine\data\mariadb
+        // MariaDB data at userDataPath/data/mariadb
         return path.join(this._userDataPath, 'data', 'mariadb');
+    }
+
+    get settingsPath(): string {
+        return this._settingsPath;
     }
 
     getPhpPath(version: string): string {

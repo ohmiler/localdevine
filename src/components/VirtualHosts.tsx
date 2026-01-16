@@ -59,7 +59,7 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
             await navigator.clipboard.writeText(url);
             setMessage(`✓ URL copied: ${url}`);
             setTimeout(() => setMessage(''), 2000);
-        } catch (err) {
+        } catch {
             setMessage('✗ Failed to copy URL');
         }
     };

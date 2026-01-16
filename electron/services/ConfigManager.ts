@@ -26,7 +26,7 @@ export interface SaveResult {
     error?: string;
 }
 
-export interface AddVHostResult extends SaveResult {}
+export type AddVHostResult = SaveResult;
 
 export default class ConfigManager {
     private configPath: string;

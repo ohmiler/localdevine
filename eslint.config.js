@@ -8,7 +8,7 @@ import eslintConfigPrettier from 'eslint-config-prettier'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'dist-electron', 'scripts', 'bin', 'test.js', 'node_modules']),
+  globalIgnores(['dist', 'dist-electron', 'scripts', 'bin', 'node_modules', 'electron/**/*.js']),
   
   // JavaScript/JSX files
   {

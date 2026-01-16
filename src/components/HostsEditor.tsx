@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { HostsEntry, HostsFileResult, HostsOperationResult } from '../types/electron';
+import { HostsEntry } from '../types/electron';
 
 interface HostsEditorProps {
   onBack: () => void;

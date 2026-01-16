@@ -5,6 +5,12 @@ interface SettingsProps {
   onBack: () => void;
 }
 
+interface DataPathInfo {
+    current: string;
+    default: string;
+    isCustom: boolean;
+}
+
 function Settings({ onBack }: SettingsProps) {
     const [config, setConfig] = useState<Config>({
         ports: { php: 9000, apache: 80, mariadb: 3306 },
@@ -18,6 +24,9 @@ function Settings({ onBack }: SettingsProps) {
     const [version, setVersion] = useState('0.0.0');
     const [checkingUpdate, setCheckingUpdate] = useState(false);
     const [updateStatus, setUpdateStatus] = useState('');
+    const [dataPath, setDataPath] = useState<DataPathInfo>({ current: '', default: '', isCustom: false });
+    const [newDataPath, setNewDataPath] = useState('');
+    const [dataPathMessage, setDataPathMessage] = useState('');
 
     useEffect(() => {
         if (window.electronAPI) {
@@ -28,6 +37,10 @@ function Settings({ onBack }: SettingsProps) {
                 setPHPVersions(versions || []);
             });
             window.electronAPI.getVersion().then(v => setVersion(v));
+            window.electronAPI.getDataPath().then(info => {
+                setDataPath(info);
+                setNewDataPath(info.current);
+            });
         }
     }, []);
 
@@ -54,7 +67,7 @@ function Settings({ onBack }: SettingsProps) {
             } else {
                 setUpdateStatus('⚠️ Could not check for updates');
             }
-        } catch (error) {
+        } catch {
             setUpdateStatus('⚠️ Network error - please try again');
         }
         
@@ -91,6 +104,44 @@ function Settings({ onBack }: SettingsProps) {
 
         setSaving(false);
         setTimeout(() => setMessage(''), 3000);
+    };
+
+    const handleBrowseDataPath = async () => {
+        if (window.electronAPI) {
+            const selectedPath = await window.electronAPI.selectFolder();
+            if (selectedPath) {
+                setNewDataPath(selectedPath);
+            }
+        }
+    };
+
+    const handleSaveDataPath = async () => {
+        if (!newDataPath.trim() || newDataPath === dataPath.current) {
+            return;
+        }
+
+        if (window.electronAPI) {
+            const result = await window.electronAPI.setDataPath(newDataPath);
+            if (result.success) {
+                setDataPathMessage('✓ Data path saved! Please restart LocalDevine to apply changes.');
+                setDataPath(prev => ({ ...prev, current: newDataPath, isCustom: true }));
+            } else {
+                setDataPathMessage(`✗ Error: ${result.error}`);
+            }
+            setTimeout(() => setDataPathMessage(''), 5000);
+        }
+    };
+
+    const handleResetDataPath = async () => {
+        if (window.electronAPI) {
+            const result = await window.electronAPI.setDataPath(dataPath.default);
+            if (result.success) {
+                setNewDataPath(dataPath.default);
+                setDataPathMessage('✓ Reset to default path! Please restart LocalDevine to apply changes.');
+                setDataPath(prev => ({ ...prev, current: dataPath.default, isCustom: false }));
+            }
+            setTimeout(() => setDataPathMessage(''), 5000);
+        }
     };
 
     return (
@@ -298,6 +349,85 @@ function Settings({ onBack }: SettingsProps) {
                     <p className="mt-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
                         ℹ️ LocalDevine checks for updates automatically on startup.
                     </p>
+                </div>
+
+                {/* Data Path Configuration */}
+                <div className="card p-6 lg:col-span-2">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center text-lg">
+                            📁
+                        </div>
+                        <h2 className="text-xl font-heading" style={{ color: 'var(--text-on-card)' }}>Data Location</h2>
+                        {dataPath.isCustom && (
+                            <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-400 font-medium">Custom</span>
+                        )}
+                    </div>
+
+                    <p className="mb-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        Choose where LocalDevine stores your projects (www), database data, and configuration files.
+                    </p>
+
+                    <div className="space-y-4">
+                        <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-label)' }}>
+                                Data Folder Path
+                            </label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={newDataPath}
+                                    onChange={(e) => setNewDataPath(e.target.value)}
+                                    placeholder={dataPath.default}
+                                    className="input flex-1"
+                                />
+                                <button
+                                    onClick={handleBrowseDataPath}
+                                    className="button-secondary"
+                                >
+                                    📂 Browse
+                                </button>
+                            </div>
+                            <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
+                                Default: <code className="px-1 py-0.5 rounded" style={{ background: 'var(--bg-secondary)' }}>{dataPath.default}</code>
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleSaveDataPath}
+                                disabled={!newDataPath.trim() || newDataPath === dataPath.current}
+                                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                                    !newDataPath.trim() || newDataPath === dataPath.current
+                                        ? 'bg-disabled text-disabled cursor-not-allowed'
+                                        : 'bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
+                                }`}
+                            >
+                                💾 Save Path
+                            </button>
+                            {dataPath.isCustom && (
+                                <button
+                                    onClick={handleResetDataPath}
+                                    className="button-secondary"
+                                >
+                                    🔄 Reset to Default
+                                </button>
+                            )}
+                        </div>
+
+                        {dataPathMessage && (
+                            <div className={`p-3 rounded-lg text-sm font-medium ${
+                                dataPathMessage.includes('✓') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                            }`}>
+                                {dataPathMessage}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-4 p-3 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
+                        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                            ⚠️ <strong>Important:</strong> Changing the data path requires restarting LocalDevine. Existing data will NOT be moved automatically.
+                        </p>
+                    </div>
                 </div>
 
             </div>

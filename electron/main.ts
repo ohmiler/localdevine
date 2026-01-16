@@ -7,7 +7,6 @@ import TrayManager from './services/TrayManager';
 import ConfigManager from './services/ConfigManager';
 import HostsManager from './services/HostsManager';
 import ProjectTemplateManager from './services/ProjectTemplateManager';
-import PathResolver from './services/PathResolver';
 import AutoUpdater from './services/AutoUpdater';
 import { registerIPCHandlers, initializeIPC } from './ipc';
 
@@ -41,7 +40,6 @@ let projectTemplateManager: ProjectTemplateManager | null;
 let autoUpdater: AutoUpdater | null;
 
 function createWindow(): BrowserWindow {
-  const pathResolver = PathResolver.getInstance();
   // Use .ico for Windows for better taskbar support
   const iconPath = app.isPackaged 
     ? path.join(process.resourcesPath, 'app.asar.unpacked', 'public', 'icon.ico')

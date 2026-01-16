@@ -11,7 +11,6 @@ const TrayManager_1 = __importDefault(require("./services/TrayManager"));
 const ConfigManager_1 = __importDefault(require("./services/ConfigManager"));
 const HostsManager_1 = __importDefault(require("./services/HostsManager"));
 const ProjectTemplateManager_1 = __importDefault(require("./services/ProjectTemplateManager"));
-const PathResolver_1 = __importDefault(require("./services/PathResolver"));
 const AutoUpdater_1 = __importDefault(require("./services/AutoUpdater"));
 const ipc_1 = require("./ipc");
 // Basic error handling to catch the 'string' issue
@@ -40,7 +39,6 @@ let hostsManager;
 let projectTemplateManager;
 let autoUpdater;
 function createWindow() {
-    const pathResolver = PathResolver_1.default.getInstance();
     // Use .ico for Windows for better taskbar support
     const iconPath = electron_1.app.isPackaged
         ? path_1.default.join(process.resourcesPath, 'app.asar.unpacked', 'public', 'icon.ico')

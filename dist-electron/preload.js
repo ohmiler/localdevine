@@ -23,6 +23,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // PHP Versions
     getPHPVersions: () => ipcRenderer.invoke('get-php-versions'),
     setPHPVersion: (version) => ipcRenderer.invoke('set-php-version', version),
+    // Data Path
+    getDataPath: () => ipcRenderer.invoke('get-data-path'),
+    setDataPath: (path) => ipcRenderer.invoke('set-data-path', path),
     // Hosts File
     getHostsEntries: () => ipcRenderer.invoke('get-hosts-entries'),
     addHostsEntry: (ip, hostname, comment) => ipcRenderer.invoke('add-hosts-entry', ip, hostname, comment),

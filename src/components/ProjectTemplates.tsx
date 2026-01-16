@@ -121,7 +121,7 @@ function ProjectTemplates() {
       await navigator.clipboard.writeText(url);
       setMessage({ type: 'success', text: `URL copied: ${url}` });
       setTimeout(() => setMessage(null), 2000);
-    } catch (err) {
+    } catch {
       setMessage({ type: 'error', text: 'Failed to copy URL' });
     }
   };

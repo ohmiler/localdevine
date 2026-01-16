@@ -30,9 +30,9 @@ export interface VHostConfig {
 }
 
 export interface ServiceProcesses {
-    php: import('child_process').ChildProcessWithoutNullStreams | null;
-    apache: import('child_process').ChildProcessWithoutNullStreams | null;
-    mariadb: import('child_process').ChildProcessWithoutNullStreams | null;
+    php: import('child_process').ChildProcess | null;
+    apache: import('child_process').ChildProcess | null;
+    mariadb: import('child_process').ChildProcess | null;
 }
 
 export interface ConfigManager {
@@ -473,9 +473,6 @@ LogLevel warn
     CustomLog "logs/access.log" common
 </IfModule>
 
-# Enable NameVirtualHost
-NameVirtualHost *:${apachePort}
-
 # Default VirtualHost for localhost (must be first!)
 <VirtualHost *:${apachePort}>
     ServerName localhost
@@ -497,6 +494,11 @@ ${vhostBlocks}
     log(service: string, message: string | Buffer): void {
         const messageStr = message.toString().trim();
         
+        // Skip empty messages
+        if (!messageStr) {
+            return;
+        }
+        
         // Filter out harmless MariaDB health check warnings
         if (service === 'mariadb' && (
             messageStr.includes('unauthenticated') ||
@@ -504,6 +506,14 @@ ${vhostBlocks}
             messageStr.includes('This connection closed normally without authentication')
         )) {
             return; // Skip these messages
+        }
+        
+        // Filter out harmless Apache warnings (not errors)
+        if (service === 'apache' && (
+            messageStr.includes('NameVirtualHost has no effect') ||
+            messageStr.includes('AH00548') // NameVirtualHost deprecation warning code
+        )) {
+            return; // Skip deprecated warnings
         }
         
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
@@ -544,43 +554,70 @@ ${vhostBlocks}
 
     async initMariaDB(cwd: string): Promise<void> {
         const dataDir = this.pathResolver.mariadbDataDir;
-        if (!fs.existsSync(dataDir) || fs.readdirSync(dataDir).length === 0) {
-            this.log('mariadb', `Initializing data directory at ${dataDir}...`);
-            const initCmd = path.join(cwd, 'bin/mysql_install_db.exe');
-
-            // Ensure directory exists
-            if (!fs.existsSync(dataDir)) {
-                fs.mkdirSync(dataDir, { recursive: true });
-            }
-
-            return new Promise((resolve, reject) => {
-                const initProcess = spawn(initCmd, [`--datadir=${dataDir}`], { cwd });
-
-                initProcess.stdout.on('data', (data) => this.log('mariadb', data));
-                initProcess.stderr.on('data', (data) => this.log('mariadb', data));
-
-                initProcess.on('close', async (code) => {
-                    if (code === 0) {
-                        this.log('mariadb', 'Data directory initialized.');
-                        
-                        // Set root password after initialization
-                        await this.setRootPassword(cwd, dataDir);
-                        
-                        this.log('mariadb', 'Root password set to "root"');
-                        resolve();
-                    } else {
-                        this.log('mariadb', `Initialization failed with code ${code}`);
-                        reject(new Error(`Init failed with code ${code}`));
-                    }
-                });
-
-                initProcess.on('error', (err) => {
-                    this.log('mariadb', `Initialization error: ${err.message}`);
-                    reject(err);
-                });
-            });
+        const mysqlDir = path.join(dataDir, 'mysql');
+        
+        // Check if MariaDB is already initialized by looking for mysql system database
+        if (fs.existsSync(mysqlDir)) {
+            logger.debug(`MariaDB already initialized (found ${mysqlDir})`);
+            return Promise.resolve();
         }
-        return Promise.resolve();
+        
+        this.log('mariadb', `Initializing data directory at ${dataDir}...`);
+        const initCmd = path.join(cwd, 'bin/mysql_install_db.exe');
+
+        // Ensure directory exists and is empty for fresh init
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+        } else {
+            // Clean up any partial/failed init files
+            const files = fs.readdirSync(dataDir);
+            for (const file of files) {
+                const filePath = path.join(dataDir, file);
+                try {
+                    if (fs.statSync(filePath).isDirectory()) {
+                        fs.rmSync(filePath, { recursive: true, force: true });
+                    } else {
+                        fs.unlinkSync(filePath);
+                    }
+                } catch (e) {
+                    logger.warn(`Could not clean up ${filePath}: ${(e as Error).message}`);
+                }
+            }
+            this.log('mariadb', 'Cleaned up partial initialization files');
+        }
+
+        return new Promise((resolve, reject) => {
+            const initProcess = spawn(initCmd, [`--datadir=${dataDir}`], { 
+                cwd,
+                windowsHide: true 
+            });
+
+            initProcess.stdout?.on('data', (data) => this.log('mariadb', data));
+            initProcess.stderr?.on('data', (data) => this.log('mariadb', data));
+
+            initProcess.on('close', async (code) => {
+                if (code === 0) {
+                    this.log('mariadb', 'Data directory initialized.');
+                    
+                    // Set root password after initialization
+                    try {
+                        await this.setRootPassword(cwd, dataDir);
+                        this.log('mariadb', 'Root password set to "root"');
+                    } catch (e) {
+                        logger.warn(`Password setting skipped: ${(e as Error).message}`);
+                    }
+                    resolve();
+                } else {
+                    this.log('mariadb', `Initialization failed with code ${code}`);
+                    reject(new Error(`Init failed with code ${code}`));
+                }
+            });
+
+            initProcess.on('error', (err) => {
+                this.log('mariadb', `Initialization error: ${err.message}`);
+                reject(err);
+            });
+        });
     }
 
     // Set root password after MariaDB initialization
@@ -597,7 +634,7 @@ ${vhostBlocks}
                 `--port=${port}`,
                 `--datadir=${dataDir}`,
                 '--skip-grant-tables'
-            ], { cwd });
+            ], { cwd, windowsHide: true });
 
             let serverKilled = false;
             const killServer = () => {
@@ -685,7 +722,7 @@ ${vhostBlocks}
         switch (serviceName) {
             case 'php':
                 // Ensure session tmp directory exists (required by php.ini)
-                const sessionTmpDir = 'C:\\LocalDevine\\tmp';
+                const sessionTmpDir = this.pathResolver.tmpDir;
                 if (!fs.existsSync(sessionTmpDir)) {
                     fs.mkdirSync(sessionTmpDir, { recursive: true });
                     this.log('php', `Created session directory: ${sessionTmpDir}`);
@@ -755,22 +792,37 @@ ${vhostBlocks}
         logger.debug('Executable exists, spawning...');
 
         try {
-            const child = spawn(cmd, args, { cwd });
+            // Spawn with Windows-specific options for better compatibility
+            const spawnOptions: import('child_process').SpawnOptions = {
+                cwd,
+                windowsHide: true, // Hide console window on Windows
+                env: {
+                    ...process.env,
+                    // Ensure proper PATH for DLL resolution
+                    PATH: process.env.PATH
+                }
+            };
+            
+            const child = spawn(cmd, args, spawnOptions);
             this.processes[serviceName] = child;
             this.serviceStartTime[serviceName] = Date.now(); // Track service start time for warmup period
             this.notifyStatus(serviceName, 'running');
 
-            child.stdout.on('data', (data) => this.log(serviceName, data));
-            child.stderr.on('data', (data) => this.log(serviceName, data));
+            child.stdout?.on('data', (data) => this.log(serviceName, data));
+            child.stderr?.on('data', (data) => this.log(serviceName, data));
 
             child.on('close', (code) => {
-                this.log(serviceName, `Exited with code ${code}`);
+                // Don't log normal shutdown (code 0 or null when killed)
+                if (code !== 0 && code !== null) {
+                    this.log(serviceName, `Exited with code ${code}`);
+                }
                 this.processes[serviceName] = null;
                 this.notifyStatus(serviceName, 'stopped');
             });
 
             child.on('error', (err) => {
                 this.log(serviceName, `Failed to start: ${err.message}`);
+                logger.error(`${serviceName} spawn error: ${err.message}`);
                 this.processes[serviceName] = null;
                 this.notifyStatus(serviceName, 'stopped');
             });

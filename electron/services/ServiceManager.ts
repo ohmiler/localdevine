@@ -58,6 +58,8 @@ export class ServiceManager {
     private healthCheckInterval: NodeJS.Timeout | null = null;
     private healthStatus: Record<string, ServiceHealth> = {};
     private lastNotificationTime: Record<string, number> = {};
+    private serviceStartTime: Record<string, number> = {}; // Track when each service was started
+    private readonly WARMUP_PERIOD_MS = 10000; // 10 seconds grace period after service start
 
     constructor(mainWindow: MainWindow, configManager: ConfigManager | null) {
         this.mainWindow = mainWindow;
@@ -323,8 +325,20 @@ export class ServiceManager {
         this.lastNotificationTime[key] = Date.now();
     }
 
+    private isInWarmupPeriod(serviceName: keyof ServiceProcesses): boolean {
+        const startTime = this.serviceStartTime[serviceName];
+        if (!startTime) return false;
+        return Date.now() - startTime < this.WARMUP_PERIOD_MS;
+    }
+
     private checkAndNotify(serviceName: keyof ServiceProcesses, health: ServiceHealth): void {
         const displayName = serviceName === 'mariadb' ? 'MariaDB' : serviceName.toUpperCase();
+        
+        // Skip error notifications during warmup period (service just started)
+        if (this.isInWarmupPeriod(serviceName) && health.status === 'error') {
+            logger.debug(`${serviceName} is in warmup period, skipping error notification`);
+            return;
+        }
         
         // Service crashed or stopped unexpectedly
         if (health.status === 'error') {
@@ -352,9 +366,9 @@ export class ServiceManager {
             return;
         }
 
-        // Service unhealthy but running
+        // Service unhealthy but running (skip during warmup period)
         if (health.status === 'running' && !health.isHealthy) {
-            if (this.shouldNotify(serviceName, 'warning')) {
+            if (!this.isInWarmupPeriod(serviceName) && this.shouldNotify(serviceName, 'warning')) {
                 this.sendNotification(
                     `${displayName} Warning`,
                     `${displayName} is running but not responding properly: ${health.error || 'Health check failed'}`,
@@ -512,8 +526,9 @@ ${vhostBlocks}
         for (const service of services) {
             if (!this.processes[service]) {
                 await this.startService(service);
-                // Small delay between starts
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Apache needs more time to fully start
+                const delay = service === 'apache' ? 2000 : 500;
+                await new Promise(resolve => setTimeout(resolve, delay));
             }
         }
     }
@@ -697,6 +712,7 @@ ${vhostBlocks}
         try {
             const child = spawn(cmd, args, { cwd });
             this.processes[serviceName] = child;
+            this.serviceStartTime[serviceName] = Date.now(); // Track service start time for warmup period
             this.notifyStatus(serviceName, 'running');
 
             child.stdout.on('data', (data) => this.log(serviceName, data));

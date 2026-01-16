@@ -394,11 +394,23 @@ export class ServiceManager {
     }
 
     generateConfigs(): void {
-        const apacheConfPath = path.join(this.binDir, 'apache/conf/httpd.conf');
+        // Write config to userDataPath (C:\LocalDevine\config) instead of Program Files
+        // This avoids permission issues when app is installed in Program Files
+        const configDir = path.join(this.pathResolver.userDataPath, 'config');
+        if (!fs.existsSync(configDir)) {
+            fs.mkdirSync(configDir, { recursive: true });
+        }
+        // Create logs directory in userDataPath
+        const logsDir = path.join(this.pathResolver.userDataPath, 'logs', 'apache');
+        if (!fs.existsSync(logsDir)) {
+            fs.mkdirSync(logsDir, { recursive: true });
+        }
+        const apacheConfPath = path.join(configDir, 'httpd.conf');
         const wwwPath = this.wwwDir.replace(/\\/g, '/');
         const apachePort = this.getPort('apache');
         const phpPath = (this.configManager ? this.configManager.getPHPPath() : path.join(this.binDir, 'php')).replace(/\\/g, '/');
         const apachePath = path.join(this.binDir, 'apache').replace(/\\/g, '/');
+        const logsPath = logsDir.replace(/\\/g, '/');
 
         // Get virtual hosts from config
         const vhosts = this.configManager ? this.configManager.getVHosts() : [];
@@ -465,12 +477,13 @@ DocumentRoot "${wwwPath}"
     Require all granted
 </Directory>
 
-ErrorLog "logs/error.log"
+ErrorLog "${logsPath}/error.log"
 LogLevel warn
+PidFile "${logsPath}/httpd.pid"
 
 <IfModule log_config_module>
     LogFormat "%h %l %u %t \\"%r\\" %>s %b" common
-    CustomLog "logs/access.log" common
+    CustomLog "${logsPath}/access.log" common
 </IfModule>
 
 # Default VirtualHost for localhost (must be first!)
@@ -532,18 +545,29 @@ ${vhostBlocks}
     }
 
     async startAllServices(): Promise<void> {
+        this.log('system', 'Starting all services...');
         const services: Array<keyof ServiceProcesses> = ['php', 'apache', 'mariadb'];
         for (const service of services) {
+            this.log('system', `Checking ${service}...`);
             if (!this.processes[service]) {
-                await this.startService(service);
-                // Different services need different startup times
-                // MariaDB may need longer on first run due to initialization
-                let delay = 500;
-                if (service === 'apache') delay = 2000;
-                if (service === 'mariadb') delay = 3000; // MariaDB needs more time
-                await new Promise(resolve => setTimeout(resolve, delay));
+                try {
+                    this.log('system', `Starting ${service}...`);
+                    await this.startService(service);
+                    // Different services need different startup times
+                    // MariaDB may need longer on first run due to initialization
+                    let delay = 500;
+                    if (service === 'apache') delay = 2000;
+                    if (service === 'mariadb') delay = 3000; // MariaDB needs more time
+                    this.log('system', `Waiting ${delay}ms before next service...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                } catch (e) {
+                    this.log('system', `Error starting ${service}: ${(e as Error).message}`);
+                }
+            } else {
+                this.log('system', `${service} already running`);
             }
         }
+        this.log('system', 'All services started.');
     }
 
     async stopAllServices(): Promise<void> {
@@ -587,6 +611,7 @@ ${vhostBlocks}
         }
 
         return new Promise((resolve, reject) => {
+            // mysql_install_db on Windows doesn't support --basedir, use cwd instead
             const initProcess = spawn(initCmd, [`--datadir=${dataDir}`], { 
                 cwd,
                 windowsHide: true 
@@ -632,6 +657,7 @@ ${vhostBlocks}
             const tempServer = spawn(mysqldCmd, [
                 '--console',
                 `--port=${port}`,
+                `--basedir=${cwd}`,
                 `--datadir=${dataDir}`,
                 '--skip-grant-tables'
             ], { cwd, windowsHide: true });
@@ -738,11 +764,11 @@ ${vhostBlocks}
                 cmd = path.join(this.binDir, 'apache/bin/httpd.exe');
                 cwd = path.join(this.binDir, 'apache');
                 
-                // Ensure logs directory exists
-                const logsDir = path.join(this.binDir, 'apache/logs');
+                // Ensure logs directory exists in userDataPath (writable location)
+                const logsDir = path.join(this.pathResolver.userDataPath, 'logs', 'apache');
                 if (!fs.existsSync(logsDir)) {
                     fs.mkdirSync(logsDir, { recursive: true });
-                    this.log('apache', 'Created logs directory');
+                    this.log('apache', `Created logs directory: ${logsDir}`);
                 }
                 
                 // Clean up stale pid file to prevent "Unclean shutdown" warning
@@ -756,13 +782,14 @@ ${vhostBlocks}
                     }
                 }
                 
-                // Use -f to specify config file path explicitly, -X for foreground mode
-                const apacheConfPath = path.join(this.binDir, 'apache/conf/httpd.conf');
+                // Use config from userDataPath (C:\LocalDevine\config) to avoid permission issues
+                const apacheConfPath = path.join(this.pathResolver.userDataPath, 'config', 'httpd.conf');
                 args = ['-X', '-f', apacheConfPath];
                 break;
             case 'mariadb':
                 cmd = path.join(this.binDir, 'mariadb/bin/mysqld.exe');
                 cwd = path.join(this.binDir, 'mariadb');
+                const mariadbBasedir = path.join(this.binDir, 'mariadb');
 
                 // Initialize Data Directory if not exists (async)
                 try {
@@ -773,7 +800,13 @@ ${vhostBlocks}
                     return;
                 }
                 // Use external data directory at C:\LocalDevine\data\mariadb
-                args = ['--console', `--port=${mariadbPort}`, `--datadir=${this.pathResolver.mariadbDataDir}`];
+                // --basedir is needed so MariaDB can find share/errmsg.sys
+                args = [
+                    '--console',
+                    `--port=${mariadbPort}`,
+                    `--basedir=${mariadbBasedir}`,
+                    `--datadir=${this.pathResolver.mariadbDataDir}`
+                ];
                 break;
             default:
                 this.log('system', `Unknown service: ${serviceName}`);
@@ -800,6 +833,7 @@ ${vhostBlocks}
                 stdio: ['ignore', 'pipe', 'pipe'], // stdin ignored, stdout/stderr piped
                 windowsHide: true, // Hide console window on Windows
                 detached: false, // Keep child attached to parent
+                shell: false, // Don't use shell to avoid path issues
                 env: {
                     ...process.env,
                     // Ensure proper PATH for DLL resolution
@@ -807,6 +841,11 @@ ${vhostBlocks}
                 }
             };
             
+            // Log to UI for debugging in production
+            this.log(serviceName, `Spawning: ${cmd}`);
+            this.log(serviceName, `Args: ${args.join(' ')}`);
+            this.log(serviceName, `CWD: ${cwd || 'default'}`);
+            this.log(serviceName, `Executable exists: ${fs.existsSync(cmd)}`);
             logger.debug(`Spawning ${serviceName} with options: cwd=${cwd}, cmd=${cmd}, args=${args.join(' ')}`);
             
             const child = spawn(cmd, args, spawnOptions);
@@ -819,7 +858,7 @@ ${vhostBlocks}
             }
             
             logger.debug(`${serviceName} spawned with PID: ${child.pid}`);
-            this.log(serviceName, `Started with PID: ${child.pid}`);
+            this.log(serviceName, `Started successfully with PID: ${child.pid}`);
             
             this.processes[serviceName] = child;
             this.serviceStartTime[serviceName] = Date.now(); // Track service start time for warmup period
@@ -828,11 +867,9 @@ ${vhostBlocks}
             child.stdout?.on('data', (data) => this.log(serviceName, data));
             child.stderr?.on('data', (data) => this.log(serviceName, data));
 
-            child.on('close', (code) => {
-                // Don't log normal shutdown (code 0 or null when killed)
-                if (code !== 0 && code !== null) {
-                    this.log(serviceName, `Exited with code ${code}`);
-                }
+            child.on('close', (code, signal) => {
+                // Log all close events for debugging
+                this.log(serviceName, `Process closed - code: ${code}, signal: ${signal}`);
                 this.processes[serviceName] = null;
                 this.notifyStatus(serviceName, 'stopped');
             });

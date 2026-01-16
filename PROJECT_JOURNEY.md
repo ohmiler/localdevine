@@ -523,6 +523,348 @@ LocalDevine คือตัวอย่างที่ชัดเจนขอ�
 
 ---
 
+## 🔧 บทเรียนเพิ่มเติม: Production Mode & Service Stability (January 2026)
+
+หลังจากเวอร์ชันแรกเสร็จสมบูรณ์ ยังมีปัญหาอีกหลายอย่างที่ต้องแก้ไขเมื่อทดสอบใน Production Mode ต่อไปนี้คือบทเรียนสำคัญ:
+
+### 🚨 ปัญหาที่ 7: Production Mode Permission Issues
+
+#### สถานการณ์
+เมื่อ build app และติดตั้งใน `C:\Program Files\LocalDevine` พบว่า:
+- **ไม่สามารถเขียน config files** ได้ เพราะ Program Files เป็น read-only สำหรับ non-admin
+- **ไม่สามารถเขียน logs** ได้
+- **Apache เริ่มไม่ได้** เพราะหา config และ log path ไม่ถูก
+
+#### สาเหตุ
+```typescript
+// ❌ โค้ดเดิม - เขียนไฟล์ใน app directory
+const configPath = path.join(__dirname, 'config', 'httpd.conf');
+fs.writeFileSync(configPath, content); // FAIL! Access Denied!
+```
+
+#### วิธีแก้ไข
+ใช้ **userDataPath** ที่ Electron จัดให้ ซึ่งเป็น path ที่ user มีสิทธิ์เขียนเสมอ:
+
+```typescript
+// ✅ โค้ดใหม่ - ใช้ userDataPath (C:\LocalDevine\)
+class PathResolver {
+    get userDataPath(): string {
+        // app.getPath('userData') หรือ fallback ไป C:\LocalDevine
+        return process.env.LOCALDEVINE_DATA || 'C:\\LocalDevine';
+    }
+    
+    get configDir(): string {
+        return path.join(this.userDataPath, 'config');
+    }
+    
+    get logsDir(): string {
+        return path.join(this.userDataPath, 'logs', 'apache');
+    }
+    
+    get mariadbDataDir(): string {
+        return path.join(this.userDataPath, 'data', 'mariadb');
+    }
+}
+```
+
+#### โครงสร้าง Path ใหม่
+```
+C:\Program Files\LocalDevine\     ← App binaries (read-only)
+    └── bin\
+        ├── apache\
+        ├── php\
+        └── mariadb\
+
+C:\LocalDevine\                    ← User data (writable)
+    ├── config\
+    │   └── httpd.conf
+    ├── logs\
+    │   └── apache\
+    ├── data\
+    │   └── mariadb\
+    └── tmp\
+```
+
+#### บทเรียน
+> **แยก App Binaries ออกจาก User Data เสมอ** - นี่คือ best practice สำหรับ Windows apps
+
+---
+
+### 🚨 ปัญหาที่ 8: Apache Stale PID File
+
+#### สถานการณ์
+Apache แสดง warning "Unclean shutdown" ทุกครั้งที่เริ่ม
+
+#### สาเหตุ
+ไฟล์ `httpd.pid` ยังคงอยู่จากการ shutdown ก่อนหน้าที่ไม่สมบูรณ์
+
+#### วิธีแก้ไข
+```typescript
+async startService(serviceName: 'apache') {
+    // Clean up stale pid file before starting
+    const pidFile = path.join(logsDir, 'httpd.pid');
+    if (fs.existsSync(pidFile)) {
+        try {
+            fs.unlinkSync(pidFile);
+            this.log('apache', 'Cleaned up stale PID file');
+        } catch (e) {
+            // Ignore if can't delete
+        }
+    }
+    
+    // Now start Apache
+    const child = spawn(cmd, args, options);
+}
+```
+
+---
+
+### 🚨 ปัญหาที่ 9: False Error Notifications (Warmup Period)
+
+#### สถานการณ์
+Health monitoring ส่ง notification ว่า service error ทั้งๆ ที่ service กำลัง start อยู่
+
+#### สาเหตุ
+- MariaDB ต้องใช้เวลา initialize data directory (อาจนานถึง 10-15 วินาที)
+- Health check ทำงานทุก 5 วินาที ทำให้ detect ว่า "not responding" ระหว่าง startup
+
+#### วิธีแก้ไข
+เพิ่ม **Warmup Period** - ช่วงเวลาที่ไม่ส่ง error notification หลัง service start:
+
+```typescript
+class ServiceManager {
+    private serviceStartTime: Record<string, number> = {};
+    private readonly WARMUP_PERIOD_MS = 15000; // 15 seconds grace period
+    
+    private isInWarmupPeriod(serviceName: string): boolean {
+        const startTime = this.serviceStartTime[serviceName];
+        if (!startTime) return false;
+        return Date.now() - startTime < this.WARMUP_PERIOD_MS;
+    }
+    
+    private checkAndNotify(serviceName: string, health: ServiceHealth): void {
+        // Skip error notifications during warmup period
+        if (this.isInWarmupPeriod(serviceName) && health.status === 'error') {
+            logger.debug(`${serviceName} is in warmup period, skipping error notification`);
+            return;
+        }
+        
+        // ... rest of notification logic
+    }
+    
+    async startService(serviceName: string) {
+        // Track service start time
+        this.serviceStartTime[serviceName] = Date.now();
+        // ... start service
+    }
+}
+```
+
+#### บทเรียน
+> **Services ต้องการเวลา startup** - อย่า assume ว่า service พร้อมใช้งานทันทีที่ process spawn
+
+---
+
+### 🚨 ปัญหาที่ 10: MariaDB 11.x Password Setup
+
+#### สถานการณ์
+การ set root password ด้วย `SET PASSWORD` ไม่ทำงานใน MariaDB 11.x
+
+#### สาเหตุ
+MariaDB 11.x เปลี่ยน syntax การจัดการ password
+
+#### วิธีแก้ไข
+ลองหลายวิธีแบบ fallback:
+
+```typescript
+private async setRootPassword(cwd: string, dataDir: string): Promise<void> {
+    // Method 1: SET PASSWORD (works on older MariaDB)
+    const sql1 = "FLUSH PRIVILEGES; SET PASSWORD FOR 'root'@'localhost' = PASSWORD('root');";
+    
+    const result = await this.runSQL(sql1);
+    
+    if (!result.success) {
+        // Method 2: ALTER USER (works on newer MariaDB 11.x)
+        const sql2 = "FLUSH PRIVILEGES; ALTER USER 'root'@'localhost' IDENTIFIED BY 'root';";
+        await this.runSQL(sql2);
+    }
+}
+```
+
+#### บทเรียน
+> **Version compatibility matters** - ต้อง handle ความแตกต่างระหว่าง versions
+
+---
+
+### 🚨 ปัญหาที่ 11: PHP Session Directory
+
+#### สถานการณ์
+PHP แสดง warning เกี่ยวกับ session save path
+
+#### สาเหตุ
+php.ini กำหนด session.save_path แต่ directory ไม่มีอยู่จริง
+
+#### วิธีแก้ไข
+สร้าง directory ก่อน start PHP:
+
+```typescript
+case 'php':
+    // Ensure session tmp directory exists
+    const sessionTmpDir = this.pathResolver.tmpDir;
+    if (!fs.existsSync(sessionTmpDir)) {
+        fs.mkdirSync(sessionTmpDir, { recursive: true });
+        this.log('php', `Created session directory: ${sessionTmpDir}`);
+    }
+    
+    cmd = path.join(phpPath, 'php-cgi.exe');
+    args = ['-b', `127.0.0.1:${phpPort}`];
+    break;
+```
+
+---
+
+### 🚨 ปัญหาที่ 12: Harmless Log Messages Flooding
+
+#### สถานการณ์
+Log panel เต็มไปด้วย warning messages ที่ไม่สำคัญ:
+- MariaDB: "unauthenticated", "Got an error reading communication packets"
+- Apache: "NameVirtualHost has no effect"
+
+#### สาเหตุ
+- MariaDB warnings เกิดจาก health check ที่ connect แล้ว disconnect ทันที
+- Apache warnings เกิดจาก deprecated config syntax
+
+#### วิธีแก้ไข
+Filter messages ที่ไม่จำเป็นออก:
+
+```typescript
+log(service: string, message: string | Buffer): void {
+    const messageStr = message.toString().trim();
+    
+    // Filter out harmless MariaDB health check warnings
+    if (service === 'mariadb' && (
+        messageStr.includes('unauthenticated') ||
+        messageStr.includes('Got an error reading communication packets') ||
+        messageStr.includes('This connection closed normally without authentication')
+    )) {
+        return; // Skip these messages
+    }
+    
+    // Filter out harmless Apache warnings
+    if (service === 'apache' && (
+        messageStr.includes('NameVirtualHost has no effect') ||
+        messageStr.includes('AH00548')
+    )) {
+        return;
+    }
+    
+    // Send to UI
+    this.mainWindow.webContents.send('log-entry', { ... });
+}
+```
+
+#### บทเรียน
+> **Log filtering ช่วย UX** - แสดงเฉพาะ messages ที่ user ต้องรู้
+
+---
+
+### 🎨 ปัญหาที่ 13: Dark Mode Text Visibility
+
+#### สถานการณ์
+ข้อความบาง elements อ่านไม่ออกใน dark mode
+
+#### วิธีแก้ไข
+ใช้ CSS variables สำหรับ colors:
+
+```css
+/* themes.css */
+:root {
+    --text-primary: #1a1a1a;
+    --text-secondary: #4a4a4a;
+    --bg-primary: #ffffff;
+}
+
+[data-theme="dark"] {
+    --text-primary: #f5f5f5;
+    --text-secondary: #a0a0a0;
+    --bg-primary: #1a1a1a;
+}
+
+/* ใช้ CSS variables ในทุก component */
+.card-title {
+    color: var(--text-primary);
+}
+```
+
+---
+
+## 📊 Summary: Key Patterns ที่ได้เรียนรู้
+
+### 1. **Path Management Pattern**
+```
+App Binaries (read-only)  →  Program Files / app.asar
+User Data (writable)      →  %APPDATA% / C:\LocalDevine
+Runtime Data (temporary)  →  %TEMP% / data directory
+```
+
+### 2. **Service Startup Pattern**
+```
+1. Check if already running
+2. Ensure required directories exist
+3. Clean up stale files (PID, locks)
+4. Track start time for warmup
+5. Spawn process with proper options
+6. Wait for service to be ready before next
+```
+
+### 3. **Health Monitoring Pattern**
+```
+1. Check process is running (PID exists)
+2. Service-specific health check (port, HTTP, etc.)
+3. Skip errors during warmup period
+4. Rate-limit notifications (prevent spam)
+5. Detect recovery and notify user
+```
+
+### 4. **Error Handling Pattern**
+```
+1. Try primary method
+2. Catch error and try fallback
+3. Log for debugging
+4. Notify user if critical
+5. Graceful degradation if possible
+```
+
+---
+
+## 📈 ผลลัพธ์หลังการแก้ไข
+
+### LocalDevine v0.2.0
+- **✅ 952 บรรทัดของ TypeScript** ใน ServiceManager (เพิ่มจาก 720)
+- **✅ Production Ready** - ทำงานได้ทั้ง Dev และ Production mode
+- **✅ Proper Path Resolution** - แยก binaries จาก user data
+- **✅ Warmup Period** - ไม่มี false notifications
+- **✅ Log Filtering** - แสดงเฉพาะ messages ที่สำคัญ
+- **✅ Dark Mode Support** - รองรับทั้ง light และ dark theme
+- **✅ MariaDB 11.x Compatible** - รองรับ version ใหม่
+
+### Commits ที่สำคัญ
+| Commit | Description |
+|--------|-------------|
+| `4ad37cc` | fix: resolve production mode permission and path issues |
+| `660e02f` | fix: resolve Apache and MariaDB service startup issues |
+| `23032c1` | fix: add warmup period to prevent false error notifications |
+| `f3e4ea1` | fix: improve MariaDB root password setup for MariaDB 11.x |
+| `c005848` | fix: create PHP session tmp directory before starting |
+| `00814ee` | feat: implement dark mode with theme toggle |
+| `4098025` | feat: add health monitoring and global error handlers |
+
+---
+
+*อัพเดทโดย Miler และ AI Agent Claude - January 2026*
+
+---
+
 ## 📚 Resources
 
 - **GitHub Repository**: [github.com/ohmiler/localdevine](https://github.com/ohmiler/localdevine)

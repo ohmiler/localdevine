@@ -520,6 +520,12 @@ ${vhostBlocks}
         const mariadbPort = this.getPort('mariadb');
         switch (serviceName) {
             case 'php':
+                // Ensure session tmp directory exists (required by php.ini)
+                const sessionTmpDir = 'C:\\LocalDevine\\tmp';
+                if (!fs_1.default.existsSync(sessionTmpDir)) {
+                    fs_1.default.mkdirSync(sessionTmpDir, { recursive: true });
+                    this.log('php', `Created session directory: ${sessionTmpDir}`);
+                }
                 // Run PHP-CGI on configured port using selected version
                 const phpPath = this.configManager ? this.configManager.getPHPPath() : path_1.default.join(this.binDir, 'php');
                 cmd = path_1.default.join(phpPath, 'php-cgi.exe');

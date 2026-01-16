@@ -653,6 +653,13 @@ ${vhostBlocks}
 
         switch (serviceName) {
             case 'php':
+                // Ensure session tmp directory exists (required by php.ini)
+                const sessionTmpDir = 'C:\\LocalDevine\\tmp';
+                if (!fs.existsSync(sessionTmpDir)) {
+                    fs.mkdirSync(sessionTmpDir, { recursive: true });
+                    this.log('php', `Created session directory: ${sessionTmpDir}`);
+                }
+                
                 // Run PHP-CGI on configured port using selected version
                 const phpPath = this.configManager ? this.configManager.getPHPPath() : path.join(this.binDir, 'php');
                 cmd = path.join(phpPath, 'php-cgi.exe');

@@ -59,7 +59,7 @@ export class ServiceManager {
     private healthStatus: Record<string, ServiceHealth> = {};
     private lastNotificationTime: Record<string, number> = {};
     private serviceStartTime: Record<string, number> = {}; // Track when each service was started
-    private readonly WARMUP_PERIOD_MS = 10000; // 10 seconds grace period after service start
+    private readonly WARMUP_PERIOD_MS = 15000; // 15 seconds grace period after service start (MariaDB init takes time)
 
     constructor(mainWindow: MainWindow, configManager: ConfigManager | null) {
         this.mainWindow = mainWindow;
@@ -526,8 +526,11 @@ ${vhostBlocks}
         for (const service of services) {
             if (!this.processes[service]) {
                 await this.startService(service);
-                // Apache needs more time to fully start
-                const delay = service === 'apache' ? 2000 : 500;
+                // Different services need different startup times
+                // MariaDB may need longer on first run due to initialization
+                let delay = 500;
+                if (service === 'apache') delay = 2000;
+                if (service === 'mariadb') delay = 3000; // MariaDB needs more time
                 await new Promise(resolve => setTimeout(resolve, delay));
             }
         }
@@ -698,8 +701,15 @@ ${vhostBlocks}
                 cmd = path.join(this.binDir, 'apache/bin/httpd.exe');
                 cwd = path.join(this.binDir, 'apache');
                 
+                // Ensure logs directory exists
+                const logsDir = path.join(this.binDir, 'apache/logs');
+                if (!fs.existsSync(logsDir)) {
+                    fs.mkdirSync(logsDir, { recursive: true });
+                    this.log('apache', 'Created logs directory');
+                }
+                
                 // Clean up stale pid file to prevent "Unclean shutdown" warning
-                const pidFile = path.join(this.binDir, 'apache/logs/httpd.pid');
+                const pidFile = path.join(logsDir, 'httpd.pid');
                 if (fs.existsSync(pidFile)) {
                     try {
                         fs.unlinkSync(pidFile);

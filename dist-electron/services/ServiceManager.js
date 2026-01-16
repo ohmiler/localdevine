@@ -15,7 +15,7 @@ class ServiceManager {
         this.healthStatus = {};
         this.lastNotificationTime = {};
         this.serviceStartTime = {}; // Track when each service was started
-        this.WARMUP_PERIOD_MS = 10000; // 10 seconds grace period after service start
+        this.WARMUP_PERIOD_MS = 15000; // 15 seconds grace period after service start (MariaDB init takes time)
         this.mainWindow = mainWindow;
         this.configManager = configManager;
         this.processes = {
@@ -410,8 +410,13 @@ ${vhostBlocks}
         for (const service of services) {
             if (!this.processes[service]) {
                 await this.startService(service);
-                // Apache needs more time to fully start
-                const delay = service === 'apache' ? 2000 : 500;
+                // Different services need different startup times
+                // MariaDB may need longer on first run due to initialization
+                let delay = 500;
+                if (service === 'apache')
+                    delay = 2000;
+                if (service === 'mariadb')
+                    delay = 3000; // MariaDB needs more time
                 await new Promise(resolve => setTimeout(resolve, delay));
             }
         }
@@ -559,8 +564,14 @@ ${vhostBlocks}
                 this.generateConfigs(); // Generate before start
                 cmd = path_1.default.join(this.binDir, 'apache/bin/httpd.exe');
                 cwd = path_1.default.join(this.binDir, 'apache');
+                // Ensure logs directory exists
+                const logsDir = path_1.default.join(this.binDir, 'apache/logs');
+                if (!fs_1.default.existsSync(logsDir)) {
+                    fs_1.default.mkdirSync(logsDir, { recursive: true });
+                    this.log('apache', 'Created logs directory');
+                }
                 // Clean up stale pid file to prevent "Unclean shutdown" warning
-                const pidFile = path_1.default.join(this.binDir, 'apache/logs/httpd.pid');
+                const pidFile = path_1.default.join(logsDir, 'httpd.pid');
                 if (fs_1.default.existsSync(pidFile)) {
                     try {
                         fs_1.default.unlinkSync(pidFile);

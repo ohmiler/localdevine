@@ -50,6 +50,7 @@ export interface ElectronAPI {
     // Folder operations
     openFolder: (folderType: FolderType) => void;
     openFolderPath: (folderPath: string) => void;
+    openConfigFile: (fileType: 'php.ini' | 'httpd.conf' | 'config.json' | 'my.ini') => void;
     openTerminal: () => void;
     selectFolder: () => Promise<string | null>;
 
@@ -65,6 +66,13 @@ export interface ElectronAPI {
     // Data Path
     getDataPath: () => Promise<{ current: string; default: string; isCustom: boolean }>;
     setDataPath: (path: string) => Promise<{ success: boolean; needsRestart?: boolean; error?: string }>;
+
+    // Config Backup
+    getConfigBackups: (fileType: 'php.ini' | 'httpd.conf' | 'config.json' | 'my.ini') => Promise<Array<{ original: string; backup: string; timestamp: number }>>;
+    restoreConfigBackup: (fileType: 'php.ini' | 'httpd.conf' | 'config.json' | 'my.ini', backupPath?: string) => Promise<{ success: boolean; error?: string }>;
+
+    // Log Files
+    openLogFile: (logType: 'apache-error' | 'apache-access') => void;
 
     // Hosts File
     getHostsEntries: () => Promise<HostsFileResult>;

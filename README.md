@@ -91,10 +91,21 @@ npm run electron:build
 
 ### จัดการ Database
 
+**Local Database:**
 1. คลิกปุ่ม **🗄️ Database** ที่หน้าแรก
 2. Adminer จะเปิดใน Browser
 3. Login: `root` / `root`
 4. จัดการ database ได้ทันที
+
+**Remote Database (เชื่อมต่อ Server ภายนอก):**
+- Adminer รองรับการเชื่อมต่อฐานข้อมูลบนเซิร์ฟเวอร์ภายนอก
+- ใส่ Server address (IP:PORT) ในหน้า Login
+- **เหมาะสำหรับ:** แทนที่ phpMyAdmin บน server (เข้าจากเครื่อง client)
+
+**Import ไฟล์ใหญ่:**
+- รองรับไฟล์ SQL ขนาดใหญ่ (สูงสุด 512MB)
+- **แก้ปัญหา phpMyAdmin** ที่อัปโหลดไฟล์ใหญ่ไม่ได้
+- เหมาะสำหรับการ import/export database ขนาดใหญ่
 
 ## 📁 Project Structure
 

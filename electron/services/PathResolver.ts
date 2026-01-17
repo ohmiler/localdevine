@@ -153,7 +153,6 @@ export class PathResolver {
     private copyDefaultFiles(): void {
         const wwwDir = path.join(this._userDataPath, 'www');
         const sourceWwwDir = path.join(this._basePath, 'www');
-        const configDir = path.join(this._userDataPath, 'config');
 
         // Copy adminer.php if exists in source and not in destination
         const adminerSrc = path.join(sourceWwwDir, 'adminer.php');
@@ -163,77 +162,13 @@ export class PathResolver {
             logger.debug('Copied adminer.php to www');
         }
 
-        // Copy php.ini to user config directory for easy editing
-        // This allows users to customize PHP settings without modifying app resources
-        const userPhpIni = path.join(configDir, 'php.ini');
-        const sourcePhpIni = path.join(this._basePath, 'bin/php/php.ini');
-        
-        if (!fs.existsSync(userPhpIni) && fs.existsSync(sourcePhpIni)) {
-            // Update session.save_path to use userDataPath
-            let phpIniContent = fs.readFileSync(sourcePhpIni, 'utf8');
-            const sessionSavePath = path.join(this._userDataPath, 'tmp').replace(/\\/g, '/');
-            phpIniContent = phpIniContent.replace(
-                /session\.save_path\s*=.*/,
-                `session.save_path = "${sessionSavePath}"`
-            );
-            fs.writeFileSync(userPhpIni, phpIniContent);
-            logger.debug(`Copied php.ini to user config: ${userPhpIni}`);
-        }
-
-        // Create MariaDB my.ini template for easy customization
-        const userMyIni = path.join(configDir, 'my.ini');
-        if (!fs.existsSync(userMyIni)) {
-            const mariadbBasedir = path.join(this.binDir, 'mariadb').replace(/\\/g, '/');
-            const mariadbDataDir = this.mariadbDataDir.replace(/\\/g, '/');
-            const mariadbPluginDir = path.join(mariadbBasedir, 'lib', 'plugin').replace(/\\/g, '/');
-            
-            const myIniContent = `[mysqld]
-# MariaDB Configuration for LocalDevine
-# This file allows you to customize MariaDB settings
-
-# Data directory
-datadir=${mariadbDataDir}
-
-# Base directory
-basedir=${mariadbBasedir}
-
-# Plugin directory
-plugin-dir=${mariadbPluginDir}
-
-# Default port (can be overridden by ServiceManager)
-port=3306
-
-# Character set
-character-set-server=utf8mb4
-collation-server=utf8mb4_unicode_ci
-
-# Allow files to be imported/exported from any directory
-secure-file-priv=
-
-[client]
-# Client configuration
-plugin-dir=${mariadbPluginDir}
-default-character-set=utf8mb4
-
-# You can add more configuration options below
-# For example:
-# max_connections=151
-# query_cache_size=0
-# query_cache_type=0
-`;
-            fs.writeFileSync(userMyIni, myIniContent);
-            logger.debug(`Created my.ini template: ${userMyIni}`);
-        }
-
-        // Copy updated php.ini to production app.asar.unpacked (for PHP to find if -c not specified)
+        // Copy updated php.ini to production
         if (app.isPackaged) {
-            const destPhpIni = path.join(this._basePath, 'bin/php/php.ini');
-            if (fs.existsSync(sourcePhpIni) && fs.existsSync(path.dirname(destPhpIni))) {
-                // Also ensure the original location has the updated php.ini
-                if (fs.existsSync(destPhpIni)) {
-                    fs.copyFileSync(sourcePhpIni, destPhpIni);
-                    logger.debug('Updated php.ini in app resources');
-                }
+            const sourcePhpIni = path.join(this._basePath, 'bin/php/php.ini');
+            const destPhpIni = path.join(this._basePath, 'app.asar.unpacked/bin/php/php.ini');
+            if (fs.existsSync(sourcePhpIni) && fs.existsSync(destPhpIni)) {
+                fs.copyFileSync(sourcePhpIni, destPhpIni);
+                logger.debug('Updated php.ini with pdo_mysql extension');
             }
         }
 
@@ -357,16 +292,6 @@ default-character-set=utf8mb4
     get mariadbDataDir(): string {
         // MariaDB data at userDataPath/data/mariadb
         return path.join(this._userDataPath, 'data', 'mariadb');
-    }
-
-    get phpIniPath(): string {
-        // php.ini at userDataPath/config/php.ini for easy user customization
-        return path.join(this._userDataPath, 'config', 'php.ini');
-    }
-
-    get myIniPath(): string {
-        // my.ini at userDataPath/config/my.ini for MariaDB customization
-        return path.join(this._userDataPath, 'config', 'my.ini');
     }
 
     get settingsPath(): string {

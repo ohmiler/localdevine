@@ -17,7 +17,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Folder operations
     openFolder: (folderType) => ipcRenderer.send('open-folder', folderType),
     openFolderPath: (folderPath) => ipcRenderer.send('open-folder-path', folderPath),
-    openConfigFile: (fileType) => ipcRenderer.send('open-config-file', fileType),
     openTerminal: () => ipcRenderer.send('open-terminal'),
     selectFolder: () => ipcRenderer.invoke('select-folder'),
 
@@ -33,13 +32,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Data Path
     getDataPath: () => ipcRenderer.invoke('get-data-path'),
     setDataPath: (path) => ipcRenderer.invoke('set-data-path', path),
-
-    // Config Backup
-    getConfigBackups: (fileType) => ipcRenderer.invoke('get-config-backups', fileType),
-    restoreConfigBackup: (fileType, backupPath) => ipcRenderer.invoke('restore-config-backup', fileType, backupPath),
-
-    // Log Files
-    openLogFile: (logType) => ipcRenderer.send('open-log-file', logType),
 
     // Hosts File
     getHostsEntries: () => ipcRenderer.invoke('get-hosts-entries'),

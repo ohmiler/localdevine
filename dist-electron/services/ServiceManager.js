@@ -623,18 +623,7 @@ ${vhostBlocks}
                 // Run PHP-CGI on configured port using selected version
                 const phpPath = this.configManager ? this.configManager.getPHPPath() : path_1.default.join(this.binDir, 'php');
                 cmd = path_1.default.join(phpPath, 'php-cgi.exe');
-                // Use php.ini from user config directory for easy customization
-                // This allows users to edit C:\LocalDevine\config\php.ini
-                const userPhpIni = this.pathResolver.phpIniPath;
-                if (fs_1.default.existsSync(userPhpIni)) {
-                    args = ['-b', `127.0.0.1:${phpPort}`, '-c', userPhpIni];
-                    this.log('php', `Using php.ini from: ${userPhpIni}`);
-                }
-                else {
-                    // Fallback to default location
-                    args = ['-b', `127.0.0.1:${phpPort}`];
-                    this.log('php', 'Using default php.ini location');
-                }
+                args = ['-b', `127.0.0.1:${phpPort}`];
                 break;
             case 'apache':
                 this.generateConfigs(); // Generate before start
@@ -674,27 +663,14 @@ ${vhostBlocks}
                     this.notifyStatus(serviceName, 'stopped');
                     return;
                 }
-                // Use my.ini from user config if exists, otherwise use command line args
-                const myIniPath = this.pathResolver.myIniPath;
-                if (fs_1.default.existsSync(myIniPath)) {
-                    // Use my.ini configuration file
-                    args = [
-                        '--console',
-                        `--defaults-file=${myIniPath}`,
-                        `--port=${mariadbPort}`
-                    ];
-                    this.log('mariadb', `Using my.ini from: ${myIniPath}`);
-                }
-                else {
-                    // Fallback to command line arguments
-                    args = [
-                        '--console',
-                        `--port=${mariadbPort}`,
-                        `--basedir=${mariadbBasedir}`,
-                        `--datadir=${this.pathResolver.mariadbDataDir}`
-                    ];
-                    this.log('mariadb', 'Using command line arguments (my.ini not found)');
-                }
+                // Use external data directory at C:\LocalDevine\data\mariadb
+                // --basedir is needed so MariaDB can find share/errmsg.sys
+                args = [
+                    '--console',
+                    `--port=${mariadbPort}`,
+                    `--basedir=${mariadbBasedir}`,
+                    `--datadir=${this.pathResolver.mariadbDataDir}`
+                ];
                 break;
             default:
                 this.log('system', `Unknown service: ${serviceName}`);

@@ -6,14 +6,12 @@
 import { ipcMain, shell, dialog, IpcMainEvent, IpcMainInvokeEvent, app, BrowserWindow } from 'electron';
 import { spawn } from 'child_process';
 import path from 'path';
-import fs from 'fs';
 
 import { ServiceManager, VHostConfig } from '../services/ServiceManager';
 import ConfigManager, { Config } from '../services/ConfigManager';
 import HostsManager from '../services/HostsManager';
 import ProjectTemplateManager, { CreateProjectOptions } from '../services/ProjectTemplateManager';
 import PathResolver from '../services/PathResolver';
-import ConfigBackupManager, { ConfigFileType } from '../services/ConfigBackupManager';
 import logger from '../services/Logger';
 
 // Module references - will be set during initialization
@@ -123,17 +121,6 @@ function registerConfigHandlers(): void {
     }
     return result;
   });
-
-  // Config Backup handlers
-  ipcMain.handle('get-config-backups', async (_event: IpcMainInvokeEvent, fileType: ConfigFileType) => {
-    const backupManager = ConfigBackupManager.getInstance();
-    return backupManager.getBackups(fileType);
-  });
-
-  ipcMain.handle('restore-config-backup', async (_event: IpcMainInvokeEvent, fileType: ConfigFileType, backupPath?: string) => {
-    const backupManager = ConfigBackupManager.getInstance();
-    return backupManager.restoreBackup(fileType, backupPath);
-  });
 }
 
 // ============================================
@@ -148,8 +135,7 @@ function registerFolderHandlers(): void {
         folderPath = pathResolver.wwwDir;
         break;
       case 'config':
-        // Open user config directory (C:\LocalDevine\config) not basePath
-        folderPath = path.join(pathResolver.userDataPath, 'config');
+        folderPath = pathResolver.basePath;
         break;
       case 'bin':
         folderPath = pathResolver.binDir;
@@ -163,71 +149,6 @@ function registerFolderHandlers(): void {
   ipcMain.on('open-folder-path', (_event: IpcMainEvent, folderPath: string) => {
     if (folderPath) {
       shell.openPath(folderPath);
-    }
-  });
-
-  // Log Files handlers
-  ipcMain.on('open-log-file', (_event: IpcMainEvent, logType: string) => {
-    const pathResolver = PathResolver.getInstance();
-    let logPath: string;
-    
-    switch (logType) {
-      case 'apache-error':
-        logPath = path.join(pathResolver.userDataPath, 'logs', 'apache', 'error.log');
-        break;
-      case 'apache-access':
-        logPath = path.join(pathResolver.userDataPath, 'logs', 'apache', 'access.log');
-        break;
-      default:
-        return;
-    }
-    
-    // Open log file with default system editor
-    if (fs.existsSync(logPath)) {
-      shell.openPath(logPath);
-    } else {
-      // If log file doesn't exist, open containing folder
-      shell.openPath(path.dirname(logPath));
-    }
-  });
-
-  ipcMain.on('open-config-file', (_event: IpcMainEvent, fileType: string) => {
-    const pathResolver = PathResolver.getInstance();
-    const backupManager = ConfigBackupManager.getInstance();
-    let filePath: string;
-    
-    switch (fileType) {
-      case 'php.ini':
-        filePath = pathResolver.phpIniPath;
-        break;
-      case 'httpd.conf':
-        filePath = path.join(pathResolver.userDataPath, 'config', 'httpd.conf');
-        break;
-      case 'config.json':
-        filePath = pathResolver.configPath;
-        break;
-      case 'my.ini':
-        // MariaDB config file location
-        filePath = path.join(pathResolver.userDataPath, 'config', 'my.ini');
-        break;
-      default:
-        return;
-    }
-    
-    // Create backup before opening file for editing
-    if (fs.existsSync(filePath)) {
-      const backup = backupManager.createBackup(fileType as ConfigFileType);
-      if (backup) {
-        logger.debug(`Created backup before opening ${fileType}: ${backup.backup}`);
-      }
-    }
-    
-    // Open file with default system editor
-    if (fs.existsSync(filePath)) {
-      shell.openPath(filePath);
-    } else {
-      // If file doesn't exist, open containing folder
-      shell.openPath(path.dirname(filePath));
     }
   });
 

@@ -201,6 +201,32 @@ body {
   background-clip: text;
 }
 
+/* White text for headers on white background */
+.header-text-white {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  background: none;
+}
+
+.dark .header-text-white {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  background: none;
+}
+
+/* Black text for headers on light background */
+.header-text-black {
+  color: #1e293b;
+  -webkit-text-fill-color: #1e293b;
+  background: none;
+}
+
+.dark .header-text-black {
+  color: #f1f5f9;
+  -webkit-text-fill-color: #f1f5f9;
+  background: none;
+}
+
 /* Utility classes for theme-aware colors */
 .text-muted {
   color: var(--text-muted) !important;

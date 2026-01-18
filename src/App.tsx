@@ -222,39 +222,39 @@ function App() {
           </h1>
           <p className="text-lg font-medium text-gradient opacity-90">The Modern PHP Development Environment</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentPage('templates')}
-            className="button-secondary"
+            className="button-secondary text-sm px-3 py-1.5"
           >
             📦 Projects
           </button>
           <button
             onClick={() => setCurrentPage('database')}
-            className="button-secondary"
+            className="button-secondary text-sm px-3 py-1.5"
           >
             🗄️ Database
           </button>
           <button
             onClick={() => setCurrentPage('vhosts')}
-            className="button-secondary"
+            className="button-secondary text-sm px-3 py-1.5"
           >
-            🌐 Virtual Hosts
+            🌐 VHosts
           </button>
           <button
             onClick={() => setCurrentPage('hosts')}
-            className="button-secondary"
+            className="button-secondary text-sm px-3 py-1.5"
           >
-            📝 Hosts File
+            📝 Hosts
           </button>
           <button
             onClick={() => setCurrentPage('settings')}
-            className="button-secondary"
+            className="button-secondary text-sm px-3 py-1.5"
           >
-            ⚙️ Settings
+            ⚙️
           </button>
           <ThemeToggle />
-          <div className="text-sm text-muted font-mono opacity-75">v{version}</div>
+          <span className="text-xs text-muted font-mono opacity-75">v{version}</span>
         </div>
       </header>
 

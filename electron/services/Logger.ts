@@ -68,5 +68,6 @@ export const configLogger = new Logger('ConfigManager');
 export const pathLogger = new Logger('PathResolver');
 export const trayLogger = new Logger('TrayManager');
 export const hostsLogger = new Logger('HostsManager');
+export const databaseLogger = new Logger('DatabaseManager');
 
 export default logger;

@@ -11,6 +11,7 @@ const TrayManager_1 = __importDefault(require("./services/TrayManager"));
 const ConfigManager_1 = __importDefault(require("./services/ConfigManager"));
 const HostsManager_1 = __importDefault(require("./services/HostsManager"));
 const ProjectTemplateManager_1 = __importDefault(require("./services/ProjectTemplateManager"));
+const DatabaseManager_1 = __importDefault(require("./services/DatabaseManager"));
 const AutoUpdater_1 = __importDefault(require("./services/AutoUpdater"));
 const ipc_1 = require("./ipc");
 // Basic error handling to catch the 'string' issue
@@ -97,8 +98,10 @@ electron_1.app.whenReady().then(() => {
     serviceManager = new ServiceManager_1.ServiceManager(win, configManager);
     hostsManager = new HostsManager_1.default();
     projectTemplateManager = new ProjectTemplateManager_1.default();
+    const databaseManager = new DatabaseManager_1.default(configManager);
+    databaseManager.setMainWindow(win);
     // Initialize IPC with manager references
-    (0, ipc_1.initializeIPC)(win, serviceManager, configManager, hostsManager, projectTemplateManager);
+    (0, ipc_1.initializeIPC)(win, serviceManager, configManager, hostsManager, projectTemplateManager, databaseManager);
     // Start health monitoring
     serviceManager.startHealthMonitoring(5000);
     // Create system tray
@@ -124,7 +127,9 @@ electron_1.app.on('activate', () => {
         serviceManager = new ServiceManager_1.ServiceManager(win, configManager);
         hostsManager = new HostsManager_1.default();
         projectTemplateManager = new ProjectTemplateManager_1.default();
-        (0, ipc_1.initializeIPC)(win, serviceManager, configManager, hostsManager, projectTemplateManager);
+        const databaseManager = new DatabaseManager_1.default(configManager);
+        databaseManager.setMainWindow(win);
+        (0, ipc_1.initializeIPC)(win, serviceManager, configManager, hostsManager, projectTemplateManager, databaseManager);
         trayManager = new TrayManager_1.default(win, serviceManager, electron_1.app);
         trayManager.create();
     }

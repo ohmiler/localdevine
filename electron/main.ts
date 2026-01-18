@@ -7,6 +7,7 @@ import TrayManager from './services/TrayManager';
 import ConfigManager from './services/ConfigManager';
 import HostsManager from './services/HostsManager';
 import ProjectTemplateManager from './services/ProjectTemplateManager';
+import DatabaseManager from './services/DatabaseManager';
 import AutoUpdater from './services/AutoUpdater';
 import { registerIPCHandlers, initializeIPC } from './ipc';
 
@@ -106,9 +107,11 @@ app.whenReady().then(() => {
   serviceManager = new ServiceManager(win, configManager);
   hostsManager = new HostsManager();
   projectTemplateManager = new ProjectTemplateManager();
+  const databaseManager = new DatabaseManager(configManager);
+  databaseManager.setMainWindow(win);
 
   // Initialize IPC with manager references
-  initializeIPC(win, serviceManager, configManager, hostsManager, projectTemplateManager);
+  initializeIPC(win, serviceManager, configManager, hostsManager, projectTemplateManager, databaseManager);
 
   // Start health monitoring
   serviceManager.startHealthMonitoring(5000);
@@ -139,8 +142,10 @@ app.on('activate', () => {
     serviceManager = new ServiceManager(win, configManager);
     hostsManager = new HostsManager();
     projectTemplateManager = new ProjectTemplateManager();
+    const databaseManager = new DatabaseManager(configManager);
+    databaseManager.setMainWindow(win);
     
-    initializeIPC(win, serviceManager, configManager, hostsManager, projectTemplateManager);
+    initializeIPC(win, serviceManager, configManager, hostsManager, projectTemplateManager, databaseManager);
     
     trayManager = new TrayManager(win, serviceManager, app);
     trayManager.create();

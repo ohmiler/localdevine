@@ -57,6 +57,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     installUpdate: () => ipcRenderer.invoke('install-update'),
     getUpdateStatus: () => ipcRenderer.invoke('get-update-status'),
 
+    // Database Manager
+    dbList: () => ipcRenderer.invoke('db-list'),
+    dbCreate: (name) => ipcRenderer.invoke('db-create', name),
+    dbDelete: (name) => ipcRenderer.invoke('db-delete', name),
+    dbTables: (database) => ipcRenderer.invoke('db-tables', database),
+    dbImport: (database, filePath) => ipcRenderer.invoke('db-import', database, filePath),
+    dbExport: (database, outputPath) => ipcRenderer.invoke('db-export', database, outputPath),
+    dbQuery: (database, query) => ipcRenderer.invoke('db-query', database, query),
+    dbTestConnection: () => ipcRenderer.invoke('db-test-connection'),
+    dbSelectFile: () => ipcRenderer.invoke('db-select-file'),
+    dbSaveFile: (defaultName) => ipcRenderer.invoke('db-save-file', defaultName),
+
     // Event listeners
     on: (channel, callback) => {
         const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status'];

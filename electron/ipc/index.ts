@@ -11,6 +11,7 @@ import { ServiceManager, VHostConfig } from '../services/ServiceManager';
 import ConfigManager, { Config } from '../services/ConfigManager';
 import HostsManager from '../services/HostsManager';
 import ProjectTemplateManager, { CreateProjectOptions } from '../services/ProjectTemplateManager';
+import DatabaseManager from '../services/DatabaseManager';
 import PathResolver from '../services/PathResolver';
 import logger from '../services/Logger';
 
@@ -77,6 +78,7 @@ let serviceManager: ServiceManager | null = null;
 let configManager: ConfigManager | null = null;
 let hostsManager: HostsManager | null = null;
 let projectTemplateManager: ProjectTemplateManager | null = null;
+let databaseManager: DatabaseManager | null = null;
 
 /**
  * Initialize IPC handlers with module references
@@ -86,13 +88,15 @@ export function initializeIPC(
   services: ServiceManager,
   config: ConfigManager,
   hosts: HostsManager,
-  projects: ProjectTemplateManager
+  projects: ProjectTemplateManager,
+  database?: DatabaseManager
 ): void {
   mainWindow = win;
   serviceManager = services;
   configManager = config;
   hostsManager = hosts;
   projectTemplateManager = projects;
+  databaseManager = database || null;
 }
 
 /**
@@ -105,6 +109,7 @@ export function registerIPCHandlers(): void {
   registerVHostHandlers();
   registerHostsHandlers();
   registerProjectHandlers();
+  registerDatabaseHandlers();
 }
 
 // ============================================
@@ -425,5 +430,125 @@ function registerProjectHandlers(): void {
     
     const port = configManager ? configManager.getPort('apache') : 80;
     shell.openExternal(`http://localhost:${port}/${projectName}`);
+  });
+}
+
+// ============================================
+// Database Handlers
+// ============================================
+function registerDatabaseHandlers(): void {
+  // List all databases
+  ipcMain.handle('db-list', async () => {
+    if (!databaseManager) return { success: false, error: 'DatabaseManager not initialized', data: [] };
+    try {
+      const databases = await databaseManager.listDatabases();
+      return { success: true, data: databases };
+    } catch (error) {
+      return { success: false, error: (error as Error).message, data: [] };
+    }
+  });
+
+  // Create database
+  ipcMain.handle('db-create', async (_event: IpcMainInvokeEvent, name: string) => {
+    if (!databaseManager) return { success: false, error: 'DatabaseManager not initialized' };
+    if (!name || typeof name !== 'string' || !/^[a-zA-Z_][a-zA-Z0-9_$]*$/.test(name)) {
+      return { success: false, error: 'Invalid database name' };
+    }
+    return databaseManager.createDatabase(name);
+  });
+
+  // Delete database
+  ipcMain.handle('db-delete', async (_event: IpcMainInvokeEvent, name: string) => {
+    if (!databaseManager) return { success: false, error: 'DatabaseManager not initialized' };
+    if (!name || typeof name !== 'string') {
+      return { success: false, error: 'Invalid database name' };
+    }
+    return databaseManager.deleteDatabase(name);
+  });
+
+  // List tables in a database
+  ipcMain.handle('db-tables', async (_event: IpcMainInvokeEvent, database: string) => {
+    if (!databaseManager) return { success: false, error: 'DatabaseManager not initialized', data: [] };
+    if (!database || typeof database !== 'string') {
+      return { success: false, error: 'Invalid database name', data: [] };
+    }
+    try {
+      const tables = await databaseManager.listTables(database);
+      return { success: true, data: tables };
+    } catch (error) {
+      return { success: false, error: (error as Error).message, data: [] };
+    }
+  });
+
+  // Import SQL file
+  ipcMain.handle('db-import', async (_event: IpcMainInvokeEvent, database: string, filePath: string) => {
+    if (!databaseManager) return { success: false, error: 'DatabaseManager not initialized' };
+    if (!database || typeof database !== 'string') {
+      return { success: false, error: 'Invalid database name' };
+    }
+    if (!filePath || typeof filePath !== 'string') {
+      return { success: false, error: 'Invalid file path' };
+    }
+    return databaseManager.importSQL(database, filePath);
+  });
+
+  // Export database
+  ipcMain.handle('db-export', async (_event: IpcMainInvokeEvent, database: string, outputPath: string) => {
+    if (!databaseManager) return { success: false, error: 'DatabaseManager not initialized' };
+    if (!database || typeof database !== 'string') {
+      return { success: false, error: 'Invalid database name' };
+    }
+    if (!outputPath || typeof outputPath !== 'string') {
+      return { success: false, error: 'Invalid output path' };
+    }
+    return databaseManager.exportDatabase(database, outputPath);
+  });
+
+  // Execute SQL query
+  ipcMain.handle('db-query', async (_event: IpcMainInvokeEvent, database: string, query: string) => {
+    if (!databaseManager) return { success: false, error: 'DatabaseManager not initialized' };
+    if (!database || typeof database !== 'string') {
+      return { success: false, error: 'Invalid database name' };
+    }
+    if (!query || typeof query !== 'string') {
+      return { success: false, error: 'Invalid query' };
+    }
+    return databaseManager.executeQuery(database, query);
+  });
+
+  // Test database connection
+  ipcMain.handle('db-test-connection', async () => {
+    if (!databaseManager) return { success: false, error: 'DatabaseManager not initialized' };
+    return databaseManager.testConnection();
+  });
+
+  // Select SQL file dialog
+  ipcMain.handle('db-select-file', async () => {
+    const result = await dialog.showOpenDialog(mainWindow!, {
+      properties: ['openFile'],
+      filters: [
+        { name: 'SQL Files', extensions: ['sql'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      return { success: true, filePath: result.filePaths[0] };
+    }
+    return { success: false, filePath: null };
+  });
+
+  // Save SQL file dialog
+  ipcMain.handle('db-save-file', async (_event: IpcMainInvokeEvent, defaultName: string) => {
+    const result = await dialog.showSaveDialog(mainWindow!, {
+      defaultPath: defaultName || 'export.sql',
+      filters: [
+        { name: 'SQL Files', extensions: ['sql'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+    if (!result.canceled && result.filePath) {
+      return { success: true, filePath: result.filePath };
+    }
+    return { success: false, filePath: null };
   });
 }

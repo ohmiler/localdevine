@@ -6,12 +6,13 @@ import VirtualHosts from './components/VirtualHosts';
 import HostsEditor from './components/HostsEditor';
 import NotificationPanel from './components/NotificationPanel';
 import ProjectTemplates from './components/ProjectTemplates';
+import DatabaseManager from './components/DatabaseManager';
 import ThemeToggle from './components/ThemeToggle';
 import { useKeyboardShortcuts, defaultShortcuts } from './hooks/useKeyboardShortcuts';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 import './styles/themes.css';
 
-type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates';
+type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database';
 
 interface Services {
   php: ServiceStatus;
@@ -206,6 +207,11 @@ function App() {
     );
   }
 
+  // Render Database Manager page
+  if (currentPage === 'database') {
+    return <DatabaseManager onBack={() => setCurrentPage('home')} />;
+  }
+
   // Render Home page
   return (
     <div className="min-h-screen p-8">
@@ -222,6 +228,12 @@ function App() {
             className="button-secondary"
           >
             📦 Projects
+          </button>
+          <button
+            onClick={() => setCurrentPage('database')}
+            className="button-secondary"
+          >
+            🗄️ Database
           </button>
           <button
             onClick={() => setCurrentPage('vhosts')}

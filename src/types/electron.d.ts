@@ -32,6 +32,20 @@ export interface ServiceNotification {
     timestamp: string;
 }
 
+// Database types
+export interface DatabaseInfo {
+    name: string;
+    tables: number;
+    size: string;
+}
+
+export interface TableInfo {
+    name: string;
+    rows: number;
+    size: string;
+    engine: string;
+}
+
 // ElectronAPI interface for renderer process
 export interface ElectronAPI {
     // Service control
@@ -83,6 +97,18 @@ export interface ElectronAPI {
     openProjectFolder: (projectName: string) => Promise<void>;
     openProjectBrowser: (projectName: string) => Promise<void>;
     openBrowser: (url: string) => Promise<void>;
+
+    // Database Manager
+    dbList: () => Promise<{ success: boolean; data: DatabaseInfo[]; error?: string }>;
+    dbCreate: (name: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+    dbDelete: (name: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+    dbTables: (database: string) => Promise<{ success: boolean; data: TableInfo[]; error?: string }>;
+    dbImport: (database: string, filePath: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+    dbExport: (database: string, outputPath: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+    dbQuery: (database: string, query: string) => Promise<{ success: boolean; data?: any[]; error?: string; affectedRows?: number }>;
+    dbTestConnection: () => Promise<{ success: boolean; message?: string; error?: string }>;
+    dbSelectFile: () => Promise<{ success: boolean; filePath: string | null }>;
+    dbSaveFile: (defaultName: string) => Promise<{ success: boolean; filePath: string | null }>;
 
     // Event listeners
     on: (channel: 'service-status' | 'log-entry' | 'health-status' | 'service-notification', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;

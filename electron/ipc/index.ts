@@ -200,7 +200,7 @@ function registerFolderHandlers(): void {
         folderPath = pathResolver.wwwDir;
         break;
       case 'config':
-        folderPath = pathResolver.basePath;
+        folderPath = pathResolver.configDir;
         break;
       case 'bin':
         folderPath = pathResolver.binDir;

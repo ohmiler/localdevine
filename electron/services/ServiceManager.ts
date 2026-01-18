@@ -757,7 +757,16 @@ ${vhostBlocks}
                 // Run PHP-CGI on configured port using selected version
                 const phpPath = this.configManager ? this.configManager.getPHPPath() : path.join(this.binDir, 'php');
                 cmd = path.join(phpPath, 'php-cgi.exe');
-                args = ['-b', `127.0.0.1:${phpPort}`];
+                
+                // Use php.ini from user config folder (so user can edit it)
+                const userPhpIni = this.pathResolver.phpIniPath;
+                if (fs.existsSync(userPhpIni)) {
+                    args = ['-b', `127.0.0.1:${phpPort}`, '-c', userPhpIni];
+                    this.log('php', `Using php.ini from: ${userPhpIni}`);
+                } else {
+                    args = ['-b', `127.0.0.1:${phpPort}`];
+                    this.log('php', 'Using default php.ini from PHP folder');
+                }
                 break;
             case 'apache':
                 this.generateConfigs(); // Generate before start

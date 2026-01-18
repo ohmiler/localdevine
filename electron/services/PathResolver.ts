@@ -162,13 +162,22 @@ export class PathResolver {
             logger.debug('Copied adminer.php to www');
         }
 
-        // Copy updated php.ini to production
-        if (app.isPackaged) {
-            const sourcePhpIni = path.join(this._basePath, 'bin/php/php.ini');
-            const destPhpIni = path.join(this._basePath, 'app.asar.unpacked/bin/php/php.ini');
-            if (fs.existsSync(sourcePhpIni) && fs.existsSync(destPhpIni)) {
-                fs.copyFileSync(sourcePhpIni, destPhpIni);
-                logger.debug('Updated php.ini with pdo_mysql extension');
+        // Copy php.ini to user config folder (so user can edit it)
+        const configDir = path.join(this._userDataPath, 'config');
+        const userPhpIni = path.join(configDir, 'php.ini');
+        if (!fs.existsSync(userPhpIni)) {
+            // Try to copy from bin/php/php.ini
+            const sourcePhpIni = path.join(this._basePath, 'bin', 'php', 'php.ini');
+            if (fs.existsSync(sourcePhpIni)) {
+                // Read and modify session.save_path to use user's tmp folder
+                let phpIniContent = fs.readFileSync(sourcePhpIni, 'utf8');
+                const tmpDir = path.join(this._userDataPath, 'tmp').replace(/\\/g, '/');
+                phpIniContent = phpIniContent.replace(
+                    /session\.save_path\s*=\s*"[^"]*"/,
+                    `session.save_path = "${tmpDir}"`
+                );
+                fs.writeFileSync(userPhpIni, phpIniContent);
+                logger.debug(`Copied php.ini to user config: ${userPhpIni}`);
             }
         }
 
@@ -283,6 +292,16 @@ export class PathResolver {
     get configPath(): string {
         // Config at userDataPath/config/config.json
         return path.join(this._userDataPath, 'config', 'config.json');
+    }
+
+    get configDir(): string {
+        // Config directory at userDataPath/config
+        return path.join(this._userDataPath, 'config');
+    }
+
+    get phpIniPath(): string {
+        // php.ini at userDataPath/config/php.ini (user-editable)
+        return path.join(this._userDataPath, 'config', 'php.ini');
     }
 
     get tmpDir(): string {

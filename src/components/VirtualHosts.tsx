@@ -9,7 +9,8 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
     const [vhosts, setVHosts] = useState<VHostConfig[]>([]);
     const [newVHost, setNewVHost] = useState<CreateVHostInput>({ name: '', domain: '', path: '' });
     const [saving, setSaving] = useState(false);
-    const [message, setMessage] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
 
     useEffect(() => {
         loadVHosts();
@@ -24,26 +25,25 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
 
     const handleAdd = async () => {
         if (!newVHost.name || !newVHost.domain || !newVHost.path) {
-            setMessage('✗ Please fill all fields');
+            setError('Please fill all fields');
             return;
         }
 
         setSaving(true);
-        setMessage('');
+        setError(null);
 
         if (window.electronAPI) {
             const result = await window.electronAPI.addVHost(newVHost);
             if (result.success) {
-                setMessage('✓ Virtual host added! Remember to add to hosts file.');
+                setSuccess('Virtual host added! Remember to add to hosts file.');
                 setNewVHost({ name: '', domain: '', path: '' });
                 loadVHosts();
             } else {
-                setMessage(`✗ Error: ${result.error}`);
+                setError(result.error || 'Failed to add virtual host');
             }
         }
 
         setSaving(false);
-        setTimeout(() => setMessage(''), 5000);
     };
 
     const handleRemove = async (id: string) => {
@@ -57,12 +57,26 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
         const url = `http://${domain}`;
         try {
             await navigator.clipboard.writeText(url);
-            setMessage(`✓ URL copied: ${url}`);
-            setTimeout(() => setMessage(''), 2000);
+            setSuccess(`URL copied: ${url}`);
         } catch {
-            setMessage('✗ Failed to copy URL');
+            setError('Failed to copy URL');
         }
     };
+
+    // Auto-clear messages
+    useEffect(() => {
+        if (success) {
+            const timer = setTimeout(() => setSuccess(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [success]);
+
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(null), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
 
     const handleOpenBrowser = (domain: string) => {
         if (window.electronAPI) {
@@ -165,9 +179,16 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
                             {saving ? '⏳ Adding...' : '➕ Add Virtual Host'}
                         </button>
 
-                        {message && (
-                            <div className={`p-3 rounded-lg text-sm ${message.startsWith('✓') ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
-                                {message}
+                        {error && (
+                            <div className="p-3 rounded-lg text-sm bg-red-100 border border-red-300 text-red-700 flex justify-between items-center">
+                                <span>❌ {error}</span>
+                                <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">✕</button>
+                            </div>
+                        )}
+                        {success && (
+                            <div className="p-3 rounded-lg text-sm bg-green-100 border border-green-300 text-green-700 flex justify-between items-center">
+                                <span>✅ {success}</span>
+                                <button onClick={() => setSuccess(null)} className="text-green-500 hover:text-green-700">✕</button>
                             </div>
                         )}
                     </div>

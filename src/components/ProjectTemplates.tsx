@@ -9,7 +9,8 @@ function ProjectTemplates() {
   const [databaseName, setDatabaseName] = useState('');
   const [createDatabase, setCreateDatabase] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; project: string }>({ show: false, project: '' });
 
   // Debug: Log state changes
@@ -22,6 +23,21 @@ function ProjectTemplates() {
   useEffect(() => {
     console.log('Projects changed:', projects);
   }, [projects]);
+
+  // Auto-clear messages
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const loadData = async () => {
     if (window.electronAPI) {
@@ -39,7 +55,7 @@ function ProjectTemplates() {
 
   const handleCreateProject = async () => {
     if (!selectedTemplate || !projectName.trim()) {
-      setMessage({ type: 'error', text: 'Please select a template and enter a project name' });
+      setError('Please select a template and enter a project name');
       return;
     }
 
@@ -47,7 +63,7 @@ function ProjectTemplates() {
     if (!template) return;
 
     setLoading(true);
-    setMessage(null);
+    setError(null);
 
     try {
       const result: CreateProjectResult = await window.electronAPI.createProject({
@@ -59,16 +75,16 @@ function ProjectTemplates() {
       });
 
       if (result.success) {
-        setMessage({ type: 'success', text: result.message });
+        setSuccess(result.message);
         setProjectName('');
         setDatabaseName('');
         setSelectedTemplate(null);
         loadData();
       } else {
-        setMessage({ type: 'error', text: result.message });
+        setError(result.message);
       }
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message });
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -88,16 +104,16 @@ function ProjectTemplates() {
       const result = await window.electronAPI.deleteProject(name);
       console.log('Delete result:', result);
       if (result.success) {
-        setMessage({ type: 'success', text: result.message });
+        setSuccess(result.message);
         console.log('Project deleted, reloading data...');
         await loadData();
         console.log('Data reloaded');
       } else {
-        setMessage({ type: 'error', text: result.message });
+        setError(result.message);
       }
     } catch (error: any) {
       console.log('Delete error:', error);
-      setMessage({ type: 'error', text: error.message });
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -119,10 +135,9 @@ function ProjectTemplates() {
     const url = `http://localhost/${name}`;
     try {
       await navigator.clipboard.writeText(url);
-      setMessage({ type: 'success', text: `URL copied: ${url}` });
-      setTimeout(() => setMessage(null), 2000);
+      setSuccess(`URL copied: ${url}`);
     } catch {
-      setMessage({ type: 'error', text: 'Failed to copy URL' });
+      setError('Failed to copy URL');
     }
   };
 
@@ -161,14 +176,17 @@ function ProjectTemplates() {
         </div>
       )}
 
-      {message && (
-        <div className={`p-4 rounded-xl mb-6 flex items-center gap-3 ${
-          message.type === 'success' 
-            ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30' 
-            : 'bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30'
-        }`}>
-          <span className="text-xl">{message.type === 'success' ? '✅' : '❌'}</span>
-          <span style={{ color: 'var(--text-on-card)' }}>{message.text}</span>
+      {/* Messages */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg flex justify-between items-center">
+          <span>❌ {error}</span>
+          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">✕</button>
+        </div>
+      )}
+      {success && (
+        <div className="mb-4 p-4 bg-green-100 border border-green-300 text-green-700 rounded-lg flex justify-between items-center">
+          <span>✅ {success}</span>
+          <button onClick={() => setSuccess(null)} className="text-green-500 hover:text-green-700">✕</button>
         </div>
       )}
 

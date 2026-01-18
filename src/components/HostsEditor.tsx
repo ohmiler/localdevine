@@ -12,7 +12,7 @@ function HostsEditor({ onBack }: HostsEditorProps) {
   const [hasAdminRights, setHasAdminRights] = useState(true);
   const [newEntry, setNewEntry] = useState({ ip: '127.0.0.1', hostname: '', comment: '' });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     loadHostsFile();
@@ -54,13 +54,12 @@ function HostsEditor({ onBack }: HostsEditorProps) {
 
   const addEntry = async () => {
     if (!newEntry.hostname.trim()) {
-      setMessage('Please enter a hostname');
-      setTimeout(() => setMessage(''), 3000);
+      setError('Please enter a hostname');
       return;
     }
 
     setSaving(true);
-    setMessage('');
+    setError('');
 
     if (window.electronAPI) {
       const result = await window.electronAPI.addHostsEntry(
@@ -70,16 +69,15 @@ function HostsEditor({ onBack }: HostsEditorProps) {
       );
 
       if (result.success) {
-        setMessage('✓ Entry added successfully');
+        setSuccess('Entry added successfully');
         setNewEntry({ ip: '127.0.0.1', hostname: '', comment: '' });
         await loadHostsFile();
       } else {
-        setMessage(`✗ Error: ${result.error}`);
+        setError(result.error || 'Failed to add entry');
       }
     }
 
     setSaving(false);
-    setTimeout(() => setMessage(''), 3000);
   };
 
   const removeEntry = async (hostname: string) => {
@@ -88,12 +86,28 @@ function HostsEditor({ onBack }: HostsEditorProps) {
     if (window.electronAPI) {
       const result = await window.electronAPI.removeHostsEntry(hostname);
       if (result.success) {
+        setSuccess(`Removed ${hostname}`);
         await loadHostsFile();
       } else {
-        alert(`Error: ${result.error}`);
+        setError(result.error || 'Failed to remove entry');
       }
     }
   };
+
+  // Auto-clear messages
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const restoreBackup = async () => {
     if (!window.confirm('Restore hosts file from backup? This will overwrite current entries.')) return;
@@ -204,9 +218,10 @@ function HostsEditor({ onBack }: HostsEditorProps) {
               {saving ? '⏳ Adding...' : '➕ Add Entry'}
             </button>
           </div>
-          {message && (
-            <div className={`mt-3 p-3 rounded-lg text-sm ${message.startsWith('✓') ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
-              {message}
+          {success && (
+            <div className="mt-3 p-3 rounded-lg text-sm bg-green-100 border border-green-300 text-green-700 flex justify-between items-center">
+              <span>✅ {success}</span>
+              <button onClick={() => setSuccess(null)} className="text-green-500 hover:text-green-700">✕</button>
             </div>
           )}
         </div>

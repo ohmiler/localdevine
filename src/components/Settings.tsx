@@ -20,7 +20,8 @@ function Settings({ onBack }: SettingsProps) {
     });
     const [phpVersions, setPHPVersions] = useState<PHPVersion[]>([]);
     const [saving, setSaving] = useState(false);
-    const [message, setMessage] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [version, setVersion] = useState('0.0.0');
     const [checkingUpdate, setCheckingUpdate] = useState(false);
     const [updateStatus, setUpdateStatus] = useState('');
@@ -43,6 +44,21 @@ function Settings({ onBack }: SettingsProps) {
             });
         }
     }, []);
+
+    // Auto-clear messages
+    useEffect(() => {
+        if (success) {
+            const timer = setTimeout(() => setSuccess(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [success]);
+
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(null), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
 
     const checkForUpdate = async () => {
         setCheckingUpdate(true);
@@ -91,19 +107,18 @@ function Settings({ onBack }: SettingsProps) {
 
     const handleSave = async () => {
         setSaving(true);
-        setMessage('');
+        setError(null);
 
         if (window.electronAPI) {
             const result = await window.electronAPI.saveConfig(config);
             if (result.success) {
-                setMessage('✓ Settings saved! Restart services to apply.');
+                setSuccess('Settings saved! Restart services to apply.');
             } else {
-                setMessage(`✗ Error: ${result.error}`);
+                setError(result.error || 'Failed to save settings');
             }
         }
 
         setSaving(false);
-        setTimeout(() => setMessage(''), 3000);
     };
 
     const handleBrowseDataPath = async () => {
@@ -218,10 +233,17 @@ function Settings({ onBack }: SettingsProps) {
                             {saving ? '⏳ Saving...' : '💾 Save Settings'}
                         </button>
 
-                        {message && (
-                            <span className={`text-sm font-medium ${message.startsWith('✓') ? 'text-green-500' : 'text-red-500'}`}>
-                                {message}
-                            </span>
+                        {error && (
+                            <div className="p-3 rounded-lg text-sm bg-red-100 border border-red-300 text-red-700 flex justify-between items-center">
+                                <span>❌ {error}</span>
+                                <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">✕</button>
+                            </div>
+                        )}
+                        {success && (
+                            <div className="p-3 rounded-lg text-sm bg-green-100 border border-green-300 text-green-700 flex justify-between items-center">
+                                <span>✅ {success}</span>
+                                <button onClick={() => setSuccess(null)} className="text-green-500 hover:text-green-700">✕</button>
+                            </div>
                         )}
                     </div>
                 </div>

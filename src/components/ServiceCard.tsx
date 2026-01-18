@@ -28,6 +28,15 @@ const statusConfig: Record<ServiceStatus, { label: string; color: string; bgColo
   error: { label: 'Error', color: 'text-red-500', bgColor: 'bg-gradient-to-r from-red-500 to-red-600' },
 };
 
+// Format uptime in human-readable format
+function formatUptime(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  return `${hours}h ${mins}m`;
+}
+
 function ServiceCard({ service, status, health, onToggle }: ServiceCardProps) {
     // Memoize computed values
     const displayName = useMemo(() => 
@@ -82,18 +91,49 @@ function ServiceCard({ service, status, health, onToggle }: ServiceCardProps) {
             {/* Health details */}
             {health && (
                 <div className="mb-4 p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="flex justify-between text-sm mb-1">
-                        <span style={{ color: 'var(--text-label)' }}>Health</span>
+                    <div className="flex justify-between text-sm mb-2">
+                        <span style={{ color: 'var(--text-label)' }}>Status</span>
                         <span className={isHealthy ? 'text-green-500 font-medium' : 'text-yellow-500 font-medium'}>
-                            {isHealthy ? '● Healthy' : '● Warning'}
+                            {isHealthy ? '● Healthy' : status === 'stopped' ? '○ Stopped' : '● Warning'}
                         </span>
                     </div>
+                    
+                    {/* Metrics Grid */}
+                    {isRunning && (
+                        <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                            {health.pid && (
+                                <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
+                                    <span>PID</span>
+                                    <span className="font-mono">{health.pid}</span>
+                                </div>
+                            )}
+                            {health.port && (
+                                <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
+                                    <span>Port</span>
+                                    <span className="font-mono">{health.port}</span>
+                                </div>
+                            )}
+                            {health.uptime !== undefined && (
+                                <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
+                                    <span>Uptime</span>
+                                    <span className="font-mono">{formatUptime(health.uptime)}</span>
+                                </div>
+                            )}
+                            {health.memoryUsage !== undefined && health.memoryUsage > 0 && (
+                                <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
+                                    <span>Memory</span>
+                                    <span className="font-mono">{health.memoryUsage} MB</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    
                     {health.error && (
                         <div className="text-red-400 text-xs mt-1 truncate" title={health.error}>
                             ⚠️ {health.error}
                         </div>
                     )}
-                    <div className="flex justify-between text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="flex justify-between text-xs mt-2 pt-2 border-t" style={{ color: 'var(--text-muted)', borderColor: 'var(--border-color)' }}>
                         <span>Last check</span>
                         <span>{lastCheck}</span>
                     </div>

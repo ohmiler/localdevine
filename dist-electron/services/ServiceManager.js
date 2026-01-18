@@ -90,17 +90,33 @@ class ServiceManager {
     async checkServiceHealth(serviceName) {
         const process = this.processes[serviceName];
         const health = this.healthStatus[serviceName];
+        // Always set port
+        health.port = this.getPort(serviceName);
         if (!process || process.killed) {
             health.status = 'stopped';
             health.isHealthy = false;
             health.lastCheck = new Date().toISOString();
             health.error = undefined;
+            health.pid = undefined;
+            health.uptime = undefined;
+            health.memoryUsage = undefined;
+            health.cpuUsage = undefined;
             return;
         }
         try {
             // Check if process is still running
             if (process.pid) {
                 await this.isProcessRunning(process.pid);
+                // Get process metrics
+                const metrics = await this.getProcessMetrics(process.pid);
+                health.pid = process.pid;
+                health.memoryUsage = metrics.memory;
+                health.cpuUsage = metrics.cpu;
+                // Calculate uptime
+                const startTime = this.serviceStartTime[serviceName];
+                if (startTime) {
+                    health.uptime = Math.floor((Date.now() - startTime) / 1000);
+                }
                 // Service-specific health checks
                 switch (serviceName) {
                     case 'php':
@@ -215,6 +231,36 @@ class ServiceManager {
     }
     getHealthStatus() {
         return this.healthStatus;
+    }
+    // Get process metrics (CPU, Memory)
+    async getProcessMetrics(pid) {
+        return new Promise((resolve) => {
+            // Use WMIC on Windows to get process info
+            (0, child_process_1.exec)(`wmic process where ProcessId=${pid} get WorkingSetSize,PercentProcessorTime /format:csv`, (error, stdout) => {
+                if (error) {
+                    resolve({ cpu: 0, memory: 0 });
+                    return;
+                }
+                try {
+                    const lines = stdout.trim().split('\n').filter(line => line.trim());
+                    if (lines.length >= 2) {
+                        const values = lines[1].split(',');
+                        // WorkingSetSize is in bytes, convert to MB
+                        const memoryBytes = parseInt(values[2] || '0', 10);
+                        const memoryMB = Math.round(memoryBytes / (1024 * 1024) * 10) / 10;
+                        // CPU percentage (WMIC may not always return accurate CPU)
+                        const cpu = parseInt(values[1] || '0', 10);
+                        resolve({ cpu, memory: memoryMB });
+                    }
+                    else {
+                        resolve({ cpu: 0, memory: 0 });
+                    }
+                }
+                catch {
+                    resolve({ cpu: 0, memory: 0 });
+                }
+            });
+        });
     }
     // Notification Methods
     sendNotification(title, body, service) {

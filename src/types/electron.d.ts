@@ -46,6 +46,20 @@ export interface TableInfo {
     engine: string;
 }
 
+// Environment Variable types
+export interface EnvVariable {
+    key: string;
+    value: string;
+    comment?: string;
+}
+
+export interface EnvFile {
+    name: string;
+    path: string;
+    variables: EnvVariable[];
+    lastModified?: string;
+}
+
 // ElectronAPI interface for renderer process
 export interface ElectronAPI {
     // Service control
@@ -109,6 +123,15 @@ export interface ElectronAPI {
     dbTestConnection: () => Promise<{ success: boolean; message?: string; error?: string }>;
     dbSelectFile: () => Promise<{ success: boolean; filePath: string | null }>;
     dbSaveFile: (defaultName: string) => Promise<{ success: boolean; filePath: string | null }>;
+
+    // Environment Variables Manager
+    envListFiles: () => Promise<{ success: boolean; data: EnvFile[] }>;
+    envGetFile: (filename: string) => Promise<{ success: boolean; data?: EnvFile; error?: string }>;
+    envCreateFile: (filename: string, variables?: EnvVariable[]) => Promise<{ success: boolean; message?: string; error?: string }>;
+    envSaveFile: (filename: string, variables: EnvVariable[]) => Promise<{ success: boolean; message?: string; error?: string }>;
+    envDeleteFile: (filename: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+    envGetDir: () => Promise<{ success: boolean; path: string }>;
+    envOpenDir: () => Promise<{ success: boolean }>;
 
     // Event listeners
     on: (channel: 'service-status' | 'log-entry' | 'health-status' | 'service-notification', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;

@@ -69,6 +69,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     dbSelectFile: () => ipcRenderer.invoke('db-select-file'),
     dbSaveFile: (defaultName) => ipcRenderer.invoke('db-save-file', defaultName),
 
+    // Environment Variables Manager
+    envListFiles: () => ipcRenderer.invoke('env-list-files'),
+    envGetFile: (filename) => ipcRenderer.invoke('env-get-file', filename),
+    envCreateFile: (filename, variables) => ipcRenderer.invoke('env-create-file', filename, variables),
+    envSaveFile: (filename, variables) => ipcRenderer.invoke('env-save-file', filename, variables),
+    envDeleteFile: (filename) => ipcRenderer.invoke('env-delete-file', filename),
+    envGetDir: () => ipcRenderer.invoke('env-get-dir'),
+    envOpenDir: () => ipcRenderer.invoke('env-open-dir'),
+
     // Event listeners
     on: (channel, callback) => {
         const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status'];

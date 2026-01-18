@@ -12,6 +12,7 @@ import ConfigManager, { Config } from '../services/ConfigManager';
 import HostsManager from '../services/HostsManager';
 import ProjectTemplateManager, { CreateProjectOptions } from '../services/ProjectTemplateManager';
 import DatabaseManager from '../services/DatabaseManager';
+import EnvManager, { EnvVariable } from '../services/EnvManager';
 import PathResolver from '../services/PathResolver';
 import logger from '../services/Logger';
 
@@ -79,6 +80,7 @@ let configManager: ConfigManager | null = null;
 let hostsManager: HostsManager | null = null;
 let projectTemplateManager: ProjectTemplateManager | null = null;
 let databaseManager: DatabaseManager | null = null;
+let envManager: EnvManager | null = null;
 
 /**
  * Initialize IPC handlers with module references
@@ -89,7 +91,8 @@ export function initializeIPC(
   config: ConfigManager,
   hosts: HostsManager,
   projects: ProjectTemplateManager,
-  database?: DatabaseManager
+  database?: DatabaseManager,
+  env?: EnvManager
 ): void {
   mainWindow = win;
   serviceManager = services;
@@ -97,6 +100,7 @@ export function initializeIPC(
   hostsManager = hosts;
   projectTemplateManager = projects;
   databaseManager = database || null;
+  envManager = env || null;
 }
 
 /**
@@ -110,6 +114,7 @@ export function registerIPCHandlers(): void {
   registerHostsHandlers();
   registerProjectHandlers();
   registerDatabaseHandlers();
+  registerEnvHandlers();
 }
 
 // ============================================
@@ -550,5 +555,83 @@ function registerDatabaseHandlers(): void {
       return { success: true, filePath: result.filePath };
     }
     return { success: false, filePath: null };
+  });
+}
+
+// ============================================
+// Environment Variable Handlers
+// ============================================
+function registerEnvHandlers(): void {
+  // List all env files
+  ipcMain.handle('env-list-files', async () => {
+    if (!envManager) {
+      envManager = new EnvManager();
+    }
+    return { success: true, data: envManager.listEnvFiles() };
+  });
+
+  // Get specific env file
+  ipcMain.handle('env-get-file', async (_event: IpcMainInvokeEvent, filename: string) => {
+    if (!envManager) {
+      envManager = new EnvManager();
+    }
+    if (typeof filename !== 'string') {
+      return { success: false, error: 'Invalid filename' };
+    }
+    const file = envManager.getEnvFile(filename);
+    if (file) {
+      return { success: true, data: file };
+    }
+    return { success: false, error: 'File not found' };
+  });
+
+  // Create new env file
+  ipcMain.handle('env-create-file', async (_event: IpcMainInvokeEvent, filename: string, variables?: EnvVariable[]) => {
+    if (!envManager) {
+      envManager = new EnvManager();
+    }
+    if (typeof filename !== 'string') {
+      return { success: false, error: 'Invalid filename' };
+    }
+    return envManager.createEnvFile(filename, variables || []);
+  });
+
+  // Save env file
+  ipcMain.handle('env-save-file', async (_event: IpcMainInvokeEvent, filename: string, variables: EnvVariable[]) => {
+    if (!envManager) {
+      envManager = new EnvManager();
+    }
+    if (typeof filename !== 'string' || !Array.isArray(variables)) {
+      return { success: false, error: 'Invalid parameters' };
+    }
+    return envManager.saveEnvFile(filename, variables);
+  });
+
+  // Delete env file
+  ipcMain.handle('env-delete-file', async (_event: IpcMainInvokeEvent, filename: string) => {
+    if (!envManager) {
+      envManager = new EnvManager();
+    }
+    if (typeof filename !== 'string') {
+      return { success: false, error: 'Invalid filename' };
+    }
+    return envManager.deleteEnvFile(filename);
+  });
+
+  // Get env directory path
+  ipcMain.handle('env-get-dir', async () => {
+    if (!envManager) {
+      envManager = new EnvManager();
+    }
+    return { success: true, path: envManager.getEnvDir() };
+  });
+
+  // Open env directory in file explorer
+  ipcMain.handle('env-open-dir', async () => {
+    if (!envManager) {
+      envManager = new EnvManager();
+    }
+    shell.openPath(envManager.getEnvDir());
+    return { success: true };
   });
 }

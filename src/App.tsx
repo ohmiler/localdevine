@@ -7,12 +7,13 @@ import HostsEditor from './components/HostsEditor';
 import NotificationPanel from './components/NotificationPanel';
 import ProjectTemplates from './components/ProjectTemplates';
 import DatabaseManager from './components/DatabaseManager';
+import EnvManager from './components/EnvManager';
 import ThemeToggle from './components/ThemeToggle';
 import { useKeyboardShortcuts, defaultShortcuts } from './hooks/useKeyboardShortcuts';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 import './styles/themes.css';
 
-type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database';
+type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env';
 
 interface Services {
   php: ServiceStatus;
@@ -212,6 +213,11 @@ function App() {
     return <DatabaseManager onBack={() => setCurrentPage('home')} />;
   }
 
+  // Render Environment Variables page
+  if (currentPage === 'env') {
+    return <EnvManager onBack={() => setCurrentPage('home')} />;
+  }
+
   // Render Home page
   return (
     <div className="min-h-screen p-8">
@@ -234,6 +240,12 @@ function App() {
             className="button-secondary text-sm px-3 py-1.5"
           >
             🗄️ Database
+          </button>
+          <button
+            onClick={() => setCurrentPage('env')}
+            className="button-secondary text-sm px-3 py-1.5"
+          >
+            🔐 Env
           </button>
           <button
             onClick={() => setCurrentPage('vhosts')}

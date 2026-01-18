@@ -273,9 +273,15 @@ function registerVHostHandlers(): void {
     
     if (result.success && serviceManager) {
       serviceManager.generateConfigs();
-      await serviceManager.stopService('apache');
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await serviceManager.startService('apache');
+      
+      // Only restart Apache if it was already running
+      const healthStatus = serviceManager.getHealthStatus();
+      const apacheStatus = healthStatus['apache']?.status;
+      if (apacheStatus === 'running') {
+        await serviceManager.stopService('apache');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await serviceManager.startService('apache');
+      }
       
       if (hostsManager) {
         const hostsResult = await hostsManager.addEntry('127.0.0.1', vhost.domain, `LocalDevine - ${vhost.name}`);
@@ -297,9 +303,15 @@ function registerVHostHandlers(): void {
     
     if (result.success && serviceManager) {
       serviceManager.generateConfigs();
-      await serviceManager.stopService('apache');
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await serviceManager.startService('apache');
+      
+      // Only restart Apache if it was already running
+      const healthStatus = serviceManager.getHealthStatus();
+      const apacheStatus = healthStatus['apache']?.status;
+      if (apacheStatus === 'running') {
+        await serviceManager.stopService('apache');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await serviceManager.startService('apache');
+      }
       
       if (hostsManager && vhostToRemove) {
         const hostsResult = await hostsManager.removeEntry(vhostToRemove.domain);

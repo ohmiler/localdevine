@@ -32,6 +32,23 @@ process.on('unhandledRejection', (reason) => {
 if (process.platform === 'win32') {
     electron_1.app.setAppUserModelId('com.localdevine.app');
 }
+// Prevent multiple instances - only allow one instance to run
+const gotTheLock = electron_1.app.requestSingleInstanceLock();
+if (!gotTheLock) {
+    // Another instance is already running, quit this one
+    electron_1.app.quit();
+}
+else {
+    electron_1.app.on('second-instance', () => {
+        // Someone tried to run a second instance, focus our window
+        if (mainWindow) {
+            if (mainWindow.isMinimized())
+                mainWindow.restore();
+            mainWindow.show();
+            mainWindow.focus();
+        }
+    });
+}
 let mainWindow;
 let serviceManager;
 let trayManager;

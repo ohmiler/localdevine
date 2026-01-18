@@ -375,18 +375,20 @@ IP.1 = 127.0.0.1
         const certDir = path.join(this.certsDir, domain);
         const certPath = path.join(certDir, 'cert.pem').replace(/\\/g, '/');
         const keyPath = path.join(certDir, 'key.pem').replace(/\\/g, '/');
+        const wwwDir = this.pathResolver.wwwDir.replace(/\\/g, '/');
+        const domainFolder = domain.replace('.local', '');
 
         return `
 # SSL Configuration for ${domain}
 <VirtualHost *:443>
     ServerName ${domain}
-    DocumentRoot "C:/LocalDevine/www/${domain}"
+    DocumentRoot "${wwwDir}/${domainFolder}"
     
     SSLEngine on
     SSLCertificateFile "${certPath}"
     SSLCertificateKeyFile "${keyPath}"
     
-    <Directory "C:/LocalDevine/www/${domain}">
+    <Directory "${wwwDir}/${domainFolder}">
         Options Indexes FollowSymLinks
         AllowOverride All
         Require all granted

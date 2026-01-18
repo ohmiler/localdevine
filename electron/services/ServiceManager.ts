@@ -520,6 +520,9 @@ ScriptAlias /php-cgi/ "${phpPath}/"
 Action application/x-httpd-php "/php-cgi/php-cgi.exe"
 AddHandler application/x-httpd-php .php
 
+# Set PHP configuration directory (for php.ini)
+SetEnv PHPRC "${configPath}"
+
 <Directory "${phpPath}">
     AllowOverride None
     Options ExecCGI

@@ -89,6 +89,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     sslOpenDir: () => ipcRenderer.invoke('ssl-open-dir'),
     sslGetDir: () => ipcRenderer.invoke('ssl-get-dir'),
     sslCheckOpenSSL: () => ipcRenderer.invoke('ssl-check-openssl'),
+    sslEnableDomain: (domain, projectPath) => ipcRenderer.invoke('ssl-enable-domain', domain, projectPath),
+    sslDisableDomain: (domain) => ipcRenderer.invoke('ssl-disable-domain', domain),
 
     // Event listeners
     on: (channel, callback) => {

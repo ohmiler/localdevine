@@ -220,8 +220,9 @@ export default function DatabaseManager({ onBack }: DatabaseManagerProps) {
             {/* Header */}
             <header className="mb-8 flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-display mb-2 text-gradient">
-                        🗄️ Database Manager
+                    <h1 className="text-3xl font-display mb-2 header-title">
+                        <span className="header-icon">🗄️</span>
+                        <span className="header-text">Database Manager</span>
                     </h1>
                     <p className="text-lg text-gradient opacity-90">
                         Manage your MariaDB databases

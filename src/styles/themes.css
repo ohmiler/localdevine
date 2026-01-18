@@ -157,6 +157,50 @@ body {
   background-clip: text;
 }
 
+/* Header styles with icon and gradient text */
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-icon {
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  -webkit-text-fill-color: initial;
+  background: none;
+}
+
+.header-text {
+  background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .header-text {
+  background: linear-gradient(135deg, #c7d2fe 0%, #e0e7ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Subheading text only gradient */
+.text-gradient-only {
+  background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .text-gradient-only {
+  background: linear-gradient(135deg, #c7d2fe 0%, #e0e7ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* Utility classes for theme-aware colors */
 .text-muted {
   color: var(--text-muted) !important;

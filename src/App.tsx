@@ -191,8 +191,9 @@ function App() {
       <div className="min-h-screen p-8">
         <header className="mb-10 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-display mb-2 text-gradient">
-              📦 Project Templates
+            <h1 className="text-3xl font-display mb-2 header-title">
+              <span className="header-icon">📦</span>
+              <span className="header-text">Project Templates</span>
             </h1>
             <p className="text-lg text-gradient opacity-90">Create projects from templates</p>
           </div>

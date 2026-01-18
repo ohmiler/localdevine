@@ -163,8 +163,9 @@ function Settings({ onBack }: SettingsProps) {
         <div className="min-h-screen p-8">
             <header className="mb-10 flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-display mb-2 text-gradient">
-                        ⚙️ Settings
+                    <h1 className="text-3xl font-display mb-2 header-title">
+                        <span className="header-icon">⚙️</span>
+                        <span className="header-text">Settings</span>
                     </h1>
                     <p className="text-lg text-gradient opacity-90">Configure your development environment</p>
                 </div>

@@ -192,8 +192,9 @@ function ProjectTemplates() {
 
       {/* Template Selection */}
       <div className="mb-8">
-        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-on-card)' }}>
-          📦 Select Template
+        <h3 className="text-lg font-semibold mb-4">
+          <span style={{ color: 'var(--text-on-card)' }}>📦</span>
+          <span className="text-gradient-only"> Select Template</span>
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {templates.map((template) => (
@@ -232,9 +233,10 @@ function ProjectTemplates() {
       {selectedTemplate && (
         <div className="card p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-heading" style={{ color: 'var(--text-on-card)' }}>
-              ✨ Create New Project
-            </h3>
+            <h1 className="text-3xl font-display mb-2 header-title">
+              <span className="header-icon">📦</span>
+              <span className="header-text">Project Templates</span>
+            </h1>
             <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg">
               <span className="text-xl">{selectedTemplateData?.icon}</span>
               <span className="font-semibold">{selectedTemplateData?.name}</span>
@@ -314,8 +316,9 @@ function ProjectTemplates() {
 
       {/* Existing Projects */}
       <div>
-        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-on-card)' }}>
-          📂 Your Projects ({projects.length})
+        <h3 className="text-lg font-semibold mb-4">
+          <span style={{ color: 'var(--text-on-card)' }}>📂</span>
+          <span className="text-gradient-only"> Your Projects ({projects.length})</span>
         </h3>
         
         {projects.length === 0 ? (

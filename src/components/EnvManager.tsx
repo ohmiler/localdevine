@@ -170,8 +170,9 @@ export default function EnvManager({ onBack }: EnvManagerProps) {
             {/* Header */}
             <header className="mb-8 flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-display mb-2 text-gradient">
-                        🔐 Environment Variables
+                    <h1 className="text-3xl font-display mb-2 header-title">
+                        <span className="header-icon">🔐</span>
+                        <span className="header-text">Environment Variables</span>
                     </h1>
                     <p className="text-lg text-gradient opacity-90">
                         Manage your .env configuration files
@@ -309,7 +310,7 @@ export default function EnvManager({ onBack }: EnvManagerProps) {
                                         onChange={(e) => setNewVarKey(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
                                         placeholder="VARIABLE_NAME"
                                         className="flex-1 px-3 py-2 rounded font-mono text-sm"
-                                        style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
+                                        style={{ background: '#374151', color: '#ffffff', border: '1px solid #4b5563' }}
                                     />
                                     <input
                                         type="text"
@@ -317,7 +318,7 @@ export default function EnvManager({ onBack }: EnvManagerProps) {
                                         onChange={(e) => setNewVarValue(e.target.value)}
                                         placeholder="value"
                                         className="flex-1 px-3 py-2 rounded text-sm"
-                                        style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
+                                        style={{ background: '#374151', color: '#ffffff', border: '1px solid #4b5563' }}
                                         onKeyDown={(e) => e.key === 'Enter' && addVariable()}
                                     />
                                     <button
@@ -355,7 +356,7 @@ export default function EnvManager({ onBack }: EnvManagerProps) {
                                                         onKeyDown={(e) => e.key === 'Enter' && setEditingKey(null)}
                                                         autoFocus
                                                         className="flex-1 px-2 py-1 rounded text-sm"
-                                                        style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
+                                                        style={{ background: '#374151', color: '#ffffff', border: '1px solid #4b5563' }}
                                                     />
                                                 ) : (
                                                     <div

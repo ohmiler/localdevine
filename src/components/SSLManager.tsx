@@ -16,6 +16,8 @@ export default function SSLManager({ onBack }: SSLManagerProps) {
     const [selectedCert, setSelectedCert] = useState<SSLCertificate | null>(null);
     const [showConfigModal, setShowConfigModal] = useState(false);
     const [apacheConfig, setApacheConfig] = useState('');
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
     const loadCertificates = useCallback(async () => {
         setLoading(true);
@@ -80,25 +82,44 @@ export default function SSLManager({ onBack }: SSLManagerProps) {
         }
     };
 
-    const handleDeleteCert = async (domain: string) => {
-        if (!confirm(`Are you sure you want to delete the certificate for "${domain}"?`)) return;
+    const handleDeleteCert = (domain: string) => {
+        // Show custom modal instead of native confirm (which causes focus issues)
+        setDeleteTarget(domain);
+        setShowDeleteModal(true);
+    };
+
+    const confirmDeleteCert = async () => {
+        if (!deleteTarget) return;
+        setShowDeleteModal(false);
         try {
-            const result = await window.electronAPI.sslDeleteCert(domain);
+            const result = await window.electronAPI.sslDeleteCert(deleteTarget);
+            // Refocus window after operation (certutil can steal focus)
+            await window.electronAPI.refocusWindow();
             if (result.success) {
-                setSuccess(`Certificate for ${domain} deleted`);
+                setSuccess(`Certificate for ${deleteTarget} deleted`);
                 loadCertificates();
             } else {
                 setError(result.error || 'Failed to delete certificate');
             }
         } catch (err) {
             setError((err as Error).message);
+            await window.electronAPI.refocusWindow();
+        } finally {
+            setDeleteTarget(null);
         }
+    };
+
+    const cancelDeleteCert = () => {
+        setShowDeleteModal(false);
+        setDeleteTarget(null);
     };
 
     const handleTrustCert = async (domain: string) => {
         setLoading(true);
         try {
             const result = await window.electronAPI.sslTrustCert(domain);
+            // Refocus window after operation (certutil can steal focus)
+            await window.electronAPI.refocusWindow();
             if (result.success) {
                 setSuccess(`Certificate for ${domain} is now trusted`);
                 loadCertificates();
@@ -107,6 +128,7 @@ export default function SSLManager({ onBack }: SSLManagerProps) {
             }
         } catch (err) {
             setError((err as Error).message);
+            await window.electronAPI.refocusWindow();
         } finally {
             setLoading(false);
         }
@@ -116,6 +138,8 @@ export default function SSLManager({ onBack }: SSLManagerProps) {
         setLoading(true);
         try {
             const result = await window.electronAPI.sslUntrustCert(domain);
+            // Refocus window after operation (certutil can steal focus)
+            await window.electronAPI.refocusWindow();
             if (result.success) {
                 setSuccess(`Certificate for ${domain} removed from trust store`);
                 loadCertificates();
@@ -124,6 +148,7 @@ export default function SSLManager({ onBack }: SSLManagerProps) {
             }
         } catch (err) {
             setError((err as Error).message);
+            await window.electronAPI.refocusWindow();
         } finally {
             setLoading(false);
         }
@@ -445,6 +470,45 @@ export default function SSLManager({ onBack }: SSLManagerProps) {
                                 style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
                             >
                                 Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && deleteTarget && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="card p-6 w-full max-w-md mx-4">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                                <span className="text-2xl">⚠️</span>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                    Delete Certificate
+                                </h3>
+                                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                    This action cannot be undone
+                                </p>
+                            </div>
+                        </div>
+                        <p className="mb-6" style={{ color: 'var(--text-primary)' }}>
+                            Are you sure you want to delete the certificate for <strong>"{deleteTarget}"</strong>?
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={cancelDeleteCert}
+                                className="px-4 py-2 border rounded-lg font-semibold transition-colors hover:bg-gray-100"
+                                style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeleteCert}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold transition-colors hover:bg-red-700"
+                            >
+                                Delete
                             </button>
                         </div>
                     </div>

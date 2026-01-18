@@ -251,6 +251,16 @@ function registerFolderHandlers(): void {
   ipcMain.on('open-browser', (_event: IpcMainEvent, url: string) => {
     shell.openExternal(url);
   });
+
+  // Refocus main window (useful after operations that steal focus)
+  ipcMain.handle('refocus-window', () => {
+    if (mainWindow) {
+      mainWindow.focus();
+      // Also focus the webContents to ensure input focus is restored
+      mainWindow.webContents.focus();
+    }
+    return { success: true };
+  });
 }
 
 // ============================================

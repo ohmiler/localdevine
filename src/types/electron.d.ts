@@ -168,6 +168,9 @@ export interface ElectronAPI {
     sslGetDir: () => Promise<{ success: boolean; path: string }>;
     sslCheckOpenSSL: () => Promise<OpenSSLInfo>;
 
+    // Window utilities
+    refocusWindow: () => Promise<{ success: boolean }>;
+
     // Event listeners
     on: (channel: 'service-status' | 'log-entry' | 'health-status' | 'service-notification', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;
     removeListener: (channel: string, callback: (...args: any[]) => void) => void;

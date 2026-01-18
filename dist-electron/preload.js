@@ -79,6 +79,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     sslCheckOpenSSL: () => ipcRenderer.invoke('ssl-check-openssl'),
     sslEnableDomain: (domain, projectPath) => ipcRenderer.invoke('ssl-enable-domain', domain, projectPath),
     sslDisableDomain: (domain) => ipcRenderer.invoke('ssl-disable-domain', domain),
+    // Window utilities
+    refocusWindow: () => ipcRenderer.invoke('refocus-window'),
     // Event listeners
     on: (channel, callback) => {
         const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status'];

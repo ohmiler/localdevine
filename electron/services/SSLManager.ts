@@ -1,12 +1,22 @@
 import fs from 'fs';
 import path from 'path';
-import { exec, execSync } from 'child_process';
-import { promisify } from 'util';
+import { exec, execSync, ExecOptions } from 'child_process';
 import { sslLogger as logger } from './Logger';
 import PathResolver from './PathResolver';
 import { shell } from 'electron';
 
-const execAsync = promisify(exec);
+// Custom execAsync with windowsHide to prevent console window stealing focus
+const execAsync = (cmd: string, options?: ExecOptions): Promise<{ stdout: string; stderr: string }> => {
+    return new Promise((resolve, reject) => {
+        exec(cmd, { windowsHide: true, ...options }, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve({ stdout: stdout.toString(), stderr: stderr.toString() });
+            }
+        });
+    });
+};
 
 export interface SSLCertificate {
     domain: string;

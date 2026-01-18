@@ -2,7 +2,7 @@
   "name": "localdevine",
   "version": "1.0.0",
   "type": "module",
-  "main": "electron/main.js",
+  "main": "dist-electron/main.js",
   "author": "Miler",
   "description": "A Modern Local Development Environment Manager",
   "scripts": {

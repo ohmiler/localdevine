@@ -9,6 +9,33 @@ const child_process_1 = require("child_process");
 const electron_1 = require("electron");
 const Logger_1 = require("./Logger");
 class HostsManager {
+    // Validation: ตรวจสอบ path ว่าอยู่ใน temp directory ที่อนุญาต
+    validateSourcePath(sourcePath) {
+        const resolvedSource = path_1.default.resolve(sourcePath);
+        const resolvedTempDir = path_1.default.resolve(this.tempDir);
+        return resolvedSource.startsWith(resolvedTempDir + path_1.default.sep);
+    }
+    // Escape string สำหรับ PowerShell (ป้องกัน Command Injection)
+    escapePowerShellString(str) {
+        // Replace single quotes with two single quotes (PowerShell escape)
+        return str.replace(/'/g, "''");
+    }
+    // Validate hostname format
+    validateHostname(hostname) {
+        if (!hostname || typeof hostname !== 'string') {
+            return { valid: false, error: 'Hostname is required' };
+        }
+        // ตรวจสอบ hostname format
+        const hostnameRegex = /^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$/;
+        if (!hostnameRegex.test(hostname)) {
+            return { valid: false, error: 'Invalid hostname format' };
+        }
+        // ความยาวสูงสุด 253 characters
+        if (hostname.length > 253) {
+            return { valid: false, error: 'Hostname is too long (max 253 characters)' };
+        }
+        return { valid: true };
+    }
     constructor() {
         this.hostsPath = path_1.default.join(process.env.WINDIR || 'C:\\Windows', 'System32', 'drivers', 'etc', 'hosts');
         // Use user-configured data path for backup
@@ -20,9 +47,11 @@ class HostsManager {
                 fs_1.default.mkdirSync(dataPath, { recursive: true });
             }
             this.backupPath = path_1.default.join(dataPath, 'hosts.backup');
+            this.tempDir = dataPath;
         }
         else {
             this.backupPath = path_1.default.join(__dirname, '../../hosts.backup');
+            this.tempDir = path_1.default.dirname(this.backupPath);
         }
         Logger_1.hostsLogger.debug(`Backup path: ${this.backupPath}`);
     }
@@ -117,6 +146,17 @@ class HostsManager {
     // Add new entry - using elevated PowerShell
     async addEntry(ip, hostname, comment) {
         try {
+            // Validate hostname (ป้องกัน injection)
+            const hostnameValidation = this.validateHostname(hostname);
+            if (!hostnameValidation.valid) {
+                return { success: false, error: hostnameValidation.error };
+            }
+            // Validate IP
+            if (!this.isValidIP(ip)) {
+                return { success: false, error: 'Invalid IP address format' };
+            }
+            // Sanitize comment (remove newlines and control characters)
+            const sanitizedComment = comment ? comment.replace(/[\r\n\t]/g, ' ').substring(0, 100) : undefined;
             // Create backup first
             const backupResult = this.createBackup();
             if (!backupResult.success) {
@@ -135,14 +175,10 @@ class HostsManager {
                     return { success: false, error: `Hostname ${hostname} already exists` };
                 }
             }
-            // Validate IP
-            if (!this.isValidIP(ip)) {
-                return { success: false, error: 'Invalid IP address format' };
-            }
             // Build new line
             let newLine = `${ip}\t${hostname}`;
-            if (comment) {
-                newLine += `\t# ${comment}`;
+            if (sanitizedComment) {
+                newLine += `\t# ${sanitizedComment}`;
             }
             // Write new content to temp file
             const needsNewline = !currentContent.endsWith('\n');
@@ -162,6 +198,11 @@ class HostsManager {
     // Remove entry - rewrite file without the entry (using elevated PowerShell)
     async removeEntry(hostname) {
         try {
+            // Validate hostname (ป้องกัน injection)
+            const hostnameValidation = this.validateHostname(hostname);
+            if (!hostnameValidation.valid) {
+                return { success: false, error: hostnameValidation.error };
+            }
             // Create backup first
             const backupResult = this.createBackup();
             if (!backupResult.success) {
@@ -201,9 +242,14 @@ class HostsManager {
     // Use elevated PowerShell to write to hosts file
     elevatedCopyToHosts(sourceFile) {
         return new Promise((resolve) => {
-            // Escape paths for PowerShell
-            const srcPath = sourceFile.replace(/\\/g, '/');
-            const destPath = this.hostsPath.replace(/\\/g, '/');
+            // Validate source file path (ป้องกัน Command Injection)
+            if (!this.validateSourcePath(sourceFile)) {
+                resolve({ success: false, error: 'Source file path is not allowed' });
+                return;
+            }
+            // Escape paths for PowerShell (ป้องกัน Command Injection)
+            const srcPath = this.escapePowerShellString(sourceFile.replace(/\\/g, '/'));
+            const destPath = this.escapePowerShellString(this.hostsPath.replace(/\\/g, '/'));
             // Create a PowerShell script that copies the file
             const scriptContent = `Copy-Item -Path '${srcPath}' -Destination '${destPath}' -Force`;
             const scriptPath = sourceFile.replace('.temp', '.ps1');

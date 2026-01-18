@@ -14,6 +14,63 @@ import ProjectTemplateManager, { CreateProjectOptions } from '../services/Projec
 import PathResolver from '../services/PathResolver';
 import logger from '../services/Logger';
 
+// ============================================
+// Input Validation Functions
+// ============================================
+
+// Validate CreateProjectOptions
+function validateCreateProjectOptions(options: unknown): options is CreateProjectOptions {
+    if (!options || typeof options !== 'object') return false;
+    const opts = options as Record<string, unknown>;
+    return (
+        typeof opts.templateId === 'string' &&
+        typeof opts.projectName === 'string' &&
+        opts.projectName.length > 0 &&
+        (opts.databaseName === undefined || typeof opts.databaseName === 'string') &&
+        typeof opts.projectPath === 'string'
+    );
+}
+
+// Validate project name format
+function isValidProjectName(name: unknown): name is string {
+    if (typeof name !== 'string' || name.trim() === '') return false;
+    // Check for path traversal
+    if (name.includes('..') || name.includes('/') || name.includes('\\')) return false;
+    // Only allow safe characters
+    return /^[a-zA-Z0-9_.-]+$/.test(name);
+}
+
+// Validate service name
+function isValidServiceName(name: unknown): name is 'php' | 'apache' | 'mariadb' {
+    return name === 'php' || name === 'apache' || name === 'mariadb';
+}
+
+// Validate VHost input
+function validateVHostInput(vhost: unknown): vhost is Omit<VHostConfig, 'id' | 'createdAt'> {
+    if (!vhost || typeof vhost !== 'object') return false;
+    const v = vhost as Record<string, unknown>;
+    return (
+        typeof v.name === 'string' && v.name.length > 0 &&
+        typeof v.domain === 'string' && v.domain.length > 0 &&
+        typeof v.path === 'string' && v.path.length > 0 &&
+        (v.phpVersion === undefined || typeof v.phpVersion === 'string')
+    );
+}
+
+// Validate hostname
+function isValidHostname(hostname: unknown): hostname is string {
+    if (typeof hostname !== 'string' || hostname.trim() === '') return false;
+    const hostnameRegex = /^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$/;
+    return hostnameRegex.test(hostname) && hostname.length <= 253;
+}
+
+// Validate IP address
+function isValidIP(ip: unknown): ip is string {
+    if (typeof ip !== 'string') return false;
+    const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    return ipv4Regex.test(ip);
+}
+
 // Module references - will be set during initialization
 let mainWindow: BrowserWindow | null = null;
 let serviceManager: ServiceManager | null = null;
@@ -54,11 +111,19 @@ export function registerIPCHandlers(): void {
 // Service Handlers
 // ============================================
 function registerServiceHandlers(): void {
-  ipcMain.on('start-service', (_event: IpcMainEvent, serviceName: 'php' | 'apache' | 'mariadb') => {
+  ipcMain.on('start-service', (_event: IpcMainEvent, serviceName: unknown) => {
+    if (!isValidServiceName(serviceName)) {
+      logger.warn(`Invalid service name: ${serviceName}`);
+      return;
+    }
     if (serviceManager) serviceManager.startService(serviceName);
   });
 
-  ipcMain.on('stop-service', (_event: IpcMainEvent, serviceName: 'php' | 'apache' | 'mariadb') => {
+  ipcMain.on('stop-service', (_event: IpcMainEvent, serviceName: unknown) => {
+    if (!isValidServiceName(serviceName)) {
+      logger.warn(`Invalid service name: ${serviceName}`);
+      return;
+    }
     if (serviceManager) serviceManager.stopService(serviceName);
   });
 
@@ -184,8 +249,14 @@ function registerVHostHandlers(): void {
     return configManager ? configManager.getVHosts() : [];
   });
 
-  ipcMain.handle('add-vhost', async (_event: IpcMainInvokeEvent, vhost: Omit<VHostConfig, 'id' | 'createdAt'>) => {
+  ipcMain.handle('add-vhost', async (_event: IpcMainInvokeEvent, vhost: unknown) => {
     if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
+    
+    // Validate input
+    if (!validateVHostInput(vhost)) {
+      return { success: false, error: 'Invalid vhost configuration' };
+    }
+    
     const result = configManager.addVHost(vhost);
     
     if (result.success && serviceManager) {
@@ -238,18 +309,38 @@ function registerHostsHandlers(): void {
     return hostsManager.readHostsFile();
   });
 
-  ipcMain.handle('add-hosts-entry', async (_event: IpcMainInvokeEvent, ip: string, hostname: string, comment?: string) => {
+  ipcMain.handle('add-hosts-entry', async (_event: IpcMainInvokeEvent, ip: unknown, hostname: unknown, comment?: unknown) => {
     if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
-    return hostsManager.addEntry(ip, hostname, comment);
+    
+    // Validate inputs
+    if (!isValidIP(ip)) {
+      return { success: false, error: 'Invalid IP address format' };
+    }
+    if (!isValidHostname(hostname)) {
+      return { success: false, error: 'Invalid hostname format' };
+    }
+    const sanitizedComment = typeof comment === 'string' ? comment.substring(0, 100) : undefined;
+    
+    return hostsManager.addEntry(ip, hostname, sanitizedComment);
   });
 
-  ipcMain.handle('remove-hosts-entry', async (_event: IpcMainInvokeEvent, hostname: string) => {
+  ipcMain.handle('remove-hosts-entry', async (_event: IpcMainInvokeEvent, hostname: unknown) => {
     if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
+    
+    if (!isValidHostname(hostname)) {
+      return { success: false, error: 'Invalid hostname format' };
+    }
+    
     return hostsManager.removeEntry(hostname);
   });
 
-  ipcMain.handle('toggle-hosts-entry', async (_event: IpcMainInvokeEvent, hostname: string) => {
+  ipcMain.handle('toggle-hosts-entry', async (_event: IpcMainInvokeEvent, hostname: unknown) => {
     if (!hostsManager) return { success: false, error: 'HostsManager not initialized' };
+    
+    if (!isValidHostname(hostname)) {
+      return { success: false, error: 'Invalid hostname format' };
+    }
+    
     return hostsManager.toggleEntry(hostname);
   });
 
@@ -282,22 +373,49 @@ function registerProjectHandlers(): void {
     return projectTemplateManager ? projectTemplateManager.getProjects() : [];
   });
 
-  ipcMain.handle('create-project', async (_event: IpcMainInvokeEvent, options: CreateProjectOptions) => {
-    return projectTemplateManager ? projectTemplateManager.createProject(options) : { success: false, error: 'ProjectTemplateManager not initialized' };
+  ipcMain.handle('create-project', async (_event: IpcMainInvokeEvent, options: unknown) => {
+    if (!projectTemplateManager) return { success: false, error: 'ProjectTemplateManager not initialized' };
+    
+    // Validate input
+    if (!validateCreateProjectOptions(options)) {
+      return { success: false, error: 'Invalid project options' };
+    }
+    
+    return projectTemplateManager.createProject(options);
   });
 
-  ipcMain.handle('delete-project', async (_event: IpcMainInvokeEvent, projectName: string) => {
-    return projectTemplateManager ? projectTemplateManager.deleteProject(projectName) : { success: false, error: 'ProjectTemplateManager not initialized' };
+  ipcMain.handle('delete-project', async (_event: IpcMainInvokeEvent, projectName: unknown) => {
+    if (!projectTemplateManager) return { success: false, error: 'ProjectTemplateManager not initialized' };
+    
+    // Validate input
+    if (!isValidProjectName(projectName)) {
+      return { success: false, error: 'Invalid project name' };
+    }
+    
+    return projectTemplateManager.deleteProject(projectName);
   });
 
-  ipcMain.handle('open-project-folder', async (_event: IpcMainInvokeEvent, projectName: string) => {
+  ipcMain.handle('open-project-folder', async (_event: IpcMainInvokeEvent, projectName: unknown) => {
     if (!projectTemplateManager) return;
+    
+    // Validate input
+    if (!isValidProjectName(projectName)) {
+      logger.warn(`Invalid project name for open-project-folder: ${projectName}`);
+      return;
+    }
+    
     const pathResolver = PathResolver.getInstance();
     const projectPath = path.join(pathResolver.wwwDir, projectName);
     shell.openPath(projectPath);
   });
 
-  ipcMain.handle('open-project-browser', async (_event: IpcMainInvokeEvent, projectName: string) => {
+  ipcMain.handle('open-project-browser', async (_event: IpcMainInvokeEvent, projectName: unknown) => {
+    // Validate input
+    if (!isValidProjectName(projectName)) {
+      logger.warn(`Invalid project name for open-project-browser: ${projectName}`);
+      return;
+    }
+    
     const port = configManager ? configManager.getPort('apache') : 80;
     shell.openExternal(`http://localhost:${port}/${projectName}`);
   });

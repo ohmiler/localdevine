@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ServiceCard from './components/ServiceCard';
 import ConsolePanel from './components/ConsolePanel';
 import Settings from './components/Settings';
@@ -31,6 +31,9 @@ function App() {
   const [version, setVersion] = useState<string>('0.0.0');
   const [healthStatus, setHealthStatus] = useState<Record<string, ServiceHealth>>({});
   const [notifications, setNotifications] = useState<ServiceNotification[]>([]);
+  
+  // Store timeout IDs for cleanup (fix memory leak)
+  const notificationTimeoutsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
 
   useEffect(() => {
     if (window.electronAPI) {
@@ -55,10 +58,13 @@ function App() {
         const notificationWithId = { ...notification, id: Date.now() };
         setNotifications(prev => [...prev.slice(-9), notificationWithId]); // Keep last 10
         
-        // Auto-dismiss after 10 seconds
-        setTimeout(() => {
+        // Auto-dismiss after 10 seconds (with proper cleanup)
+        const timeoutId = setTimeout(() => {
           setNotifications(prev => prev.filter(n => (n as any).id !== notificationWithId.id));
+          notificationTimeoutsRef.current.delete(notificationWithId.id);
         }, 10000);
+        
+        notificationTimeoutsRef.current.set(notificationWithId.id, timeoutId);
       };
 
       window.electronAPI.on('service-status', handleStatus);
@@ -67,6 +73,10 @@ function App() {
       window.electronAPI.on('service-notification', handleNotification);
 
       return () => {
+        // Clear all notification timeouts to prevent memory leaks
+        notificationTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+        notificationTimeoutsRef.current.clear();
+        
         window.electronAPI.removeListener('service-status', handleStatus);
         window.electronAPI.removeListener('log-entry', handleLog);
         window.electronAPI.removeListener('health-status', handleHealth);

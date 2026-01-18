@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { BrowserWindow } from 'electron';
 import PathResolver from './PathResolver';
+import ConfigManager, { DatabaseConfig } from './ConfigManager';
 import logger from './Logger';
 
 export interface ProjectTemplate {
@@ -37,10 +38,68 @@ export interface CreateProjectResult {
 export class ProjectTemplateManager {
     private mainWindow: BrowserWindow | null = null;
     private wwwPath: string;
-    private dbHost = '127.0.0.1';
-    private dbPort = 3306;
-    private dbUser = 'root';
-    private dbPassword = 'root';
+    private configManager: ConfigManager | null = null;
+
+    // Validation: ตรวจสอบชื่อโปรเจค (ป้องกัน Path Traversal)
+    private validateProjectName(name: string): { valid: boolean; error?: string } {
+        if (!name || typeof name !== 'string') {
+            return { valid: false, error: 'Project name is required' };
+        }
+
+        // ตรวจสอบ path traversal
+        if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+            return { valid: false, error: 'Project name contains invalid path characters' };
+        }
+
+        // ตรวจสอบชื่อที่อันตรายใน Windows
+        const dangerous = ['.', '..', 'CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'LPT1', 'LPT2', 'LPT3', 'LPT4'];
+        if (dangerous.includes(name.toUpperCase())) {
+            return { valid: false, error: 'Project name is a reserved system name' };
+        }
+
+        // ตรวจสอบอักขระที่อนุญาต (a-z, A-Z, 0-9, -, _, .)
+        if (!/^[a-zA-Z0-9_.-]+$/.test(name)) {
+            return { valid: false, error: 'Project name can only contain letters, numbers, underscores, hyphens, and dots' };
+        }
+
+        // ตรวจสอบความยาว
+        if (name.length < 1 || name.length > 255) {
+            return { valid: false, error: 'Project name must be between 1 and 255 characters' };
+        }
+
+        // ตรวจสอบว่า resolved path อยู่ใน wwwDir
+        const resolvedPath = path.resolve(this.wwwPath, name);
+        const resolvedWwwDir = path.resolve(this.wwwPath);
+        if (!resolvedPath.startsWith(resolvedWwwDir + path.sep)) {
+            return { valid: false, error: 'Project path is outside allowed directory' };
+        }
+
+        return { valid: true };
+    }
+
+    // Validation: ตรวจสอบชื่อ Database (ป้องกัน SQL Injection)
+    private validateDatabaseName(dbName: string): { valid: boolean; error?: string } {
+        if (!dbName || typeof dbName !== 'string') {
+            return { valid: false, error: 'Database name is required' };
+        }
+
+        // อนุญาตเฉพาะ a-z, A-Z, 0-9, _, $ (MySQL valid characters)
+        if (!/^[a-zA-Z0-9_$]+$/.test(dbName)) {
+            return { valid: false, error: 'Database name can only contain letters, numbers, underscores, and dollar signs' };
+        }
+
+        // ตรวจสอบความยาว (MySQL limit = 64)
+        if (dbName.length < 1 || dbName.length > 64) {
+            return { valid: false, error: 'Database name must be between 1 and 64 characters' };
+        }
+
+        // ห้ามขึ้นต้นด้วยตัวเลข
+        if (/^[0-9]/.test(dbName)) {
+            return { valid: false, error: 'Database name cannot start with a number' };
+        }
+
+        return { valid: true };
+    }
 
     private templates: ProjectTemplate[] = [
         {
@@ -270,10 +329,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     ];
 
-    constructor() {
+    constructor(configManager?: ConfigManager) {
         // Use PathResolver for correct paths in both dev and production
         const pathResolver = PathResolver.getInstance();
         this.wwwPath = pathResolver.wwwDir;
+        this.configManager = configManager || null;
+    }
+
+    setConfigManager(configManager: ConfigManager) {
+        this.configManager = configManager;
+    }
+
+    // Get database config from ConfigManager or use defaults
+    private getDbConfig(): DatabaseConfig {
+        if (this.configManager) {
+            return this.configManager.getDatabaseConfig();
+        }
+        // Fallback defaults
+        return {
+            host: '127.0.0.1',
+            port: 3306,
+            user: 'root',
+            password: 'root'
+        };
     }
 
     setMainWindow(window: BrowserWindow) {
@@ -298,8 +376,20 @@ document.addEventListener('DOMContentLoaded', function() {
             return { success: false, message: 'Template not found' };
         }
 
+        // Validate project name (ป้องกัน Path Traversal)
+        const projectNameValidation = this.validateProjectName(options.projectName);
+        if (!projectNameValidation.valid) {
+            return { success: false, message: projectNameValidation.error || 'Invalid project name' };
+        }
+
         const projectPath = path.join(this.wwwPath, options.projectName);
         const databaseName = options.databaseName || options.projectName.replace(/[^a-zA-Z0-9_]/g, '_');
+
+        // Validate database name (ป้องกัน SQL Injection)
+        const dbNameValidation = this.validateDatabaseName(databaseName);
+        if (!dbNameValidation.valid) {
+            return { success: false, message: dbNameValidation.error || 'Invalid database name' };
+        }
 
         try {
             // Check if project already exists
@@ -367,17 +457,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     private async createDatabase(dbName: string): Promise<CreateProjectResult> {
         return new Promise((resolve) => {
-            logger.debug(`Connecting to database: ${this.dbHost}:${this.dbPort} as ${this.dbUser}`);
+            const dbConfig = this.getDbConfig();
+            logger.debug(`Connecting to database: ${dbConfig.host}:${dbConfig.port} as ${dbConfig.user}`);
             const mysql = require('mysql2');
             const connection = mysql.createConnection({
-                host: this.dbHost,
-                port: this.dbPort,
-                user: this.dbUser,
-                password: this.dbPassword
+                host: dbConfig.host,
+                port: dbConfig.port,
+                user: dbConfig.user,
+                password: dbConfig.password
             });
 
             connection.connect((err: any) => {
                 if (err) {
+                    connection.end(); // ปิด connection เมื่อเกิด error
                     logger.error(`Database connection error: ${err.message}`);
                     resolve({ success: false, message: `Database connection failed: ${err.message}` });
                     return;
@@ -400,18 +492,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     private async runSchema(dbName: string, schema: string): Promise<void> {
         return new Promise((resolve, reject) => {
+            const dbConfig = this.getDbConfig();
             const mysql = require('mysql2');
             const connection = mysql.createConnection({
-                host: this.dbHost,
-                port: this.dbPort,
-                user: this.dbUser,
-                password: this.dbPassword,
+                host: dbConfig.host,
+                port: dbConfig.port,
+                user: dbConfig.user,
+                password: dbConfig.password,
                 database: dbName,
                 multipleStatements: true
             });
 
             connection.connect((err: any) => {
                 if (err) {
+                    connection.end(); // ปิด connection เมื่อเกิด error
                     reject(err);
                     return;
                 }
@@ -429,16 +523,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     deleteProject(projectName: string): CreateProjectResult {
+        // Validate project name (ป้องกัน Path Traversal)
+        const projectNameValidation = this.validateProjectName(projectName);
+        if (!projectNameValidation.valid) {
+            return { success: false, message: projectNameValidation.error || 'Invalid project name' };
+        }
+
         const projectPath = path.join(this.wwwPath, projectName);
         
         try {
             if (!fs.existsSync(projectPath)) {
                 return { success: false, message: 'Project not found' };
-            }
-
-            // Additional check: ensure we're not deleting system folders
-            if (projectName === '.' || projectName === '..' || projectName.includes('..')) {
-                return { success: false, message: 'Invalid project name' };
             }
 
             // Try to delete with more robust error handling

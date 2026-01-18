@@ -42,12 +42,58 @@ const path = __importStar(require("path"));
 const PathResolver_1 = __importDefault(require("./PathResolver"));
 const Logger_1 = __importDefault(require("./Logger"));
 class ProjectTemplateManager {
-    constructor() {
+    // Validation: ตรวจสอบชื่อโปรเจค (ป้องกัน Path Traversal)
+    validateProjectName(name) {
+        if (!name || typeof name !== 'string') {
+            return { valid: false, error: 'Project name is required' };
+        }
+        // ตรวจสอบ path traversal
+        if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+            return { valid: false, error: 'Project name contains invalid path characters' };
+        }
+        // ตรวจสอบชื่อที่อันตรายใน Windows
+        const dangerous = ['.', '..', 'CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'LPT1', 'LPT2', 'LPT3', 'LPT4'];
+        if (dangerous.includes(name.toUpperCase())) {
+            return { valid: false, error: 'Project name is a reserved system name' };
+        }
+        // ตรวจสอบอักขระที่อนุญาต (a-z, A-Z, 0-9, -, _, .)
+        if (!/^[a-zA-Z0-9_.-]+$/.test(name)) {
+            return { valid: false, error: 'Project name can only contain letters, numbers, underscores, hyphens, and dots' };
+        }
+        // ตรวจสอบความยาว
+        if (name.length < 1 || name.length > 255) {
+            return { valid: false, error: 'Project name must be between 1 and 255 characters' };
+        }
+        // ตรวจสอบว่า resolved path อยู่ใน wwwDir
+        const resolvedPath = path.resolve(this.wwwPath, name);
+        const resolvedWwwDir = path.resolve(this.wwwPath);
+        if (!resolvedPath.startsWith(resolvedWwwDir + path.sep)) {
+            return { valid: false, error: 'Project path is outside allowed directory' };
+        }
+        return { valid: true };
+    }
+    // Validation: ตรวจสอบชื่อ Database (ป้องกัน SQL Injection)
+    validateDatabaseName(dbName) {
+        if (!dbName || typeof dbName !== 'string') {
+            return { valid: false, error: 'Database name is required' };
+        }
+        // อนุญาตเฉพาะ a-z, A-Z, 0-9, _, $ (MySQL valid characters)
+        if (!/^[a-zA-Z0-9_$]+$/.test(dbName)) {
+            return { valid: false, error: 'Database name can only contain letters, numbers, underscores, and dollar signs' };
+        }
+        // ตรวจสอบความยาว (MySQL limit = 64)
+        if (dbName.length < 1 || dbName.length > 64) {
+            return { valid: false, error: 'Database name must be between 1 and 64 characters' };
+        }
+        // ห้ามขึ้นต้นด้วยตัวเลข
+        if (/^[0-9]/.test(dbName)) {
+            return { valid: false, error: 'Database name cannot start with a number' };
+        }
+        return { valid: true };
+    }
+    constructor(configManager) {
         this.mainWindow = null;
-        this.dbHost = '127.0.0.1';
-        this.dbPort = 3306;
-        this.dbUser = 'root';
-        this.dbPassword = 'root';
+        this.configManager = null;
         this.templates = [
             {
                 id: 'php-basic',
@@ -278,6 +324,23 @@ document.addEventListener('DOMContentLoaded', function() {
         // Use PathResolver for correct paths in both dev and production
         const pathResolver = PathResolver_1.default.getInstance();
         this.wwwPath = pathResolver.wwwDir;
+        this.configManager = configManager || null;
+    }
+    setConfigManager(configManager) {
+        this.configManager = configManager;
+    }
+    // Get database config from ConfigManager or use defaults
+    getDbConfig() {
+        if (this.configManager) {
+            return this.configManager.getDatabaseConfig();
+        }
+        // Fallback defaults
+        return {
+            host: '127.0.0.1',
+            port: 3306,
+            user: 'root',
+            password: 'root'
+        };
     }
     setMainWindow(window) {
         this.mainWindow = window;
@@ -296,8 +359,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!template) {
             return { success: false, message: 'Template not found' };
         }
+        // Validate project name (ป้องกัน Path Traversal)
+        const projectNameValidation = this.validateProjectName(options.projectName);
+        if (!projectNameValidation.valid) {
+            return { success: false, message: projectNameValidation.error || 'Invalid project name' };
+        }
         const projectPath = path.join(this.wwwPath, options.projectName);
         const databaseName = options.databaseName || options.projectName.replace(/[^a-zA-Z0-9_]/g, '_');
+        // Validate database name (ป้องกัน SQL Injection)
+        const dbNameValidation = this.validateDatabaseName(databaseName);
+        if (!dbNameValidation.valid) {
+            return { success: false, message: dbNameValidation.error || 'Invalid database name' };
+        }
         try {
             // Check if project already exists
             if (fs.existsSync(projectPath)) {
@@ -355,16 +428,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     async createDatabase(dbName) {
         return new Promise((resolve) => {
-            Logger_1.default.debug(`Connecting to database: ${this.dbHost}:${this.dbPort} as ${this.dbUser}`);
+            const dbConfig = this.getDbConfig();
+            Logger_1.default.debug(`Connecting to database: ${dbConfig.host}:${dbConfig.port} as ${dbConfig.user}`);
             const mysql = require('mysql2');
             const connection = mysql.createConnection({
-                host: this.dbHost,
-                port: this.dbPort,
-                user: this.dbUser,
-                password: this.dbPassword
+                host: dbConfig.host,
+                port: dbConfig.port,
+                user: dbConfig.user,
+                password: dbConfig.password
             });
             connection.connect((err) => {
                 if (err) {
+                    connection.end(); // ปิด connection เมื่อเกิด error
                     Logger_1.default.error(`Database connection error: ${err.message}`);
                     resolve({ success: false, message: `Database connection failed: ${err.message}` });
                     return;
@@ -386,17 +461,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     async runSchema(dbName, schema) {
         return new Promise((resolve, reject) => {
+            const dbConfig = this.getDbConfig();
             const mysql = require('mysql2');
             const connection = mysql.createConnection({
-                host: this.dbHost,
-                port: this.dbPort,
-                user: this.dbUser,
-                password: this.dbPassword,
+                host: dbConfig.host,
+                port: dbConfig.port,
+                user: dbConfig.user,
+                password: dbConfig.password,
                 database: dbName,
                 multipleStatements: true
             });
             connection.connect((err) => {
                 if (err) {
+                    connection.end(); // ปิด connection เมื่อเกิด error
                     reject(err);
                     return;
                 }
@@ -413,14 +490,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     deleteProject(projectName) {
+        // Validate project name (ป้องกัน Path Traversal)
+        const projectNameValidation = this.validateProjectName(projectName);
+        if (!projectNameValidation.valid) {
+            return { success: false, message: projectNameValidation.error || 'Invalid project name' };
+        }
         const projectPath = path.join(this.wwwPath, projectName);
         try {
             if (!fs.existsSync(projectPath)) {
                 return { success: false, message: 'Project not found' };
-            }
-            // Additional check: ensure we're not deleting system folders
-            if (projectName === '.' || projectName === '..' || projectName.includes('..')) {
-                return { success: false, message: 'Invalid project name' };
             }
             // Try to delete with more robust error handling
             try {

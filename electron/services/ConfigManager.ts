@@ -4,12 +4,20 @@ import { VHostConfig } from './ServiceManager';
 import PathResolver from './PathResolver';
 import { configLogger as logger } from './Logger';
 
+export interface DatabaseConfig {
+    host: string;
+    port: number;
+    user: string;
+    password: string;
+}
+
 export interface Config {
     ports: {
         php: number;
         apache: number;
         mariadb: number;
     };
+    database: DatabaseConfig;
     autoStart: boolean;
     vhosts: VHostConfig[];
     phpVersion: string;
@@ -45,6 +53,12 @@ export default class ConfigManager {
                 apache: 80,
                 mariadb: 3306
             },
+            database: {
+                host: '127.0.0.1',
+                port: 3306,
+                user: 'root',
+                password: 'root'
+            },
             autoStart: false,
             vhosts: [],
             phpVersion: 'php'
@@ -62,6 +76,7 @@ export default class ConfigManager {
                     ...this.defaultConfig,
                     ...loaded,
                     ports: { ...this.defaultConfig.ports, ...loaded.ports },
+                    database: { ...this.defaultConfig.database, ...(loaded.database || {}) },
                     vhosts: loaded.vhosts || [],
                     phpVersion: loaded.phpVersion || 'php'
                 };
@@ -95,6 +110,10 @@ export default class ConfigManager {
 
     getPort(service: keyof Config['ports']): number {
         return this.config.ports[service] || this.defaultConfig.ports[service];
+    }
+
+    getDatabaseConfig(): DatabaseConfig {
+        return this.config.database || this.defaultConfig.database;
     }
 
     // Virtual Hosts methods

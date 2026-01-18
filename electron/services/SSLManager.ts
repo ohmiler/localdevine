@@ -538,10 +538,11 @@ SSLSessionCacheTimeout 300
 
             let httpdConfig = fs.readFileSync(this.httpdConfigPath, 'utf-8');
             const sslIncludePath = this.sslConfigPath.replace(/\\/g, '/');
-            const includeDirective = `Include "${sslIncludePath}"`;
+            const includeDirective = `IncludeOptional "${sslIncludePath}"`;
 
             // Check if include already exists
             if (httpdConfig.includes('httpd-ssl.conf')) {
+                logger.info('SSL include directive already exists in httpd.conf');
                 return;
             }
 
@@ -551,11 +552,11 @@ SSLSessionCacheTimeout 300
                 const insertPos = vhostMatch.index;
                 httpdConfig = 
                     httpdConfig.slice(0, insertPos) + 
-                    `# Include SSL Configuration\n${includeDirective}\n\n` + 
+                    `# Include SSL Configuration (if exists)\n${includeDirective}\n\n` + 
                     httpdConfig.slice(insertPos);
             } else {
                 // Add at the end
-                httpdConfig += `\n# Include SSL Configuration\n${includeDirective}\n`;
+                httpdConfig += `\n# Include SSL Configuration (if exists)\n${includeDirective}\n`;
             }
 
             fs.writeFileSync(this.httpdConfigPath, httpdConfig);

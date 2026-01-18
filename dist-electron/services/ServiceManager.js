@@ -350,6 +350,7 @@ class ServiceManager {
         const phpPath = (this.configManager ? this.configManager.getPHPPath() : path_1.default.join(this.binDir, 'php')).replace(/\\/g, '/');
         const apachePath = path_1.default.join(this.binDir, 'apache').replace(/\\/g, '/');
         const logsPath = logsDir.replace(/\\/g, '/');
+        const configPath = configDir.replace(/\\/g, '/');
         // Get virtual hosts from config
         const vhosts = this.configManager ? this.configManager.getVHosts() : [];
         // Generate vhost blocks
@@ -421,6 +422,9 @@ PidFile "${logsPath}/httpd.pid"
     LogFormat "%h %l %u %t \\"%r\\" %>s %b" common
     CustomLog "${logsPath}/access.log" common
 </IfModule>
+
+# Include SSL Configuration (if exists)
+IncludeOptional "${configPath}/httpd-ssl.conf"
 
 # Default VirtualHost for localhost (must be first!)
 <VirtualHost *:${apachePort}>

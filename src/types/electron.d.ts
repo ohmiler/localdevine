@@ -46,6 +46,29 @@ export interface TableInfo {
     engine: string;
 }
 
+// SSL Certificate types
+export interface SSLCertificate {
+    domain: string;
+    certPath: string;
+    keyPath: string;
+    createdAt: string;
+    expiresAt: string;
+    isTrusted: boolean;
+}
+
+export interface SSLOperationResult {
+    success: boolean;
+    message?: string;
+    error?: string;
+    data?: SSLCertificate | SSLCertificate[];
+}
+
+export interface OpenSSLInfo {
+    available: boolean;
+    version?: string;
+    path?: string;
+}
+
 // Environment Variable types
 export interface EnvVariable {
     key: string;
@@ -132,6 +155,18 @@ export interface ElectronAPI {
     envDeleteFile: (filename: string) => Promise<{ success: boolean; message?: string; error?: string }>;
     envGetDir: () => Promise<{ success: boolean; path: string }>;
     envOpenDir: () => Promise<{ success: boolean }>;
+
+    // SSL Certificate Manager
+    sslListCerts: () => Promise<SSLOperationResult>;
+    sslGenerateCert: (domain: string) => Promise<SSLOperationResult>;
+    sslDeleteCert: (domain: string) => Promise<SSLOperationResult>;
+    sslTrustCert: (domain: string) => Promise<SSLOperationResult>;
+    sslUntrustCert: (domain: string) => Promise<SSLOperationResult>;
+    sslGetCertInfo: (domain: string) => Promise<SSLOperationResult>;
+    sslGetApacheConfig: (domain: string) => Promise<{ success: boolean; config?: string; error?: string }>;
+    sslOpenDir: () => Promise<{ success: boolean }>;
+    sslGetDir: () => Promise<{ success: boolean; path: string }>;
+    sslCheckOpenSSL: () => Promise<OpenSSLInfo>;
 
     // Event listeners
     on: (channel: 'service-status' | 'log-entry' | 'health-status' | 'service-notification', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;

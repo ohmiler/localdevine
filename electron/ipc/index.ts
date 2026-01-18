@@ -13,6 +13,7 @@ import HostsManager from '../services/HostsManager';
 import ProjectTemplateManager, { CreateProjectOptions } from '../services/ProjectTemplateManager';
 import DatabaseManager from '../services/DatabaseManager';
 import EnvManager, { EnvVariable } from '../services/EnvManager';
+import SSLManager from '../services/SSLManager';
 import PathResolver from '../services/PathResolver';
 import logger from '../services/Logger';
 
@@ -115,6 +116,7 @@ export function registerIPCHandlers(): void {
   registerProjectHandlers();
   registerDatabaseHandlers();
   registerEnvHandlers();
+  registerSSLHandlers();
 }
 
 // ============================================
@@ -633,5 +635,112 @@ function registerEnvHandlers(): void {
     }
     shell.openPath(envManager.getEnvDir());
     return { success: true };
+  });
+}
+
+// ============================================
+// SSL Manager IPC Handlers
+// ============================================
+
+let sslManager: SSLManager | null = null;
+
+function registerSSLHandlers(): void {
+  // List all certificates
+  ipcMain.handle('ssl-list-certs', async () => {
+    if (!sslManager) {
+      sslManager = new SSLManager();
+    }
+    return sslManager.listCertificates();
+  });
+
+  // Generate new certificate
+  ipcMain.handle('ssl-generate-cert', async (_event: IpcMainInvokeEvent, domain: string) => {
+    if (!sslManager) {
+      sslManager = new SSLManager();
+    }
+    if (typeof domain !== 'string' || !domain.trim()) {
+      return { success: false, error: 'Invalid domain name' };
+    }
+    return sslManager.generateCertificate(domain.trim());
+  });
+
+  // Delete certificate
+  ipcMain.handle('ssl-delete-cert', async (_event: IpcMainInvokeEvent, domain: string) => {
+    if (!sslManager) {
+      sslManager = new SSLManager();
+    }
+    if (typeof domain !== 'string' || !domain.trim()) {
+      return { success: false, error: 'Invalid domain name' };
+    }
+    return sslManager.deleteCertificate(domain.trim());
+  });
+
+  // Trust certificate (add to Windows store)
+  ipcMain.handle('ssl-trust-cert', async (_event: IpcMainInvokeEvent, domain: string) => {
+    if (!sslManager) {
+      sslManager = new SSLManager();
+    }
+    if (typeof domain !== 'string' || !domain.trim()) {
+      return { success: false, error: 'Invalid domain name' };
+    }
+    return sslManager.trustCertificate(domain.trim());
+  });
+
+  // Untrust certificate (remove from Windows store)
+  ipcMain.handle('ssl-untrust-cert', async (_event: IpcMainInvokeEvent, domain: string) => {
+    if (!sslManager) {
+      sslManager = new SSLManager();
+    }
+    if (typeof domain !== 'string' || !domain.trim()) {
+      return { success: false, error: 'Invalid domain name' };
+    }
+    return sslManager.untrustCertificate(domain.trim());
+  });
+
+  // Get certificate info
+  ipcMain.handle('ssl-get-cert-info', async (_event: IpcMainInvokeEvent, domain: string) => {
+    if (!sslManager) {
+      sslManager = new SSLManager();
+    }
+    if (typeof domain !== 'string' || !domain.trim()) {
+      return { success: false, error: 'Invalid domain name' };
+    }
+    return sslManager.getCertificateInfo(domain.trim());
+  });
+
+  // Get Apache SSL config snippet
+  ipcMain.handle('ssl-get-apache-config', async (_event: IpcMainInvokeEvent, domain: string) => {
+    if (!sslManager) {
+      sslManager = new SSLManager();
+    }
+    if (typeof domain !== 'string' || !domain.trim()) {
+      return { success: false, error: 'Invalid domain name' };
+    }
+    return { success: true, config: sslManager.getApacheSSLConfig(domain.trim()) };
+  });
+
+  // Open SSL directory
+  ipcMain.handle('ssl-open-dir', async () => {
+    if (!sslManager) {
+      sslManager = new SSLManager();
+    }
+    sslManager.openSSLDir();
+    return { success: true };
+  });
+
+  // Get SSL directory path
+  ipcMain.handle('ssl-get-dir', async () => {
+    if (!sslManager) {
+      sslManager = new SSLManager();
+    }
+    return { success: true, path: sslManager.getSSLDir() };
+  });
+
+  // Check OpenSSL availability
+  ipcMain.handle('ssl-check-openssl', async () => {
+    if (!sslManager) {
+      sslManager = new SSLManager();
+    }
+    return sslManager.checkOpenSSL();
   });
 }

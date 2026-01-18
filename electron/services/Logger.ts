@@ -70,5 +70,6 @@ export const trayLogger = new Logger('TrayManager');
 export const hostsLogger = new Logger('HostsManager');
 export const databaseLogger = new Logger('DatabaseManager');
 export const envLogger = new Logger('EnvManager');
+export const sslLogger = new Logger('SSLManager');
 
 export default logger;

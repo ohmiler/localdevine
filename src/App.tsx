@@ -8,12 +8,13 @@ import NotificationPanel from './components/NotificationPanel';
 import ProjectTemplates from './components/ProjectTemplates';
 import DatabaseManager from './components/DatabaseManager';
 import EnvManager from './components/EnvManager';
+import SSLManager from './components/SSLManager';
 import ThemeToggle from './components/ThemeToggle';
 import { useKeyboardShortcuts, defaultShortcuts } from './hooks/useKeyboardShortcuts';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 import './styles/themes.css';
 
-type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env';
+type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl';
 
 interface Services {
   php: ServiceStatus;
@@ -219,6 +220,11 @@ function App() {
     return <EnvManager onBack={() => setCurrentPage('home')} />;
   }
 
+  // Render SSL Certificate Manager page
+  if (currentPage === 'ssl') {
+    return <SSLManager onBack={() => setCurrentPage('home')} />;
+  }
+
   // Render Home page
   return (
     <div className="min-h-screen p-8">
@@ -246,7 +252,13 @@ function App() {
             onClick={() => setCurrentPage('env')}
             className="button-secondary text-sm px-3 py-1.5"
           >
-            🔐 Env
+            📄 Env
+          </button>
+          <button
+            onClick={() => setCurrentPage('ssl')}
+            className="button-secondary text-sm px-3 py-1.5"
+          >
+            🔐 SSL
           </button>
           <button
             onClick={() => setCurrentPage('vhosts')}

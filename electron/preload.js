@@ -78,6 +78,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     envGetDir: () => ipcRenderer.invoke('env-get-dir'),
     envOpenDir: () => ipcRenderer.invoke('env-open-dir'),
 
+    // SSL Certificate Manager
+    sslListCerts: () => ipcRenderer.invoke('ssl-list-certs'),
+    sslGenerateCert: (domain) => ipcRenderer.invoke('ssl-generate-cert', domain),
+    sslDeleteCert: (domain) => ipcRenderer.invoke('ssl-delete-cert', domain),
+    sslTrustCert: (domain) => ipcRenderer.invoke('ssl-trust-cert', domain),
+    sslUntrustCert: (domain) => ipcRenderer.invoke('ssl-untrust-cert', domain),
+    sslGetCertInfo: (domain) => ipcRenderer.invoke('ssl-get-cert-info', domain),
+    sslGetApacheConfig: (domain) => ipcRenderer.invoke('ssl-get-apache-config', domain),
+    sslOpenDir: () => ipcRenderer.invoke('ssl-open-dir'),
+    sslGetDir: () => ipcRenderer.invoke('ssl-get-dir'),
+    sslCheckOpenSSL: () => ipcRenderer.invoke('ssl-check-openssl'),
+
     // Event listeners
     on: (channel, callback) => {
         const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status'];

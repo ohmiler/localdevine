@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { VHostConfig, CreateVHostInput } from '../types/electron';
 
 interface VirtualHostsProps {
@@ -11,6 +11,9 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    
+    // Refs for input focus restoration
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         loadVHosts();
@@ -47,9 +50,25 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
     };
 
     const handleRemove = async (id: string) => {
+        // Save current active element before operation
+        const activeElement = document.activeElement as HTMLElement;
+        const wasInputFocused = activeElement?.tagName === 'INPUT';
+        
         if (window.electronAPI) {
             await window.electronAPI.removeVHost(id);
-            loadVHosts();
+            await loadVHosts();
+            
+            // Restore focus to container to keep inputs responsive
+            if (wasInputFocused && containerRef.current) {
+                // Use setTimeout to ensure DOM has updated
+                setTimeout(() => {
+                    containerRef.current?.focus();
+                    // Re-focus the input if it still exists
+                    if (activeElement && document.body.contains(activeElement)) {
+                        activeElement.focus();
+                    }
+                }, 100);
+            }
         }
     };
 
@@ -100,7 +119,7 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
     };
 
     return (
-        <div className="min-h-screen p-8">
+        <div ref={containerRef} tabIndex={-1} className="min-h-screen p-8" style={{ outline: 'none' }}>
             <header className="mb-10 flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-display mb-2 header-title">

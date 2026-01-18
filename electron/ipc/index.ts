@@ -410,7 +410,14 @@ function registerProjectHandlers(): void {
   });
 
   ipcMain.handle('open-project-browser', async (_event: IpcMainInvokeEvent, projectName: unknown) => {
-    // Validate input
+    // Special case: empty string means open localhost root
+    if (projectName === '') {
+      const port = configManager ? configManager.getPort('apache') : 80;
+      shell.openExternal(`http://localhost:${port}`);
+      return;
+    }
+    
+    // Validate input for project names
     if (!isValidProjectName(projectName)) {
       logger.warn(`Invalid project name for open-project-browser: ${projectName}`);
       return;

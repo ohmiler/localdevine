@@ -14,10 +14,14 @@ interface DataPathInfo {
 function Settings({ onBack }: SettingsProps) {
     const [config, setConfig] = useState<Config>({
         ports: { php: 9000, apache: 80, mariadb: 3306 },
+        database: { host: '127.0.0.1', port: 3306, user: 'root', password: 'root' },
         autoStart: false,
         vhosts: [],
         phpVersion: 'php'
     });
+    const [showPassword, setShowPassword] = useState(false);
+    const [testingConnection, setTestingConnection] = useState(false);
+    const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
     const [phpVersions, setPHPVersions] = useState<PHPVersion[]>([]);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -96,6 +100,30 @@ function Settings({ onBack }: SettingsProps) {
             ...prev,
             ports: { ...prev.ports, [service]: port }
         }));
+    };
+
+    const handleDatabaseChange = (field: keyof Config['database'], value: string | number) => {
+        setConfig((prev: Config) => ({
+            ...prev,
+            database: { ...prev.database, [field]: value }
+        }));
+    };
+
+    const handleTestConnection = async () => {
+        setTestingConnection(true);
+        setConnectionStatus(null);
+        try {
+            const result = await window.electronAPI.dbTestConnection();
+            if (result.success) {
+                setConnectionStatus('✅ Connection successful!');
+            } else {
+                setConnectionStatus(`❌ Connection failed: ${result.error}`);
+            }
+        } catch (err) {
+            setConnectionStatus(`❌ Error: ${(err as Error).message}`);
+        }
+        setTestingConnection(false);
+        setTimeout(() => setConnectionStatus(null), 5000);
     };
 
     const handlePHPVersionChange = async (version: string) => {
@@ -450,6 +478,132 @@ function Settings({ onBack }: SettingsProps) {
                         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                             ⚠️ <strong>Important:</strong> Changing the data path requires restarting LocalDevine. Existing data will NOT be moved automatically.
                         </p>
+                    </div>
+                </div>
+
+                {/* Database Configuration */}
+                <div className="card p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-lg">
+                            🗄️
+                        </div>
+                        <h2 className="text-xl font-heading" style={{ color: 'var(--text-on-card)' }}>Database Credentials</h2>
+                    </div>
+
+                    <div className="space-y-4">
+                        {/* Host */}
+                        <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                            <label style={{ color: 'var(--text-label)' }}>🌐 Host</label>
+                            <input
+                                type="text"
+                                value={config.database?.host || '127.0.0.1'}
+                                onChange={(e) => handleDatabaseChange('host', e.target.value)}
+                                className="input w-40 text-center"
+                                placeholder="127.0.0.1"
+                            />
+                        </div>
+
+                        {/* Port */}
+                        <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                            <label style={{ color: 'var(--text-label)' }}>🔌 Port</label>
+                            <input
+                                type="number"
+                                value={config.database?.port || 3306}
+                                onChange={(e) => handleDatabaseChange('port', parseInt(e.target.value, 10) || 3306)}
+                                className="input w-24 text-center"
+                            />
+                        </div>
+
+                        {/* User */}
+                        <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                            <label style={{ color: 'var(--text-label)' }}>👤 User</label>
+                            <input
+                                type="text"
+                                value={config.database?.user || 'root'}
+                                onChange={(e) => handleDatabaseChange('user', e.target.value)}
+                                className="input w-40 text-center"
+                                placeholder="root"
+                            />
+                        </div>
+
+                        {/* Password */}
+                        <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                            <label style={{ color: 'var(--text-label)' }}>🔑 Password</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={config.database?.password || ''}
+                                    onChange={(e) => handleDatabaseChange('password', e.target.value)}
+                                    className="input w-32 text-center"
+                                    placeholder="••••••••"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                    title={showPassword ? 'Hide password' : 'Show password'}
+                                >
+                                    {showPassword ? '🙈' : '👁️'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 flex items-center gap-3">
+                        <button
+                            onClick={handleTestConnection}
+                            disabled={testingConnection}
+                            className={`px-4 py-2 rounded-xl font-semibold transition-all text-sm ${
+                                testingConnection
+                                    ? 'bg-disabled text-disabled cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
+                            }`}
+                        >
+                            {testingConnection ? '⏳ Testing...' : '🔗 Test Connection'}
+                        </button>
+                    </div>
+
+                    {connectionStatus && (
+                        <div className={`mt-4 p-3 rounded-lg text-sm font-medium ${
+                            connectionStatus.includes('✅') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                        }`}>
+                            {connectionStatus}
+                        </div>
+                    )}
+
+                    <div className="mt-4 p-3 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
+                        <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                            🔑 How to change MariaDB password:
+                        </p>
+                        <ol className="text-xs space-y-1" style={{ color: 'var(--text-secondary)' }}>
+                            <li>1. Change password above and click <strong>💾 Save Settings</strong></li>
+                            <li>2. Stop and restart MariaDB service</li>
+                            <li>3. Open <strong>Database</strong> page (Adminer)</li>
+                            <li>4. Login with OLD password, then go to <strong>SQL</strong> tab</li>
+                            <li>5. Run: <code className="px-1 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)' }}>ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpassword';</code></li>
+                            <li>6. Replace <code>newpassword</code> with your new password</li>
+                            <li>7. Restart MariaDB again and test connection</li>
+                        </ol>
+                        <div className="mt-2 p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
+                            <p className="text-xs font-mono" style={{ color: 'var(--text-primary)' }}>
+                                ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpassword';
+                            </p>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    navigator.clipboard.writeText("ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpassword';");
+                                    const btn = e.currentTarget;
+                                    const originalText = btn.textContent;
+                                    btn.textContent = '📋 Copied!';
+                                    setTimeout(() => {
+                                        btn.textContent = originalText;
+                                    }, 2000);
+                                }}
+                                className="mt-1 px-2 py-1 text-xs rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+                            >
+                                📋 Copy SQL Command
+                            </button>
+                        </div>
                     </div>
                 </div>
 

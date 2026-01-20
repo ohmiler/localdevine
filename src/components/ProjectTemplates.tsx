@@ -262,18 +262,31 @@ function ProjectTemplates() {
                 </div>
 
                 {createDatabase && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-label)' }}>
-                      Database Name
-                    </label>
-                    <input
-                      type="text"
-                      value={databaseName}
-                      onChange={(e) => setDatabaseName(e.target.value)}
-                      placeholder={projectName.toLowerCase().replace(/\s+/g, '_') || 'database_name'}
-                      className="input w-full"
-                    />
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-label)' }}>
+                        Database Name
+                      </label>
+                      <input
+                        type="text"
+                        value={databaseName}
+                        onChange={(e) => setDatabaseName(e.target.value)}
+                        placeholder={projectName.toLowerCase().replace(/\s+/g, '_') || 'database_name'}
+                        className="input w-full"
+                      />
+                    </div>
+
+                    <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+                      <div className="flex items-start gap-2">
+                        <span className="text-lg">💡</span>
+                        <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                          <p className="font-medium mb-1" style={{ color: 'var(--text-label)' }}>Important:</p>
+                          <p>After creating this project, please <strong>logout and login to Adminer</strong> to see the new database.</p>
+                          <p className="mt-1">This is required because Adminer caches the database list when you first log in.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
               </>
             )}

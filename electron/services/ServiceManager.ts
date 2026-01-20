@@ -320,26 +320,26 @@ export class ServiceManager {
         return this.healthStatus;
     }
 
-    // Get process metrics (CPU, Memory)
+    // Get process metrics (CPU, Memory) using PowerShell (Windows 11+ compatible)
     private async getProcessMetrics(pid: number): Promise<{ cpu: number; memory: number }> {
         return new Promise((resolve) => {
-            // Use WMIC on Windows to get process info
-            exec(`wmic process where ProcessId=${pid} get WorkingSetSize,PercentProcessorTime /format:csv`, (error, stdout) => {
+            // Use PowerShell instead of deprecated WMIC for Windows 11+ compatibility
+            const psCommand = `powershell -NoProfile -Command "Get-Process -Id ${pid} -ErrorAction SilentlyContinue | Select-Object @{N='Memory';E={[math]::Round($_.WorkingSet64/1MB,1)}},@{N='CPU';E={[math]::Round($_.CPU,1)}} | ConvertTo-Json"`;
+            
+            exec(psCommand, { windowsHide: true }, (error, stdout) => {
                 if (error) {
                     resolve({ cpu: 0, memory: 0 });
                     return;
                 }
 
                 try {
-                    const lines = stdout.trim().split('\n').filter(line => line.trim());
-                    if (lines.length >= 2) {
-                        const values = lines[1].split(',');
-                        // WorkingSetSize is in bytes, convert to MB
-                        const memoryBytes = parseInt(values[2] || '0', 10);
-                        const memoryMB = Math.round(memoryBytes / (1024 * 1024) * 10) / 10;
-                        // CPU percentage (WMIC may not always return accurate CPU)
-                        const cpu = parseInt(values[1] || '0', 10);
-                        resolve({ cpu, memory: memoryMB });
+                    const trimmed = stdout.trim();
+                    if (trimmed) {
+                        const data = JSON.parse(trimmed);
+                        resolve({
+                            cpu: data.CPU || 0,
+                            memory: data.Memory || 0
+                        });
                     } else {
                         resolve({ cpu: 0, memory: 0 });
                     }

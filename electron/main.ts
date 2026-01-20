@@ -179,8 +179,15 @@ app.on('activate', () => {
   }
 });
 
-// Cleanup all services before quitting
+// Shutdown timeout constant (10 seconds)
+const SHUTDOWN_TIMEOUT_MS = 10000;
+let isQuitting = false;
+
+// Cleanup all services before quitting with timeout protection
 app.on('before-quit', async (event) => {
+  // Prevent re-entry
+  if (isQuitting) return;
+
   // Set tray to quitting mode
   if (trayManager) {
     trayManager.setQuitting(true);
@@ -188,9 +195,29 @@ app.on('before-quit', async (event) => {
 
   if (serviceManager && serviceManager.hasRunningServices()) {
     event.preventDefault();
+    isQuitting = true;
     logger.info('Stopping all services before quit...');
-    await serviceManager.stopAllServices();
-    app.quit();
+
+    // Create a timeout promise that forces quit
+    const timeoutPromise = new Promise<void>((resolve) => {
+      setTimeout(() => {
+        logger.warn(`Shutdown timeout (${SHUTDOWN_TIMEOUT_MS}ms) reached. Force quitting...`, { forceLog: true });
+        resolve();
+      }, SHUTDOWN_TIMEOUT_MS);
+    });
+
+    // Race between stopAllServices and timeout
+    try {
+      await Promise.race([
+        serviceManager.stopAllServices(),
+        timeoutPromise
+      ]);
+    } catch (error) {
+      logger.error(`Error during shutdown: ${error}`, { forceLog: true });
+    }
+
+    // Force quit regardless of result
+    app.exit(0);
   }
 });
 

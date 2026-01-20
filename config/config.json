@@ -11,14 +11,6 @@
     "password": "root"
   },
   "autoStart": false,
-  "vhosts": [
-    {
-      "id": "1768749537547",
-      "name": "test",
-      "domain": "test.local",
-      "path": "C:\\Users\\Miler\\Documents\\dev\\localdevine\\www\\test",
-      "createdAt": "2026-01-18T15:18:57.547Z"
-    }
-  ],
+  "vhosts": [],
   "phpVersion": "php"
 }

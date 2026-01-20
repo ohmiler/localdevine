@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -6,7 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
 const ServiceManager_1 = require("./services/ServiceManager");
-const Logger_1 = __importDefault(require("./services/Logger"));
+const Logger_1 = __importStar(require("./services/Logger"));
 const TrayManager_1 = __importDefault(require("./services/TrayManager"));
 const ConfigManager_1 = __importDefault(require("./services/ConfigManager"));
 const HostsManager_1 = __importDefault(require("./services/HostsManager"));
@@ -14,6 +47,14 @@ const ProjectTemplateManager_1 = __importDefault(require("./services/ProjectTemp
 const DatabaseManager_1 = __importDefault(require("./services/DatabaseManager"));
 const AutoUpdater_1 = __importDefault(require("./services/AutoUpdater"));
 const ipc_1 = require("./ipc");
+// Initialize file logger
+try {
+    Logger_1.Logger.getLogDir(); // This will initialize the FileLogger
+    Logger_1.default.info('File logger initialized successfully');
+}
+catch (error) {
+    console.error('Failed to initialize file logger:', error);
+}
 // Basic error handling to catch the 'string' issue
 if (typeof electron_1.app === 'undefined') {
     Logger_1.default.error('FATAL: electron module returned undefined/string. Exiting.', { forceLog: true });
@@ -62,8 +103,10 @@ function createWindow() {
         ? path_1.default.join(process.resourcesPath, 'app.asar.unpacked', 'public', 'icon.ico')
         : path_1.default.join(__dirname, '../public/icon.ico');
     mainWindow = new electron_1.BrowserWindow({
-        width: 1000,
-        height: 700,
+        width: 1400,
+        height: 900,
+        minWidth: 1200,
+        minHeight: 700,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -151,17 +194,41 @@ electron_1.app.on('activate', () => {
         trayManager.create();
     }
 });
-// Cleanup all services before quitting
+// Shutdown timeout constant (10 seconds)
+const SHUTDOWN_TIMEOUT_MS = 10000;
+let isQuitting = false;
+// Cleanup all services before quitting with timeout protection
 electron_1.app.on('before-quit', async (event) => {
+    // Prevent re-entry
+    if (isQuitting)
+        return;
     // Set tray to quitting mode
     if (trayManager) {
         trayManager.setQuitting(true);
     }
     if (serviceManager && serviceManager.hasRunningServices()) {
         event.preventDefault();
+        isQuitting = true;
         Logger_1.default.info('Stopping all services before quit...');
-        await serviceManager.stopAllServices();
-        electron_1.app.quit();
+        // Create a timeout promise that forces quit
+        const timeoutPromise = new Promise((resolve) => {
+            setTimeout(() => {
+                Logger_1.default.warn(`Shutdown timeout (${SHUTDOWN_TIMEOUT_MS}ms) reached. Force quitting...`, { forceLog: true });
+                resolve();
+            }, SHUTDOWN_TIMEOUT_MS);
+        });
+        // Race between stopAllServices and timeout
+        try {
+            await Promise.race([
+                serviceManager.stopAllServices(),
+                timeoutPromise
+            ]);
+        }
+        catch (error) {
+            Logger_1.default.error(`Error during shutdown: ${error}`, { forceLog: true });
+        }
+        // Force quit regardless of result
+        electron_1.app.exit(0);
     }
 });
 // Cleanup tray on quit

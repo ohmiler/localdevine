@@ -70,6 +70,7 @@ function App() {
         notificationTimeoutsRef.current.set(notificationWithId.id, timeoutId);
       };
 
+      
       window.electronAPI.on('service-status', handleStatus);
       window.electronAPI.on('log-entry', handleLog);
       window.electronAPI.on('health-status', handleHealth);

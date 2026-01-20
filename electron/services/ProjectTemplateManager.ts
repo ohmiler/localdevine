@@ -123,13 +123,165 @@ echo "<p>Your PHP project is ready.</p>";
 echo "<p>PHP Version: " . phpversion() . "</p>";
 echo "<p>Server Time: " . date('Y-m-d H:i:s') . "</p>";
 ?>`
+                }
+            ]
+        },
+        {
+            id: 'php-database',
+            name: 'PHP + Database',
+            description: 'PHP project with MySQL database connection ready',
+            icon: '🐘',
+            category: 'php',
+            hasDatabase: true,
+            files: [
+                {
+                    path: 'index.php',
+                    content: `<?php
+/**
+ * {{PROJECT_NAME}} - PHP + Database Project
+ * Created with LocalDevine
+ */
+
+require_once 'config/database.php';
+
+// Get database connection
+$db = Database::getInstance();
+$conn = $db->getConnection();
+
+// Example query
+$result = $conn->query("SELECT 1 as test");
+$dbStatus = $result ? "Connected" : "Failed";
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{PROJECT_NAME}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .container { background: white; padding: 2rem 3rem; border-radius: 1rem; box-shadow: 0 10px 40px rgba(0,0,0,0.2); text-align: center; max-width: 500px; }
+        h1 { color: #333; margin-bottom: 1rem; }
+        .status { padding: 0.5rem 1rem; border-radius: 0.5rem; margin: 0.5rem 0; }
+        .success { background: #d4edda; color: #155724; }
+        .info { background: #e2e3e5; color: #383d41; }
+        .footer { margin-top: 1.5rem; color: #666; font-size: 0.875rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 {{PROJECT_NAME}}</h1>
+        <p class="status success">✅ Database: <?= \$dbStatus ?></p>
+        <p class="status info">🐘 PHP Version: <?= phpversion() ?></p>
+        <p class="status info">🗄️ Database: {{DATABASE_NAME}}</p>
+        <p class="status info">⏰ Server Time: <?= date('Y-m-d H:i:s') ?></p>
+        <p class="footer">Created with LocalDevine</p>
+    </div>
+</body>
+</html>`
                 },
                 {
-                    path: '.htaccess',
-                    content: `RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php [QSA,L]`
+                    path: 'config/database.php',
+                    content: `<?php
+/**
+ * Database Configuration
+ * {{PROJECT_NAME}}
+ */
+
+class Database {
+    private static \$instance = null;
+    private \$connection;
+    
+    private \$host = '127.0.0.1';
+    private \$port = 3306;
+    private \$username = 'root';
+    private \$password = 'root';
+    private \$database = '{{DATABASE_NAME}}';
+    
+    private function __construct() {
+        try {
+            \$this->connection = new mysqli(
+                \$this->host,
+                \$this->username,
+                \$this->password,
+                \$this->database,
+                \$this->port
+            );
+            
+            if (\$this->connection->connect_error) {
+                throw new Exception("Connection failed: " . \$this->connection->connect_error);
+            }
+            
+            \$this->connection->set_charset("utf8mb4");
+        } catch (Exception \$e) {
+            die("Database Error: " . \$e->getMessage());
+        }
+    }
+    
+    public static function getInstance(): Database {
+        if (self::\$instance === null) {
+            self::\$instance = new Database();
+        }
+        return self::\$instance;
+    }
+    
+    public function getConnection(): mysqli {
+        return \$this->connection;
+    }
+    
+    public function query(string \$sql): mysqli_result|bool {
+        return \$this->connection->query(\$sql);
+    }
+    
+    public function prepare(string \$sql): mysqli_stmt|false {
+        return \$this->connection->prepare(\$sql);
+    }
+    
+    public function escape(string \$value): string {
+        return \$this->connection->real_escape_string(\$value);
+    }
+    
+    public function lastInsertId(): int {
+        return \$this->connection->insert_id;
+    }
+    
+    public function close(): void {
+        \$this->connection->close();
+    }
+}`
+                },
+                {
+                    path: 'schema.sql',
+                    content: `-- {{PROJECT_NAME}} Database Schema
+-- Created with LocalDevine
+
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Example data
+INSERT INTO users (name, email, password) VALUES
+('Admin', 'admin@example.com', 'changeme'),
+('User', 'user@example.com', 'changeme');
+
+-- Settings table
+CREATE TABLE IF NOT EXISTS settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    setting_key VARCHAR(50) UNIQUE NOT NULL,
+    setting_value TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO settings (setting_key, setting_value) VALUES
+('site_name', '{{PROJECT_NAME}}'),
+('site_version', '1.0.0');`
                 }
             ]
         },

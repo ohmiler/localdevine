@@ -41,6 +41,12 @@ export default function DatabaseManager({ onBack }: DatabaseManagerProps) {
             if (result.success) {
                 setDatabases(result.data);
                 setConnectionStatus('connected');
+                
+                // Check if selected database still exists
+                if (selectedDb && !result.data.find(db => db.name === selectedDb)) {
+                    setSelectedDb(null);
+                    setTables([]);
+                }
             } else {
                 setError(result.error || 'Failed to load databases');
                 setConnectionStatus('disconnected');
@@ -51,7 +57,7 @@ export default function DatabaseManager({ onBack }: DatabaseManagerProps) {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [selectedDb]);
 
     // Load tables for selected database
     const loadTables = useCallback(async (database: string) => {
@@ -335,7 +341,7 @@ export default function DatabaseManager({ onBack }: DatabaseManagerProps) {
                         <button
                             onClick={loadDatabases}
                             disabled={loading || connectionStatus !== 'connected'}
-                            className="w-full mt-4 py-2 text-sm rounded-lg transition-all"
+                            className="w-full mt-4 py-2 text-sm rounded-lg transition-all cursor-pointer hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
                             style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
                         >
                             🔄 Refresh
@@ -380,6 +386,19 @@ export default function DatabaseManager({ onBack }: DatabaseManagerProps) {
                             <div className="text-center py-16" style={{ color: 'var(--text-muted)' }}>
                                 <div className="text-6xl mb-4">📂</div>
                                 <p>Select a database from the list to view its tables</p>
+                                
+                                <div className="mt-8 max-w-md mx-auto">
+                                    <div className="p-4 rounded-lg text-left" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+                                        <div className="flex items-start gap-3">
+                                            <span className="text-xl">💡</span>
+                                            <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                                <p className="font-medium mb-2" style={{ color: 'var(--text-label)' }}>Adminer Database Visibility:</p>
+                                                <p>If you create a new database and don't see it in Adminer, please <strong>logout and login to Adminer</strong> to refresh the database list.</p>
+                                                <p className="mt-1">This happens because Adminer caches the database list when you first log in.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         ) : tables.length === 0 ? (
                             <div className="text-center py-16" style={{ color: 'var(--text-muted)' }}>

@@ -239,18 +239,25 @@ export default function EnvManager({ onBack }: EnvManagerProps) {
                                             if (hasChanges && !confirm('Discard unsaved changes?')) return;
                                             setSelectedFile(file.name);
                                         }}
-                                        className={`p-3 rounded-lg cursor-pointer transition-all flex justify-between items-center ${
+                                        className={`p-3 rounded-lg cursor-pointer transition-all flex justify-between items-center border-2 ${
                                             selectedFile === file.name
-                                                ? 'bg-indigo-100 border-2 border-indigo-500'
-                                                : 'hover:bg-gray-100 border-2 border-transparent'
+                                                ? 'border-indigo-500'
+                                                : 'border-transparent'
                                         }`}
-                                        style={{ background: selectedFile === file.name ? undefined : 'var(--bg-tertiary)' }}
+                                        style={{ 
+                                            background: selectedFile === file.name 
+                                                ? 'var(--gradient-primary)' 
+                                                : 'var(--bg-tertiary)',
+                                            color: selectedFile === file.name 
+                                                ? 'white' 
+                                                : 'var(--text-primary)'
+                                        }}
                                     >
                                         <div>
-                                            <div className="font-mono text-sm" style={{ color: 'var(--text-primary)' }}>
+                                            <div className="font-mono text-sm" style={{ color: selectedFile === file.name ? 'white' : 'var(--text-primary)' }}>
                                                 📄 {file.name}
                                             </div>
-                                            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                                            <div className="text-xs" style={{ color: selectedFile === file.name ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)' }}>
                                                 {file.variables.length} variables
                                             </div>
                                         </div>
@@ -260,7 +267,7 @@ export default function EnvManager({ onBack }: EnvManagerProps) {
                                                     e.stopPropagation();
                                                     handleDeleteFile(file.name);
                                                 }}
-                                                className="text-red-500 hover:text-red-700 p-1"
+                                                className={`p-1 ${selectedFile === file.name ? 'text-red-300 hover:text-red-100' : 'text-red-500 hover:text-red-700'}`}
                                                 title="Delete file"
                                             >
                                                 🗑️

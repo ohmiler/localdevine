@@ -270,13 +270,13 @@ function App() {
       <div className="flex flex-wrap gap-3 mb-8">
         <button
           onClick={() => window.electronAPI?.openProjectBrowser('')}
-          className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all"
+          className="button-secondary"
         >
           🌐 Open localhost
         </button>
         <button
           onClick={() => window.electronAPI?.openProjectBrowser('adminer.php')}
-          className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all"
+          className="button-secondary"
         >
           🗄️ Database
         </button>

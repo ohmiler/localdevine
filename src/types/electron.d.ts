@@ -167,6 +167,8 @@ export interface ElectronAPI {
     sslOpenDir: () => Promise<{ success: boolean }>;
     sslGetDir: () => Promise<{ success: boolean; path: string }>;
     sslCheckOpenSSL: () => Promise<OpenSSLInfo>;
+    sslEnableDomain: (domain: string, projectPath?: string) => Promise<SSLOperationResult>;
+    sslDisableDomain: (domain: string) => Promise<SSLOperationResult>;
 
     // Window utilities
     refocusWindow: () => Promise<{ success: boolean }>;

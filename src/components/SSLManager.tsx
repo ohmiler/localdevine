@@ -18,6 +18,7 @@ export default function SSLManager({ onBack }: SSLManagerProps) {
     const [apacheConfig, setApacheConfig] = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+    const [enabledDomains, setEnabledDomains] = useState<Set<string>>(new Set());
 
     const loadCertificates = useCallback(async () => {
         setLoading(true);
@@ -167,6 +168,46 @@ export default function SSLManager({ onBack }: SSLManagerProps) {
         }
     };
 
+    const handleEnableSSL = async (domain: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await window.electronAPI.sslEnableDomain(domain);
+            if (result.success) {
+                setEnabledDomains(prev => new Set(prev).add(domain));
+                setSuccess(`SSL enabled for ${domain}. Restart Apache to apply changes.`);
+            } else {
+                setError(result.error || 'Failed to enable SSL');
+            }
+        } catch (err) {
+            setError((err as Error).message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDisableSSL = async (domain: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await window.electronAPI.sslDisableDomain(domain);
+            if (result.success) {
+                setEnabledDomains(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(domain);
+                    return newSet;
+                });
+                setSuccess(`SSL disabled for ${domain}. Restart Apache to apply changes.`);
+            } else {
+                setError(result.error || 'Failed to disable SSL');
+            }
+        } catch (err) {
+            setError((err as Error).message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         setSuccess('Copied to clipboard!');
@@ -313,23 +354,61 @@ export default function SSLManager({ onBack }: SSLManagerProps) {
                                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                                             cert.isTrusted 
                                                 ? 'bg-green-100 text-green-700' 
-                                                : 'bg-yellow-100 text-yellow-700'
+                                                : 'bg-orange-100 text-orange-700'
                                         }`}>
-                                            {cert.isTrusted ? '✓ Trusted' : '⚠ Not Trusted'}
+                                            {cert.isTrusted ? '✅ Trusted' : '⚠️ Trust Required'}
                                         </span>
                                         
+                                        {/* SSL status badge */}
+                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                            enabledDomains.has(cert.domain)
+                                                ? 'bg-blue-100 text-blue-700' 
+                                                : 'bg-gray-100 text-gray-600'
+                                        }`}>
+                                            {enabledDomains.has(cert.domain) ? '🌐 SSL Enabled' : '🚫 SSL Disabled'}
+                                        </span>
+                                        
+                                                                                
                                         {/* Action buttons */}
-                                        <button
-                                            onClick={() => cert.isTrusted ? handleUntrustCert(cert.domain) : handleTrustCert(cert.domain)}
-                                            className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
-                                                cert.isTrusted
-                                                    ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
-                                            }`}
-                                            title={cert.isTrusted ? 'Remove from Windows trust store' : 'Add to Windows trust store'}
-                                        >
-                                            {cert.isTrusted ? '🔓 Untrust' : '🔐 Trust'}
-                                        </button>
+                                        {/* Trust button - primary action when not trusted */}
+                                        {!cert.isTrusted && (
+                                            <button
+                                                onClick={() => handleTrustCert(cert.domain)}
+                                                className="px-3 py-2 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg text-sm font-semibold transition-all"
+                                                title="Add to Windows trust store (required for HTTPS)"
+                                            >
+                                                🔐 Trust
+                                            </button>
+                                        )}
+                                        {cert.isTrusted && (
+                                            <button
+                                                onClick={() => handleUntrustCert(cert.domain)}
+                                                className="px-3 py-2 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 rounded-lg text-sm font-semibold transition-all"
+                                                title="Remove from Windows trust store"
+                                            >
+                                                🔓 Untrust
+                                            </button>
+                                        )}
+                                        
+                                        {/* SSL Enable/Disable button */}
+                                        {!enabledDomains.has(cert.domain) && (
+                                            <button
+                                                onClick={() => handleEnableSSL(cert.domain)}
+                                                className="px-3 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg text-sm font-semibold transition-all"
+                                                title="Enable SSL in Apache config"
+                                            >
+                                                🌐 Enable SSL
+                                            </button>
+                                        )}
+                                        {enabledDomains.has(cert.domain) && (
+                                            <button
+                                                onClick={() => handleDisableSSL(cert.domain)}
+                                                className="px-3 py-2 bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-lg text-sm font-semibold transition-all"
+                                                title="Disable SSL in Apache config"
+                                            >
+                                                🚫 Disable SSL
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => handleShowConfig(cert)}
                                             className="px-3 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg text-sm font-semibold transition-all"

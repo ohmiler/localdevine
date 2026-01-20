@@ -74,6 +74,26 @@ function isValidIP(ip: unknown): ip is string {
     return ipv4Regex.test(ip);
 }
 
+// Validate domain name for SSL (e.g., mysite.local, test.dev)
+function validateDomain(domain: unknown): domain is string {
+    if (typeof domain !== 'string' || domain.trim() === '') return false;
+    
+    // Prevent path traversal and command injection
+    if (domain.includes('..') || domain.includes('/') || domain.includes('\\')) return false;
+    if (domain.includes(';') || domain.includes('&') || domain.includes('|')) return false;
+    
+    // Domain format: alphanumeric, hyphens, single dots only; must have at least one dot
+    // Prevent consecutive dots, dots at start/end, and dots followed by dots
+    const domainRegex = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+    
+    // Additional checks for invalid patterns
+    if (domain.startsWith('.') || domain.endsWith('.')) return false;
+    if (domain.includes('...')) return false;
+    if (domain.includes('.-') || domain.includes('-.')) return false;
+    
+    return domainRegex.test(domain) && domain.length <= 253;
+}
+
 // Module references - will be set during initialization
 let mainWindow: BrowserWindow | null = null;
 let serviceManager: ServiceManager | null = null;
@@ -764,5 +784,39 @@ function registerSSLHandlers(): void {
       sslManager = new SSLManager();
     }
     return sslManager.checkOpenSSL();
+  });
+
+  // Enable SSL for domain (add to Apache config)
+  ipcMain.handle('ssl-enable-domain', async (_event: IpcMainInvokeEvent, domain: string, projectPath?: string) => {
+    if (!sslManager) {
+      sslManager = new SSLManager();
+    }
+    if (typeof domain !== 'string' || !domain.trim()) {
+      return { success: false, error: 'Invalid domain name' };
+    }
+    // Validate domain format
+    if (!validateDomain(domain.trim())) {
+      return { success: false, error: 'Invalid domain format' };
+    }
+    // Validate project path if provided
+    if (projectPath !== undefined && (typeof projectPath !== 'string' || !projectPath.trim())) {
+      return { success: false, error: 'Invalid project path' };
+    }
+    return sslManager.enableSSLForDomain(domain.trim(), projectPath?.trim());
+  });
+
+  // Disable SSL for domain (remove from Apache config)
+  ipcMain.handle('ssl-disable-domain', async (_event: IpcMainInvokeEvent, domain: string) => {
+    if (!sslManager) {
+      sslManager = new SSLManager();
+    }
+    if (typeof domain !== 'string' || !domain.trim()) {
+      return { success: false, error: 'Invalid domain name' };
+    }
+    // Validate domain format
+    if (!validateDomain(domain.trim())) {
+      return { success: false, error: 'Invalid domain format' };
+    }
+    return sslManager.disableSSLForDomain(domain.trim());
   });
 }

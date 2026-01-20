@@ -72,8 +72,10 @@ function createWindow(): BrowserWindow {
     : path.join(__dirname, '../public/icon.ico');
 
   mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 700,
+    width: 1400,
+    height: 900,
+    minWidth: 1200,
+    minHeight: 700,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

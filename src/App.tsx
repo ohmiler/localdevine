@@ -10,6 +10,7 @@ import DatabaseManager from './components/DatabaseManager';
 import EnvManager from './components/EnvManager';
 import SSLManager from './components/SSLManager';
 import LogsManager from './components/LogsManager';
+import Sidebar from './components/Sidebar';
 import ThemeToggle from './components/ThemeToggle';
 import { useKeyboardShortcuts, defaultShortcuts } from './hooks/useKeyboardShortcuts';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
@@ -172,126 +173,55 @@ function App() {
 
   useKeyboardShortcuts(keyboardShortcuts);
 
-  // Render Settings page
-  if (currentPage === 'settings') {
-    return <Settings onBack={() => setCurrentPage('home')} />;
-  }
-
-  // Render Virtual Hosts page
-  if (currentPage === 'vhosts') {
-    return <VirtualHosts onBack={() => setCurrentPage('home')} />;
-  }
-
-  // Render Hosts Editor page
-  if (currentPage === 'hosts') {
-    return <HostsEditor onBack={() => setCurrentPage('home')} />;
-  }
-
-  // Render Project Templates page
-  if (currentPage === 'templates') {
-    return (
-      <div className="min-h-screen p-8">
-        <header className="mb-10 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-display mb-2 header-title">
-              <span className="header-icon">📦</span>
-              <span className="header-text">Project Templates</span>
-            </h1>
-            <p className="text-lg text-gradient opacity-90">Create projects from templates</p>
+  // Render page content based on current page
+  const renderPageContent = () => {
+    switch (currentPage) {
+      case 'settings':
+        return <Settings onBack={() => setCurrentPage('home')} />;
+      case 'vhosts':
+        return <VirtualHosts onBack={() => setCurrentPage('home')} />;
+      case 'hosts':
+        return <HostsEditor onBack={() => setCurrentPage('home')} />;
+      case 'templates':
+        return (
+          <div className="min-h-screen p-8">
+            <header className="mb-10 flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-display mb-2 header-title">
+                  <span className="header-icon">📦</span>
+                  <span className="header-text">Project Templates</span>
+                </h1>
+                <p className="text-lg text-gradient opacity-90">Create projects from templates</p>
+              </div>
+            </header>
+            <ProjectTemplates />
           </div>
-          <button
-            onClick={() => setCurrentPage('home')}
-            className="button-secondary"
-          >
-            ← Back
-          </button>
-        </header>
-        <ProjectTemplates />
-      </div>
-    );
-  }
+        );
+      case 'database':
+        return <DatabaseManager onBack={() => setCurrentPage('home')} />;
+      case 'env':
+        return <EnvManager onBack={() => setCurrentPage('home')} />;
+      case 'ssl':
+        return <SSLManager onBack={() => setCurrentPage('home')} />;
+      case 'logs':
+        return <LogsManager onBack={() => setCurrentPage('home')} />;
+      default:
+        return renderHomePage();
+    }
+  };
 
-  // Render Database Manager page
-  if (currentPage === 'database') {
-    return <DatabaseManager onBack={() => setCurrentPage('home')} />;
-  }
-
-  // Render Environment Variables page
-  if (currentPage === 'env') {
-    return <EnvManager onBack={() => setCurrentPage('home')} />;
-  }
-
-  // Render SSL Certificate Manager page
-  if (currentPage === 'ssl') {
-    return <SSLManager onBack={() => setCurrentPage('home')} />;
-  }
-
-  // Render Logs Manager page
-  if (currentPage === 'logs') {
-    return <LogsManager onBack={() => setCurrentPage('home')} />;
-  }
-
-  // Render Home page
-  return (
-    <div className="min-h-screen p-8">
+  // Render Home page content
+  const renderHomePage = () => (
+    <div className="p-8">
       <header className="mb-10 flex justify-between items-center">
         <div>
           <h1 className="text-4xl font-display mb-2 text-gradient">
-            LocalDevine
+            Dashboard
           </h1>
-          <p className="text-lg font-medium text-gradient opacity-90">The Modern PHP Development Environment</p>
+          <p className="text-lg font-medium text-gradient opacity-90">Service Management & Quick Actions</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCurrentPage('templates')}
-            className="button-secondary text-sm px-3 py-1.5"
-          >
-            📦 Projects
-          </button>
-          <button
-            onClick={() => setCurrentPage('database')}
-            className="button-secondary text-sm px-3 py-1.5"
-          >
-            🗄️ Database
-          </button>
-          <button
-            onClick={() => setCurrentPage('env')}
-            className="button-secondary text-sm px-3 py-1.5"
-          >
-            📄 Env
-          </button>
-          <button
-            onClick={() => setCurrentPage('ssl')}
-            className="button-secondary text-sm px-3 py-1.5"
-          >
-            🔐 SSL
-          </button>
-          <button
-            onClick={() => setCurrentPage('vhosts')}
-            className="button-secondary text-sm px-3 py-1.5"
-          >
-            🌐 VHosts
-          </button>
-          <button
-            onClick={() => setCurrentPage('hosts')}
-            className="button-secondary text-sm px-3 py-1.5"
-          >
-            📝 Hosts
-          </button>
-          <button
-            onClick={() => setCurrentPage('logs')}
-            className="button-secondary text-sm px-3 py-1.5"
-          >
-            📋 Logs
-          </button>
-          <button
-            onClick={() => setCurrentPage('settings')}
-            className="button-secondary text-sm px-3 py-1.5"
-          >
-            ⚙️
-          </button>
           <ThemeToggle />
-          <span className="text-xs text-muted font-mono opacity-75">v{version}</span>
         </div>
       </header>
 
@@ -379,6 +309,28 @@ function App() {
         onDismiss={(index) => setNotifications(prev => prev.filter((_, i) => i !== index))}
         onDismissAll={() => setNotifications([])}
       />
+    </div>
+  );
+
+  // Main layout with Sidebar
+  return (
+    <div className="app-layout" style={{ display: 'flex', minHeight: '100vh' }}>
+      <Sidebar 
+        currentPage={currentPage} 
+        onNavigate={setCurrentPage} 
+        version={version}
+      />
+      <main 
+        className="main-content" 
+        style={{ 
+          flex: 1, 
+          marginLeft: '240px',
+          minHeight: '100vh',
+          transition: 'margin-left 0.3s ease',
+        }}
+      >
+        {renderPageContent()}
+      </main>
     </div>
   );
 }

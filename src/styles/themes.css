@@ -45,6 +45,9 @@
   /* Light theme specific */
   --console-bg: #1e293b;
   --console-text: #e2e8f0;
+  
+  /* Logo gradient colors */
+  --gradient-logo: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
 }
 
 /* Dark Theme - Deep Ocean */
@@ -89,6 +92,9 @@
   /* Dark theme specific */
   --console-bg: #0f172a;
   --console-text: #e2e8f0;
+  
+  /* Logo gradient colors */
+  --gradient-logo: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
 }
 
 /* Base styles */
@@ -298,4 +304,48 @@ body {
   background: var(--bg-card);
   border-color: var(--border-secondary);
   transform: translateY(-1px);
+}
+
+/* ============================================
+   Sidebar Styles
+   ============================================ */
+
+.sidebar-nav-item:hover {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+
+.sidebar-nav-item:active {
+  transform: scale(0.98);
+}
+
+/* Keep active state on hover */
+.sidebar-nav-item:hover {
+  background: var(--gradient-primary) !important;
+  color: white !important;
+}
+
+.sidebar-nav-item:not([data-active]):hover {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Collapsed sidebar adjustments */
+.sidebar-collapsed + .main-content {
+  margin-left: 64px !important;
+}
+
+/* Responsive sidebar for smaller screens */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+  
+  .main-content {
+    margin-left: 0 !important;
+  }
 }

@@ -9,12 +9,13 @@ import ProjectTemplates from './components/ProjectTemplates';
 import DatabaseManager from './components/DatabaseManager';
 import EnvManager from './components/EnvManager';
 import SSLManager from './components/SSLManager';
+import LogsManager from './components/LogsManager';
 import ThemeToggle from './components/ThemeToggle';
 import { useKeyboardShortcuts, defaultShortcuts } from './hooks/useKeyboardShortcuts';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 import './styles/themes.css';
 
-type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl';
+type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl' | 'logs';
 
 interface Services {
   php: ServiceStatus;
@@ -225,6 +226,11 @@ function App() {
     return <SSLManager onBack={() => setCurrentPage('home')} />;
   }
 
+  // Render Logs Manager page
+  if (currentPage === 'logs') {
+    return <LogsManager onBack={() => setCurrentPage('home')} />;
+  }
+
   // Render Home page
   return (
     <div className="min-h-screen p-8">
@@ -271,6 +277,12 @@ function App() {
             className="button-secondary text-sm px-3 py-1.5"
           >
             📝 Hosts
+          </button>
+          <button
+            onClick={() => setCurrentPage('logs')}
+            className="button-secondary text-sm px-3 py-1.5"
+          >
+            📋 Logs
           </button>
           <button
             onClick={() => setCurrentPage('settings')}

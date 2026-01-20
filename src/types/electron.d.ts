@@ -170,6 +170,11 @@ export interface ElectronAPI {
     sslEnableDomain: (domain: string, projectPath?: string) => Promise<SSLOperationResult>;
     sslDisableDomain: (domain: string) => Promise<SSLOperationResult>;
 
+    // Logs Management
+    logsGetDir: () => Promise<{ success: boolean; path: string }>;
+    logsGetFile: () => Promise<{ success: boolean; path: string }>;
+    logsOpenDir: () => Promise<{ success: boolean; error?: string }>;
+
     // Window utilities
     refocusWindow: () => Promise<{ success: boolean }>;
 

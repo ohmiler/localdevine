@@ -15,7 +15,7 @@ import DatabaseManager from '../services/DatabaseManager';
 import EnvManager, { EnvVariable } from '../services/EnvManager';
 import SSLManager from '../services/SSLManager';
 import PathResolver from '../services/PathResolver';
-import logger from '../services/Logger';
+import logger, { Logger } from '../services/Logger';
 
 // ============================================
 // Input Validation Functions
@@ -818,5 +818,29 @@ function registerSSLHandlers(): void {
       return { success: false, error: 'Invalid domain format' };
     }
     return sslManager.disableSSLForDomain(domain.trim());
+  });
+
+  // ============================================
+  // Logs Management Handlers
+  // ============================================
+
+  // Get log directory path
+  ipcMain.handle('logs-get-dir', async () => {
+    return { success: true, path: Logger.getLogDir() };
+  });
+
+  // Get current log file path
+  ipcMain.handle('logs-get-file', async () => {
+    return { success: true, path: Logger.getLogFile() };
+  });
+
+  // Open logs directory
+  ipcMain.handle('logs-open-dir', async () => {
+    const logDir = Logger.getLogDir();
+    if (logDir) {
+      shell.openPath(logDir);
+      return { success: true };
+    }
+    return { success: false, error: 'Log directory not found' };
   });
 }

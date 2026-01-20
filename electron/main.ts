@@ -2,7 +2,7 @@ import { app, BrowserWindow, session } from 'electron';
 import path from 'path';
 
 import { ServiceManager } from './services/ServiceManager';
-import logger from './services/Logger';
+import logger, { Logger } from './services/Logger';
 import TrayManager from './services/TrayManager';
 import ConfigManager from './services/ConfigManager';
 import HostsManager from './services/HostsManager';
@@ -10,6 +10,14 @@ import ProjectTemplateManager from './services/ProjectTemplateManager';
 import DatabaseManager from './services/DatabaseManager';
 import AutoUpdater from './services/AutoUpdater';
 import { registerIPCHandlers, initializeIPC } from './ipc';
+
+// Initialize file logger
+try {
+  Logger.getLogDir(); // This will initialize the FileLogger
+  logger.info('File logger initialized successfully');
+} catch (error) {
+  console.error('Failed to initialize file logger:', error);
+}
 
 // Basic error handling to catch the 'string' issue
 if (typeof app === 'undefined') {

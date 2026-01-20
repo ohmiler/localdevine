@@ -92,6 +92,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     sslEnableDomain: (domain, projectPath) => ipcRenderer.invoke('ssl-enable-domain', domain, projectPath),
     sslDisableDomain: (domain) => ipcRenderer.invoke('ssl-disable-domain', domain),
 
+    // Logs Management
+    logsGetDir: () => ipcRenderer.invoke('logs-get-dir'),
+    logsGetFile: () => ipcRenderer.invoke('logs-get-file'),
+    logsOpenDir: () => ipcRenderer.invoke('logs-open-dir'),
+
     // Window utilities
     refocusWindow: () => ipcRenderer.invoke('refocus-window'),
 

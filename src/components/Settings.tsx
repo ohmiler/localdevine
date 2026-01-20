@@ -453,6 +453,25 @@ function Settings({ onBack }: SettingsProps) {
                     </div>
                 </div>
 
+                {/* Logs Quick Access */}
+                <div className="card p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-500 to-slate-600 flex items-center justify-center text-lg">
+                            📋
+                        </div>
+                        <h2 className="text-xl font-heading" style={{ color: 'var(--text-on-card)' }}>Application Logs</h2>
+                    </div>
+                    <p className="mb-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        View application logs for debugging and troubleshooting issues.
+                    </p>
+                    <button
+                        onClick={() => window.electronAPI.logsOpenDir()}
+                        className="px-6 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-gray-500 to-slate-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                    >
+                        📂 Open Logs Folder
+                    </button>
+                </div>
+
             </div>
         </div>
     );

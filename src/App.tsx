@@ -45,21 +45,19 @@ function App() {
       // Get version
       window.electronAPI.getVersion().then(v => setVersion(v));
 
-      const handleStatus = (event: any, { service, status }: { service: keyof Services; status: ServiceStatus }) => {
-        console.log('[React] Received service-status:', service, status);
+      const handleStatus = (_event: any, { service, status }: { service: keyof Services; status: ServiceStatus }) => {
         setServices(prev => ({ ...prev, [service]: status }));
       };
 
-      const handleLog = (event: any, { time, service, message }: LogEntry) => {
+      const handleLog = (_event: any, { time, service, message }: LogEntry) => {
         setLogs(prev => [...prev.slice(-100), { time, service, message }]);
       };
 
-      const handleHealth = (event: any, healthData: Record<string, ServiceHealth>) => {
-        console.log('[React] Received health-status:', healthData);
+      const handleHealth = (_event: any, healthData: Record<string, ServiceHealth>) => {
         setHealthStatus(healthData);
       };
 
-      const handleNotification = (event: any, notification: ServiceNotification) => {
+      const handleNotification = (_event: any, notification: ServiceNotification) => {
         const notificationWithId = { ...notification, id: Date.now() };
         setNotifications(prev => [...prev.slice(-9), notificationWithId]); // Keep last 10
         

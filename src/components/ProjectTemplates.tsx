@@ -13,16 +13,9 @@ function ProjectTemplates() {
   const [success, setSuccess] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; project: string }>({ show: false, project: '' });
 
-  // Debug: Log state changes
-  console.log('ProjectTemplates render:', { projectName, selectedTemplate, templates: templates.length });
-
   useEffect(() => {
     loadData();
   }, []);
-
-  useEffect(() => {
-    console.log('Projects changed:', projects);
-  }, [projects]);
 
   // Auto-clear messages
   useEffect(() => {
@@ -41,13 +34,10 @@ function ProjectTemplates() {
 
   const loadData = async () => {
     if (window.electronAPI) {
-      console.log('Loading templates and projects...');
       const [templatesData, projectsData] = await Promise.all([
         window.electronAPI.getTemplates(),
         window.electronAPI.getProjects()
       ]);
-      console.log('Templates loaded:', templatesData.length);
-      console.log('Projects loaded:', projectsData);
       setTemplates(templatesData);
       setProjects(projectsData);
     }
@@ -98,21 +88,16 @@ function ProjectTemplates() {
     const name = deleteConfirm.project;
     setDeleteConfirm({ show: false, project: '' });
 
-    console.log('Deleting project:', name);
     setLoading(true);
     try {
       const result = await window.electronAPI.deleteProject(name);
-      console.log('Delete result:', result);
       if (result.success) {
         setSuccess(result.message);
-        console.log('Project deleted, reloading data...');
         await loadData();
-        console.log('Data reloaded');
       } else {
         setError(result.message);
       }
     } catch (error: any) {
-      console.log('Delete error:', error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -251,10 +236,7 @@ function ProjectTemplates() {
               <input
                 type="text"
                 value={projectName}
-                onChange={(e) => {
-                  console.log('Project name input change:', e.target.value);
-                  setProjectName(e.target.value);
-                }}
+                onChange={(e) => setProjectName(e.target.value)}
                 placeholder="my-project"
                 className="input w-full"
                 autoFocus
@@ -287,10 +269,7 @@ function ProjectTemplates() {
                     <input
                       type="text"
                       value={databaseName}
-                      onChange={(e) => {
-                        console.log('Database name input change:', e.target.value);
-                        setDatabaseName(e.target.value);
-                      }}
+                      onChange={(e) => setDatabaseName(e.target.value)}
                       placeholder={projectName.toLowerCase().replace(/\s+/g, '_') || 'database_name'}
                       className="input w-full"
                     />

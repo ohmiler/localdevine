@@ -1,23 +1,29 @@
-import { memo, useCallback } from 'react';
+import { memo } from 'react';
 import { ServiceNotification } from '../types/electron';
 
 interface NotificationPanelProps {
   notifications: ServiceNotification[];
-  onDismiss: (index: number) => void;
+  onDismiss: (timestamp: string) => void;
   onDismissAll: () => void;
 }
 
-// Memoized notification item
-const NotificationItem = memo(({ 
+// Notification item (removed memo for auto-dismiss to work)
+const NotificationItem = ({ 
   notification, 
-  index, 
   onDismiss 
 }: { 
   notification: ServiceNotification; 
-  index: number; 
-  onDismiss: (index: number) => void 
+  onDismiss: (timestamp: string) => void 
 }) => {
-  const handleDismiss = useCallback(() => onDismiss(index), [onDismiss, index]);
+  // Determine icon and color based on notification type/content
+  const isError = notification.title?.toLowerCase().includes('error') || notification.title?.toLowerCase().includes('failed');
+  const isSuccess = notification.title?.toLowerCase().includes('changed') || notification.title?.toLowerCase().includes('success');
+  
+  const iconConfig = isError 
+    ? { icon: '❌', gradient: 'from-red-400 to-red-600' }
+    : isSuccess 
+      ? { icon: '✅', gradient: 'from-green-400 to-emerald-500' }
+      : { icon: '🔄', gradient: 'from-blue-400 to-purple-500' };
   
   return (
     <div
@@ -29,8 +35,8 @@ const NotificationItem = memo(({
       }}
     >
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white shadow-lg">
-          ⚠️
+        <div className={`flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br ${iconConfig.gradient} flex items-center justify-center text-white shadow-lg`}>
+          {iconConfig.icon}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-on-card)' }}>
@@ -44,7 +50,7 @@ const NotificationItem = memo(({
           </p>
         </div>
         <button
-          onClick={handleDismiss}
+          onClick={() => onDismiss(notification.timestamp)}
           className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all hover:scale-110"
           style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
           title="Dismiss"
@@ -56,9 +62,7 @@ const NotificationItem = memo(({
       </div>
     </div>
   );
-});
-
-NotificationItem.displayName = 'NotificationItem';
+};
 
 function NotificationPanel({ notifications, onDismiss, onDismissAll }: NotificationPanelProps) {
   if (notifications.length === 0) return null;
@@ -78,11 +82,10 @@ function NotificationPanel({ notifications, onDismiss, onDismissAll }: Notificat
           Clear All ({notifications.length})
         </button>
       )}
-      {notifications.map((notification, index) => (
+      {notifications.map((notification) => (
         <NotificationItem
-          key={`${notification.timestamp}-${index}`}
+          key={notification.timestamp}
           notification={notification}
-          index={index}
           onDismiss={onDismiss}
         />
       ))}

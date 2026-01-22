@@ -43,6 +43,29 @@ function App() {
   
   // Store timeout IDs for cleanup (fix memory leak)
   const notificationTimeoutsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+  const autoDismissTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  // Auto-dismiss notifications after 5 seconds
+  useEffect(() => {
+    notifications.forEach(notification => {
+      // If no timer exists for this notification, create one
+      if (!autoDismissTimersRef.current.has(notification.timestamp)) {
+        const timer = setTimeout(() => {
+          setNotifications(prev => prev.filter(n => n.timestamp !== notification.timestamp));
+          autoDismissTimersRef.current.delete(notification.timestamp);
+        }, 5000);
+        autoDismissTimersRef.current.set(notification.timestamp, timer);
+      }
+    });
+    
+    // Cleanup timers for notifications that no longer exist
+    autoDismissTimersRef.current.forEach((timer, timestamp) => {
+      if (!notifications.some(n => n.timestamp === timestamp)) {
+        clearTimeout(timer);
+        autoDismissTimersRef.current.delete(timestamp);
+      }
+    });
+  }, [notifications]);
 
   useEffect(() => {
     if (window.electronAPI) {
@@ -59,10 +82,18 @@ function App() {
       // Load current PHP version from config
       window.electronAPI.getConfig().then(config => {
         if (config?.phpVersion) {
-          // Convert folder name to display name
-          const displayName = config.phpVersion === 'php' 
-            ? 'PHP (default)' 
-            : config.phpVersion.toUpperCase().replace('PHP', 'PHP ');
+          // Convert folder name to display name (e.g., php -> PHP 8.5 (default), php81 -> PHP 8.1)
+          let displayName: string;
+          if (config.phpVersion === 'php') {
+            displayName = 'PHP 8.5 (default)';
+          } else {
+            const match = config.phpVersion.match(/php(\d)(\d)/);
+            if (match) {
+              displayName = `PHP ${match[1]}.${match[2]}`;
+            } else {
+              displayName = config.phpVersion.toUpperCase();
+            }
+          }
           setPhpVersion(displayName);
         }
       });
@@ -155,20 +186,25 @@ function App() {
   const handlePhpVersionChange = useCallback(async (newVersion: string) => {
     // Show notification
     setNotifications(prev => [...prev.slice(-9), {
-      id: Date.now(),
-      type: 'info',
       title: 'Switching PHP Version',
-      message: `Switching to ${newVersion}...`,
-      service: 'php'
-    } as any]);
+      body: `Switching to ${newVersion}...`,
+      service: 'php',
+      timestamp: new Date().toISOString()
+    }]);
     
     // Convert display name back to folder name for backend
-    // e.g. "PHP 8.3" -> "php83", "PHP (default)" -> "php"
+    // e.g. "PHP 8.3" -> "php83", "PHP 8.5 (default)" -> "php"
     let folderId = newVersion;
-    if (newVersion === 'PHP (default)') {
+    if (newVersion.includes('(default)')) {
       folderId = 'php';
     } else {
-      folderId = newVersion.toLowerCase().replace(' ', '').replace('.', '');
+      // PHP 8.3 -> php83, PHP 8.1 -> php81
+      const match = newVersion.match(/PHP (\d)\.(\d)/);
+      if (match) {
+        folderId = `php${match[1]}${match[2]}`;
+      } else {
+        folderId = newVersion.toLowerCase().replace(' ', '').replace('.', '');
+      }
     }
     
     try {
@@ -180,31 +216,28 @@ function App() {
         setPhpVersion(newVersion);
         
         setNotifications(prev => [...prev.slice(-9), {
-          id: Date.now(),
-          type: 'success',
           title: 'PHP Version Changed',
-          message: result.restarted 
+          body: result.restarted 
             ? `Switched to ${newVersion} and restarted services` 
             : `Now using ${newVersion}`,
-          service: 'php'
-        } as any]);
+          service: 'php',
+          timestamp: new Date().toISOString()
+        }]);
       } else {
         setNotifications(prev => [...prev.slice(-9), {
-          id: Date.now(),
-          type: 'error',
           title: 'Failed to Switch PHP',
-          message: result?.error || 'Unknown error occurred',
-          service: 'php'
-        } as any]);
+          body: result?.error || 'Unknown error occurred',
+          service: 'php',
+          timestamp: new Date().toISOString()
+        }]);
       }
     } catch (error) {
       setNotifications(prev => [...prev.slice(-9), {
-        id: Date.now(),
-        type: 'error',
         title: 'Failed to Switch PHP',
-        message: (error as Error).message,
-        service: 'php'
-      } as any]);
+        body: (error as Error).message,
+        service: 'php',
+        timestamp: new Date().toISOString()
+      }]);
     }
   }, []);
 
@@ -405,7 +438,7 @@ function App() {
       {/* Notification Panel */}
       <NotificationPanel 
         notifications={notifications} 
-        onDismiss={(index) => setNotifications(prev => prev.filter((_, i) => i !== index))}
+        onDismiss={(timestamp) => setNotifications(prev => prev.filter(n => n.timestamp !== timestamp))}
         onDismissAll={() => setNotifications([])}
       />
     </div>

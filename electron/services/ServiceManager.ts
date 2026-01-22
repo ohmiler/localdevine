@@ -65,6 +65,7 @@ export class ServiceManager {
     private healthStatus: Record<string, ServiceHealth> = {};
     private lastNotificationTime: Record<string, number> = {};
     private serviceStartTime: Record<string, number> = {}; // Track when each service was started
+    private stoppingServices: Set<string> = new Set(); // Track services that are being stopped intentionally
     private readonly WARMUP_PERIOD_MS = 15000; // 15 seconds grace period after service start (MariaDB init takes time)
 
     constructor(mainWindow: MainWindow, configManager: ConfigManager | null) {
@@ -388,6 +389,12 @@ export class ServiceManager {
 
     private checkAndNotify(serviceName: keyof ServiceProcesses, health: ServiceHealth): void {
         const displayName = serviceName === 'mariadb' ? 'MariaDB' : serviceName.toUpperCase();
+        
+        // Skip notifications if service is being stopped intentionally
+        if (this.stoppingServices.has(serviceName)) {
+            logger.debug(`${serviceName} is being stopped intentionally, skipping notification`);
+            return;
+        }
         
         // Skip error notifications during warmup period (service just started)
         if (this.isInWarmupPeriod(serviceName) && health.status === 'error') {
@@ -965,11 +972,15 @@ ${vhostBlocks}
                 const pid = child.pid;
                 if (pid) {
                     this.log(serviceName, `Stopping (PID: ${pid})...`);
+                    
+                    // Mark service as stopping to prevent error notifications during shutdown
+                    this.stoppingServices.add(serviceName);
 
                     // Kill using PID instead of /IM for safety
                     this.killByPID(pid, serviceName)
                         .then(() => {
                             this.processes[serviceName] = null;
+                            this.stoppingServices.delete(serviceName);
                             this.notifyStatus(serviceName, 'stopped');
                             resolve();
                         })
@@ -978,6 +989,7 @@ ${vhostBlocks}
                             // Try force kill as fallback
                             child.kill('SIGKILL');
                             this.processes[serviceName] = null;
+                            this.stoppingServices.delete(serviceName);
                             this.notifyStatus(serviceName, 'stopped');
                             resolve();
                         });

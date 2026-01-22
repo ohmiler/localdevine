@@ -46,6 +46,24 @@ export interface TableInfo {
     engine: string;
 }
 
+// PHP Download types
+export interface PHPVersionInfo {
+    version: string;
+    displayName: string;
+    url: string;
+    size: string;
+    installed: boolean;
+}
+
+export interface DownloadProgress {
+    version: string;
+    progress: number;
+    downloaded: number;
+    total: number;
+    status: 'downloading' | 'extracting' | 'completed' | 'error';
+    error?: string;
+}
+
 // SSL Certificate types
 export interface SSLCertificate {
     domain: string;
@@ -113,6 +131,12 @@ export interface ElectronAPI {
     getPHPVersions: () => Promise<PHPVersion[]>;
     setPHPVersion: (version: string) => Promise<{ success: boolean; error?: string }>;
     switchPhpVersion: (version: string) => Promise<{ success: boolean; restarted?: boolean; version?: string; error?: string }>;
+    
+    // PHP Download
+    phpGetAvailableVersions: () => Promise<{ success: boolean; data: PHPVersionInfo[] }>;
+    phpGetInstalledVersions: () => Promise<{ success: boolean; data: string[] }>;
+    phpDownloadVersion: (version: string) => Promise<{ success: boolean; error?: string }>;
+    phpDownloadMultiple: (versions: string[]) => Promise<{ success: boolean; results: Record<string, boolean> }>;
 
     // Data Path
     getDataPath: () => Promise<{ current: string; default: string; isCustom: boolean }>;
@@ -180,7 +204,7 @@ export interface ElectronAPI {
     refocusWindow: () => Promise<{ success: boolean }>;
 
     // Event listeners
-    on: (channel: 'service-status' | 'log-entry' | 'health-status' | 'service-notification', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;
+    on: (channel: 'service-status' | 'log-entry' | 'health-status' | 'service-notification' | 'php-download-progress', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;
     removeListener: (channel: string, callback: (...args: any[]) => void) => void;
 }
 

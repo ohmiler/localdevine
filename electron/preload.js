@@ -29,6 +29,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getPHPVersions: () => ipcRenderer.invoke('get-php-versions'),
     setPHPVersion: (version) => ipcRenderer.invoke('set-php-version', version),
     switchPhpVersion: (version) => ipcRenderer.invoke('switch-php-version', version),
+    
+    // PHP Download
+    phpGetAvailableVersions: () => ipcRenderer.invoke('php-get-available-versions'),
+    phpGetInstalledVersions: () => ipcRenderer.invoke('php-get-installed-versions'),
+    phpDownloadVersion: (version) => ipcRenderer.invoke('php-download-version', version),
+    phpDownloadMultiple: (versions) => ipcRenderer.invoke('php-download-multiple', versions),
 
     // Data Path
     getDataPath: () => ipcRenderer.invoke('get-data-path'),
@@ -103,7 +109,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Event listeners
     on: (channel, callback) => {
-        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status'];
+        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status', 'php-download-progress'];
         if (allowedChannels.includes(channel)) {
             ipcRenderer.on(channel, (event, ...args) => callback(event, ...args));
         }

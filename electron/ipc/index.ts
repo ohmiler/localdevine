@@ -14,6 +14,7 @@ import ProjectTemplateManager, { CreateProjectOptions } from '../services/Projec
 import DatabaseManager from '../services/DatabaseManager';
 import EnvManager, { EnvVariable } from '../services/EnvManager';
 import SSLManager from '../services/SSLManager';
+import PHPDownloader, { DownloadProgress } from '../services/PHPDownloader';
 import PathResolver from '../services/PathResolver';
 import logger, { Logger } from '../services/Logger';
 
@@ -139,6 +140,7 @@ export function registerIPCHandlers(): void {
   registerDatabaseHandlers();
   registerEnvHandlers();
   registerSSLHandlers();
+  registerPHPDownloadHandlers();
 }
 
 // ============================================
@@ -905,5 +907,68 @@ function registerSSLHandlers(): void {
       return { success: true };
     }
     return { success: false, error: 'Log directory not found' };
+  });
+}
+
+// ============================================
+// PHP Download Handlers
+// ============================================
+let phpDownloader: PHPDownloader | null = null;
+
+function registerPHPDownloadHandlers(): void {
+  // Get available PHP versions with install status
+  ipcMain.handle('php-get-available-versions', async () => {
+    if (!phpDownloader) {
+      phpDownloader = new PHPDownloader();
+    }
+    return { success: true, data: phpDownloader.getAvailableVersions() };
+  });
+
+  // Get installed PHP versions
+  ipcMain.handle('php-get-installed-versions', async () => {
+    if (!phpDownloader) {
+      phpDownloader = new PHPDownloader();
+    }
+    return { success: true, data: phpDownloader.getInstalledVersions() };
+  });
+
+  // Download a specific PHP version
+  ipcMain.handle('php-download-version', async (_event: IpcMainInvokeEvent, version: string) => {
+    if (!phpDownloader) {
+      phpDownloader = new PHPDownloader();
+    }
+    
+    if (typeof version !== 'string' || !version.match(/^\d+\.\d+$/)) {
+      return { success: false, error: 'Invalid version format' };
+    }
+    
+    // Set progress callback to send updates to renderer
+    phpDownloader.setProgressCallback((progress: DownloadProgress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('php-download-progress', progress);
+      }
+    });
+    
+    return phpDownloader.downloadVersion(version);
+  });
+
+  // Download multiple PHP versions
+  ipcMain.handle('php-download-multiple', async (_event: IpcMainInvokeEvent, versions: string[]) => {
+    if (!phpDownloader) {
+      phpDownloader = new PHPDownloader();
+    }
+    
+    if (!Array.isArray(versions)) {
+      return { success: false, error: 'Versions must be an array' };
+    }
+    
+    // Set progress callback
+    phpDownloader.setProgressCallback((progress: DownloadProgress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('php-download-progress', progress);
+      }
+    });
+    
+    return phpDownloader.downloadMultipleVersions(versions);
   });
 }

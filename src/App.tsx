@@ -12,6 +12,7 @@ import SSLManager from './components/SSLManager';
 import LogsManager from './components/LogsManager';
 import Sidebar from './components/Sidebar';
 import ThemeToggle from './components/ThemeToggle';
+import PHPDownloadDialog from './components/PHPDownloadDialog';
 import { useKeyboardShortcuts, defaultShortcuts } from './hooks/useKeyboardShortcuts';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 import './styles/themes.css';
@@ -40,6 +41,8 @@ function App() {
   // PHP Version Management
   const [phpVersion, setPhpVersion] = useState<string>('php');
   const [availablePhpVersions, setAvailablePhpVersions] = useState<string[]>([]);
+  const [showPHPDownloadDialog, setShowPHPDownloadDialog] = useState(false);
+  const [hasCheckedPHPVersions, setHasCheckedPHPVersions] = useState(false);
   
   // Store timeout IDs for cleanup (fix memory leak)
   const notificationTimeoutsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
@@ -78,6 +81,22 @@ function App() {
           setAvailablePhpVersions(versions.map(v => v.name));
         }
       });
+      
+      // Check for missing PHP versions (show download dialog on first run)
+      if (!hasCheckedPHPVersions) {
+        (window.electronAPI as any).phpGetInstalledVersions?.().then((result: { success: boolean; data: string[] }) => {
+          setHasCheckedPHPVersions(true);
+          if (result?.success) {
+            const installed = result.data;
+            // Show dialog if only default PHP is installed (or less than 2 versions)
+            if (installed.length <= 1) {
+              setShowPHPDownloadDialog(true);
+            }
+          }
+        }).catch(() => {
+          setHasCheckedPHPVersions(true);
+        });
+      }
       
       // Load current PHP version from config
       window.electronAPI.getConfig().then(config => {
@@ -239,6 +258,24 @@ function App() {
         timestamp: new Date().toISOString()
       }]);
     }
+  }, []);
+
+  // Handle PHP download dialog callbacks
+  const handlePHPDownloadComplete = useCallback(() => {
+    setShowPHPDownloadDialog(false);
+    // Reload PHP versions after download
+    window.electronAPI?.getPHPVersions().then(versions => {
+      if (versions && versions.length > 0) {
+        setAvailablePhpVersions(versions.map(v => v.name));
+      }
+    });
+    // Show success notification
+    setNotifications(prev => [...prev.slice(-9), {
+      title: 'PHP Versions Installed',
+      body: 'Additional PHP versions have been installed successfully!',
+      service: 'php',
+      timestamp: new Date().toISOString()
+    }]);
   }, []);
 
   // Memoized computed values
@@ -463,6 +500,13 @@ function App() {
       >
         {renderPageContent()}
       </main>
+      
+      {/* PHP Download Dialog */}
+      <PHPDownloadDialog
+        isOpen={showPHPDownloadDialog}
+        onClose={() => setShowPHPDownloadDialog(false)}
+        onComplete={handlePHPDownloadComplete}
+      />
     </div>
   );
 }

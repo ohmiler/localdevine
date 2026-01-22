@@ -158,6 +158,19 @@ export class ServiceManager {
         // Always set port
         health.port = this.getPort(serviceName);
         
+        // Skip health check if service is being stopped intentionally
+        if (this.stoppingServices.has(serviceName)) {
+            health.status = 'stopped';
+            health.isHealthy = false;
+            health.lastCheck = new Date().toISOString();
+            health.error = undefined;
+            health.pid = undefined;
+            health.uptime = undefined;
+            health.memoryUsage = undefined;
+            health.cpuUsage = undefined;
+            return;
+        }
+        
         if (!process || process.killed) {
             health.status = 'stopped';
             health.isHealthy = false;
@@ -993,8 +1006,11 @@ ${vhostBlocks}
                     this.killByPID(pid, serviceName)
                         .then(() => {
                             this.processes[serviceName] = null;
-                            this.stoppingServices.delete(serviceName);
                             this.notifyStatus(serviceName, 'stopped');
+                            // Delay removing from stoppingServices to avoid race condition with health check
+                            setTimeout(() => {
+                                this.stoppingServices.delete(serviceName);
+                            }, 5000);
                             resolve();
                         })
                         .catch((err) => {
@@ -1002,8 +1018,11 @@ ${vhostBlocks}
                             // Try force kill as fallback
                             child.kill('SIGKILL');
                             this.processes[serviceName] = null;
-                            this.stoppingServices.delete(serviceName);
                             this.notifyStatus(serviceName, 'stopped');
+                            // Delay removing from stoppingServices to avoid race condition with health check
+                            setTimeout(() => {
+                                this.stoppingServices.delete(serviceName);
+                            }, 5000);
                             resolve();
                         });
                 } else {

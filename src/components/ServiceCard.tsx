@@ -10,6 +10,7 @@ interface ServiceCardProps {
   phpVersion?: string;
   availablePhpVersions?: string[];
   onPhpVersionChange?: (version: string) => void;
+  onOpenPHPDownload?: () => void;
 }
 
 const serviceIcons: Record<string, string> = {
@@ -41,7 +42,7 @@ function formatUptime(seconds: number): string {
   return `${hours}h ${mins}m`;
 }
 
-function ServiceCard({ service, status, health, onToggle, phpVersion, availablePhpVersions, onPhpVersionChange }: ServiceCardProps) {
+function ServiceCard({ service, status, health, onToggle, phpVersion, availablePhpVersions, onPhpVersionChange, onOpenPHPDownload }: ServiceCardProps) {
     const [showVersionDropdown, setShowVersionDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     
@@ -215,6 +216,24 @@ function ServiceCard({ service, status, health, onToggle, phpVersion, availableP
                                     {version === phpVersion && <span>✓</span>}
                                 </button>
                             ))}
+                            
+                            {/* Download More Versions */}
+                            {onOpenPHPDownload && (
+                                <button
+                                    onClick={() => {
+                                        setShowVersionDropdown(false);
+                                        onOpenPHPDownload();
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left transition-all flex items-center gap-2 border-t hover:bg-purple-500/20"
+                                    style={{ 
+                                        color: 'var(--text-secondary)', 
+                                        borderColor: 'var(--border-color)' 
+                                    }}
+                                >
+                                    <span>📥</span>
+                                    <span className="text-sm">Download More Versions...</span>
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>

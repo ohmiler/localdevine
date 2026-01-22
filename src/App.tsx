@@ -341,7 +341,7 @@ function App() {
   const renderPageContent = () => {
     switch (currentPage) {
       case 'settings':
-        return <Settings onBack={() => setCurrentPage('home')} />;
+        return <Settings onBack={() => setCurrentPage('home')} onOpenPHPDownload={() => setShowPHPDownloadDialog(true)} />;
       case 'vhosts':
         return <VirtualHosts onBack={() => setCurrentPage('home')} />;
       case 'hosts':
@@ -429,7 +429,8 @@ function App() {
             {...(service === 'php' && {
               phpVersion,
               availablePhpVersions,
-              onPhpVersionChange: handlePhpVersionChange
+              onPhpVersionChange: handlePhpVersionChange,
+              onOpenPHPDownload: () => setShowPHPDownloadDialog(true)
             })}
           />
         ))}
@@ -506,6 +507,14 @@ function App() {
         isOpen={showPHPDownloadDialog}
         onClose={() => setShowPHPDownloadDialog(false)}
         onComplete={handlePHPDownloadComplete}
+        onSkip={() => {
+          setNotifications(prev => [...prev.slice(-9), {
+            title: 'PHP Download Skipped',
+            body: 'You can download additional PHP versions anytime from Settings → PHP Version or by clicking the PHP card dropdown.',
+            service: 'php',
+            timestamp: new Date().toISOString()
+          }]);
+        }}
       />
     </div>
   );

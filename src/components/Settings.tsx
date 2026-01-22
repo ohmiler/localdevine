@@ -3,6 +3,7 @@ import { Config, PHPVersion } from '../types/electron';
 
 interface SettingsProps {
   onBack: () => void;
+  onOpenPHPDownload?: () => void;
 }
 
 interface DataPathInfo {
@@ -11,7 +12,7 @@ interface DataPathInfo {
     isCustom: boolean;
 }
 
-function Settings({ onBack }: SettingsProps) {
+function Settings({ onBack, onOpenPHPDownload }: SettingsProps) {
     const [config, setConfig] = useState<Config>({
         ports: { php: 9000, apache: 80, mariadb: 3306 },
         database: { host: '127.0.0.1', port: 3306, user: 'root', password: 'root' },
@@ -323,6 +324,21 @@ function Settings({ onBack }: SettingsProps) {
                     <p className="mt-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
                         ℹ️ Note: Restart PHP service after changing version.
                     </p>
+
+                    {/* Download Additional PHP Versions */}
+                    {onOpenPHPDownload && (
+                        <div className="mt-6 pt-4 border-t" style={{ borderColor: 'var(--border-color)' }}>
+                            <button
+                                onClick={onOpenPHPDownload}
+                                className="w-full px-4 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] flex items-center justify-center gap-2"
+                            >
+                                📥 Download Additional PHP Versions
+                            </button>
+                            <p className="mt-2 text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
+                                Download PHP 8.1, 8.2, 8.3, 8.4 from windows.php.net
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Startup Options */}

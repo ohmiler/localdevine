@@ -21,6 +21,7 @@ interface PHPDownloadDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;
+  onSkip?: () => void;
 }
 
 function formatBytes(bytes: number): string {
@@ -31,7 +32,7 @@ function formatBytes(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-export default function PHPDownloadDialog({ isOpen, onClose, onComplete }: PHPDownloadDialogProps) {
+export default function PHPDownloadDialog({ isOpen, onClose, onComplete, onSkip }: PHPDownloadDialogProps) {
   const [versions, setVersions] = useState<PHPVersionInfo[]>([]);
   const [selectedVersions, setSelectedVersions] = useState<Set<string>>(new Set());
   const [isDownloading, setIsDownloading] = useState(false);
@@ -125,6 +126,9 @@ export default function PHPDownloadDialog({ isOpen, onClose, onComplete }: PHPDo
   };
 
   const handleSkip = () => {
+    if (onSkip) {
+      onSkip();
+    }
     onClose();
   };
 

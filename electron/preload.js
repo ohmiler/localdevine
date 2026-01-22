@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // PHP Versions
     getPHPVersions: () => ipcRenderer.invoke('get-php-versions'),
     setPHPVersion: (version) => ipcRenderer.invoke('set-php-version', version),
+    switchPhpVersion: (version) => ipcRenderer.invoke('switch-php-version', version),
 
     // Data Path
     getDataPath: () => ipcRenderer.invoke('get-data-path'),

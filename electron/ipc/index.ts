@@ -201,6 +201,67 @@ function registerConfigHandlers(): void {
     return configManager.setPHPVersion(version);
   });
 
+  // Switch PHP version with auto-restart
+  ipcMain.handle('switch-php-version', async (_event: IpcMainInvokeEvent, version: string) => {
+    if (!configManager) return { success: false, error: 'ConfigManager not initialized' };
+    if (!serviceManager) return { success: false, error: 'ServiceManager not initialized' };
+    
+    // Validate version exists
+    const versions = configManager.getPHPVersions();
+    const versionExists = versions.some(v => v.id === version || v.name === version);
+    if (!versionExists && version !== 'php') {
+      return { success: false, error: `PHP version "${version}" not found` };
+    }
+    
+    // Save the new version
+    const saveResult = configManager.setPHPVersion(version);
+    if (!saveResult.success) {
+      return saveResult;
+    }
+    
+    // Check if Apache is running
+    const healthStatus = serviceManager.getHealthStatus();
+    const apacheRunning = healthStatus['apache']?.status === 'running';
+    const phpRunning = healthStatus['php']?.status === 'running';
+    
+    // Restart services if they were running
+    if (phpRunning || apacheRunning) {
+      try {
+        // Stop PHP first
+        if (phpRunning) {
+          await serviceManager.stopService('php');
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        // Stop Apache
+        if (apacheRunning) {
+          await serviceManager.stopService('apache');
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        // Regenerate configs with new PHP path
+        serviceManager.generateConfigs();
+        
+        // Restart PHP
+        if (phpRunning) {
+          await serviceManager.startService('php');
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        // Restart Apache
+        if (apacheRunning) {
+          await serviceManager.startService('apache');
+        }
+        
+        return { success: true, restarted: true, version };
+      } catch (error) {
+        return { success: false, error: `Failed to restart services: ${(error as Error).message}` };
+      }
+    }
+    
+    return { success: true, restarted: false, version };
+  });
+
   // Data Path handlers
   ipcMain.handle('get-data-path', () => {
     const pathResolver = PathResolver.getInstance();

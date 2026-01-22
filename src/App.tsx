@@ -37,6 +37,10 @@ function App() {
   const [healthStatus, setHealthStatus] = useState<Record<string, ServiceHealth>>({});
   const [notifications, setNotifications] = useState<ServiceNotification[]>([]);
   
+  // PHP Version Management
+  const [phpVersion, setPhpVersion] = useState<string>('php');
+  const [availablePhpVersions, setAvailablePhpVersions] = useState<string[]>([]);
+  
   // Store timeout IDs for cleanup (fix memory leak)
   const notificationTimeoutsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
 
@@ -44,6 +48,24 @@ function App() {
     if (window.electronAPI) {
       // Get version
       window.electronAPI.getVersion().then(v => setVersion(v));
+      
+      // Load PHP versions from backend
+      window.electronAPI.getPHPVersions().then(versions => {
+        if (versions && versions.length > 0) {
+          setAvailablePhpVersions(versions.map(v => v.name));
+        }
+      });
+      
+      // Load current PHP version from config
+      window.electronAPI.getConfig().then(config => {
+        if (config?.phpVersion) {
+          // Convert folder name to display name
+          const displayName = config.phpVersion === 'php' 
+            ? 'PHP (default)' 
+            : config.phpVersion.toUpperCase().replace('PHP', 'PHP ');
+          setPhpVersion(displayName);
+        }
+      });
 
       const handleStatus = (_event: any, { service, status }: { service: keyof Services; status: ServiceStatus }) => {
         setServices(prev => ({ ...prev, [service]: status }));
@@ -126,6 +148,63 @@ function App() {
         mariadb: 'stopping'
       });
       window.electronAPI.stopAllServices();
+    }
+  }, []);
+
+  // Handle PHP version change
+  const handlePhpVersionChange = useCallback(async (newVersion: string) => {
+    // Show notification
+    setNotifications(prev => [...prev.slice(-9), {
+      id: Date.now(),
+      type: 'info',
+      title: 'Switching PHP Version',
+      message: `Switching to ${newVersion}...`,
+      service: 'php'
+    } as any]);
+    
+    // Convert display name back to folder name for backend
+    // e.g. "PHP 8.3" -> "php83", "PHP (default)" -> "php"
+    let folderId = newVersion;
+    if (newVersion === 'PHP (default)') {
+      folderId = 'php';
+    } else {
+      folderId = newVersion.toLowerCase().replace(' ', '').replace('.', '');
+    }
+    
+    try {
+      // Call backend API to switch PHP version
+      const result = await window.electronAPI?.switchPhpVersion(folderId);
+      
+      if (result?.success) {
+        // Update UI state
+        setPhpVersion(newVersion);
+        
+        setNotifications(prev => [...prev.slice(-9), {
+          id: Date.now(),
+          type: 'success',
+          title: 'PHP Version Changed',
+          message: result.restarted 
+            ? `Switched to ${newVersion} and restarted services` 
+            : `Now using ${newVersion}`,
+          service: 'php'
+        } as any]);
+      } else {
+        setNotifications(prev => [...prev.slice(-9), {
+          id: Date.now(),
+          type: 'error',
+          title: 'Failed to Switch PHP',
+          message: result?.error || 'Unknown error occurred',
+          service: 'php'
+        } as any]);
+      }
+    } catch (error) {
+      setNotifications(prev => [...prev.slice(-9), {
+        id: Date.now(),
+        type: 'error',
+        title: 'Failed to Switch PHP',
+        message: (error as Error).message,
+        service: 'php'
+      } as any]);
     }
   }, []);
 
@@ -277,6 +356,11 @@ function App() {
             status={services[service]}
             health={healthStatus[service]}
             onToggle={() => toggleService(service)}
+            {...(service === 'php' && {
+              phpVersion,
+              availablePhpVersions,
+              onPhpVersionChange: handlePhpVersionChange
+            })}
           />
         ))}
       </div>

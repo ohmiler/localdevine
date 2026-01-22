@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState, useRef, useEffect } from 'react';
 import { ServiceStatus, ServiceHealth } from '../types/electron';
 
 interface ServiceCardProps {
@@ -6,6 +6,10 @@ interface ServiceCardProps {
   status: ServiceStatus;
   health?: ServiceHealth;
   onToggle: () => void;
+  // PHP Version props
+  phpVersion?: string;
+  availablePhpVersions?: string[];
+  onPhpVersionChange?: (version: string) => void;
 }
 
 const serviceIcons: Record<string, string> = {
@@ -37,7 +41,21 @@ function formatUptime(seconds: number): string {
   return `${hours}h ${mins}m`;
 }
 
-function ServiceCard({ service, status, health, onToggle }: ServiceCardProps) {
+function ServiceCard({ service, status, health, onToggle, phpVersion, availablePhpVersions, onPhpVersionChange }: ServiceCardProps) {
+    const [showVersionDropdown, setShowVersionDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowVersionDropdown(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     // Memoize computed values
     const displayName = useMemo(() => 
         service === 'mariadb' ? 'MariaDB' : service.toUpperCase(), 
@@ -137,6 +155,68 @@ function ServiceCard({ service, status, health, onToggle }: ServiceCardProps) {
                         <span>Last check</span>
                         <span>{lastCheck}</span>
                     </div>
+                </div>
+            )}
+
+            {/* PHP Version Selector */}
+            {service === 'php' && availablePhpVersions && availablePhpVersions.length > 0 && (
+                <div className="mb-4 relative" ref={dropdownRef}>
+                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-label)' }}>
+                        PHP Version
+                    </label>
+                    <button
+                        onClick={() => setShowVersionDropdown(!showVersionDropdown)}
+                        disabled={isLoading}
+                        className={`w-full px-4 py-2.5 rounded-lg flex items-center justify-between transition-all ${
+                            isLoading 
+                                ? 'opacity-50 cursor-not-allowed' 
+                                : 'hover:bg-opacity-80 cursor-pointer'
+                        }`}
+                        style={{ 
+                            background: 'var(--bg-tertiary)', 
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--text-on-card)'
+                        }}
+                    >
+                        <span className="font-mono font-semibold">
+                            {phpVersion || 'PHP 8.5'}
+                        </span>
+                        <span className={`transition-transform ${showVersionDropdown ? 'rotate-180' : ''}`}>
+                            ▼
+                        </span>
+                    </button>
+                    
+                    {/* Dropdown Menu */}
+                    {showVersionDropdown && (
+                        <div 
+                            className="absolute top-full left-0 right-0 mt-1 rounded-lg shadow-xl z-50 overflow-hidden"
+                            style={{ 
+                                background: 'var(--bg-card)', 
+                                border: '1px solid var(--border-color)' 
+                            }}
+                        >
+                            {availablePhpVersions.map((version) => (
+                                <button
+                                    key={version}
+                                    onClick={() => {
+                                        if (onPhpVersionChange && version !== phpVersion) {
+                                            onPhpVersionChange(version);
+                                        }
+                                        setShowVersionDropdown(false);
+                                    }}
+                                    className={`w-full px-4 py-2.5 text-left transition-all flex items-center justify-between ${
+                                        version === phpVersion 
+                                            ? 'bg-purple-600 text-white' 
+                                            : 'hover:bg-purple-500/20'
+                                    }`}
+                                    style={{ color: version === phpVersion ? 'white' : 'var(--text-on-card)' }}
+                                >
+                                    <span className="font-mono font-semibold">{version}</span>
+                                    {version === phpVersion && <span>✓</span>}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 

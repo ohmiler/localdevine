@@ -112,6 +112,7 @@ export interface ElectronAPI {
     // PHP Versions
     getPHPVersions: () => Promise<PHPVersion[]>;
     setPHPVersion: (version: string) => Promise<{ success: boolean; error?: string }>;
+    switchPhpVersion: (version: string) => Promise<{ success: boolean; restarted?: boolean; version?: string; error?: string }>;
 
     // Data Path
     getDataPath: () => Promise<{ current: string; default: string; isCustom: boolean }>;

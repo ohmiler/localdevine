@@ -15,6 +15,8 @@ function HostsEditor({ onBack }: HostsEditorProps) {
   const [success, setSuccess] = useState<string | null>(null);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadHostsFile();
@@ -64,34 +66,58 @@ function HostsEditor({ onBack }: HostsEditorProps) {
     setError('');
 
     if (window.electronAPI) {
-      const result = await window.electronAPI.addHostsEntry(
-        newEntry.ip,
-        newEntry.hostname.trim(),
-        newEntry.comment.trim() || undefined
-      );
+      try {
+        const result = await window.electronAPI.addHostsEntry(
+          newEntry.ip,
+          newEntry.hostname.trim(),
+          newEntry.comment.trim() || undefined
+        );
+        // Refocus window after elevated PowerShell operation
+        await window.electronAPI.refocusWindow();
 
-      if (result.success) {
-        setSuccess('Entry added successfully');
-        setNewEntry({ ip: '127.0.0.1', hostname: '', comment: '' });
-        await loadHostsFile();
-      } else {
-        setError(result.error || 'Failed to add entry');
+        if (result.success) {
+          setSuccess('Entry added successfully');
+          setNewEntry({ ip: '127.0.0.1', hostname: '', comment: '' });
+          await loadHostsFile();
+        } else {
+          setError(result.error || 'Failed to add entry');
+        }
+      } catch (err) {
+        setError((err as Error).message);
+        await window.electronAPI.refocusWindow();
       }
     }
 
     setSaving(false);
   };
 
-  const removeEntry = async (hostname: string) => {
-    if (!window.confirm(`Remove entry for ${hostname}?`)) return;
+  const removeEntry = (hostname: string) => {
+    setShowDeleteConfirm(hostname);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!showDeleteConfirm) return;
+    const hostname = showDeleteConfirm;
+    setShowDeleteConfirm(null);
+    setDeleting(true);
 
     if (window.electronAPI) {
-      const result = await window.electronAPI.removeHostsEntry(hostname);
-      if (result.success) {
-        setSuccess(`Removed ${hostname}`);
-        await loadHostsFile();
-      } else {
-        setError(result.error || 'Failed to remove entry');
+      try {
+        const result = await window.electronAPI.removeHostsEntry(hostname);
+        // Refocus window after elevated PowerShell operation
+        await window.electronAPI.refocusWindow();
+        
+        if (result.success) {
+          setSuccess(`Removed ${hostname}`);
+          await loadHostsFile();
+        } else {
+          setError(result.error || 'Failed to remove entry');
+        }
+      } catch (err) {
+        setError((err as Error).message);
+        await window.electronAPI.refocusWindow();
+      } finally {
+        setDeleting(false);
       }
     }
   };
@@ -335,6 +361,41 @@ function HostsEditor({ onBack }: HostsEditorProps) {
                 className="button-primary"
               >
                 🔄 Restore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="card p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-2xl">
+                🗑️
+              </div>
+              <div>
+                <h3 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Remove Entry?</h3>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>This will remove the hosts entry</p>
+              </div>
+            </div>
+            <p className="mb-6" style={{ color: 'var(--text-on-card)' }}>
+              Are you sure you want to remove <strong>{showDeleteConfirm}</strong> from the hosts file?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="button-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                className="px-4 py-2 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                {deleting ? '⏳ Removing...' : '🗑️ Remove'}
               </button>
             </div>
           </div>

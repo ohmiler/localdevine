@@ -95,12 +95,16 @@ function createWindow(): BrowserWindow {
   });
 
   // In production, load the built file
-  // In dev, load localhost (but use built version for testing)
+  // In dev, load Vite dev server for hot reload
   if (app.isPackaged) {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   } else {
-    // Use built version instead of dev server for testing
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    // Use Vite dev server for hot reload in development
+    const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
+    mainWindow.loadURL(VITE_DEV_SERVER_URL);
+    
+    // Open DevTools in development mode
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 
   return mainWindow;
@@ -110,22 +114,27 @@ function createWindow(): BrowserWindow {
 registerIPCHandlers();
 
 app.whenReady().then(() => {
-  // Set Content Security Policy (allow Google Fonts)
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [
-          "default-src 'self'; " +
-          "script-src 'self'; " +
-          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-          "img-src 'self' data:; " +
-          "font-src 'self' https://fonts.gstatic.com; " +
-          "connect-src 'self' https://api.github.com;"
-        ]
-      }
+  // Set Content Security Policy
+  // In dev mode: relaxed CSP to allow Vite HMR (Hot Module Replacement)
+  // In production: strict CSP for security
+  if (app.isPackaged) {
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Content-Security-Policy': [
+            "default-src 'self'; " +
+            "script-src 'self'; " +
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+            "img-src 'self' data:; " +
+            "font-src 'self' https://fonts.gstatic.com; " +
+            "connect-src 'self' https://api.github.com;"
+          ]
+        }
+      });
     });
-  });
+  }
+  // In dev mode, no CSP restrictions to allow Vite dev server with HMR
 
   const win = createWindow();
 

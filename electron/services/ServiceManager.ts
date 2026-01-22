@@ -949,14 +949,27 @@ ${vhostBlocks}
                 // Log all close events for debugging
                 this.log(serviceName, `Process closed - code: ${code}, signal: ${signal}`);
                 this.processes[serviceName] = null;
-                this.notifyStatus(serviceName, 'stopped');
+                
+                // Only notify if not being stopped intentionally
+                if (!this.stoppingServices.has(serviceName)) {
+                    // Unexpected close - this is an error
+                    if (code !== 0 && code !== null) {
+                        this.log(serviceName, `Unexpected exit with code ${code}`);
+                    }
+                    this.notifyStatus(serviceName, 'stopped');
+                }
+                // If intentional stop, notifyStatus will be called in stopService after cleanup
             });
 
             child.on('error', (err) => {
                 this.log(serviceName, `Failed to start: ${err.message}`);
                 logger.error(`${serviceName} spawn error: ${err.message}`);
                 this.processes[serviceName] = null;
-                this.notifyStatus(serviceName, 'stopped');
+                
+                // Only notify if not being stopped intentionally
+                if (!this.stoppingServices.has(serviceName)) {
+                    this.notifyStatus(serviceName, 'stopped');
+                }
             });
 
         } catch (e) {

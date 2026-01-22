@@ -13,6 +13,8 @@ function HostsEditor({ onBack }: HostsEditorProps) {
   const [newEntry, setNewEntry] = useState({ ip: '127.0.0.1', hostname: '', comment: '' });
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   useEffect(() => {
     loadHostsFile();
@@ -109,16 +111,27 @@ function HostsEditor({ onBack }: HostsEditorProps) {
     }
   }, [error]);
 
-  const restoreBackup = async () => {
-    if (!window.confirm('Restore hosts file from backup? This will overwrite current entries.')) return;
-
+  const handleRestoreConfirm = async () => {
+    setShowRestoreConfirm(false);
+    setRestoring(true);
+    
     if (window.electronAPI) {
-      const result = await window.electronAPI.restoreHostsBackup();
-      if (result.success) {
-        await loadHostsFile();
-        alert('Hosts file restored from backup');
-      } else {
-        alert(`Error: ${result.error}`);
+      try {
+        const result = await window.electronAPI.restoreHostsBackup();
+        // Refocus window after elevated PowerShell operation
+        await window.electronAPI.refocusWindow();
+        
+        if (result.success) {
+          await loadHostsFile();
+          setSuccess('Hosts file restored from backup');
+        } else {
+          setError(result.error || 'Failed to restore backup');
+        }
+      } catch (err) {
+        setError((err as Error).message);
+        await window.electronAPI.refocusWindow();
+      } finally {
+        setRestoring(false);
       }
     }
   };
@@ -239,10 +252,11 @@ function HostsEditor({ onBack }: HostsEditorProps) {
           </div>
           {hasAdminRights && (
             <button
-              onClick={restoreBackup}
+              onClick={() => setShowRestoreConfirm(true)}
+              disabled={restoring}
               className="button-secondary"
             >
-              🔄 Restore Backup
+              {restoring ? '⏳ Restoring...' : '🔄 Restore Backup'}
             </button>
           )}
         </div>
@@ -292,6 +306,40 @@ function HostsEditor({ onBack }: HostsEditorProps) {
         <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>📡 Changes affect system-wide DNS resolution.</p>
         <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>💾 Backup is automatically created before any changes.</p>
       </div>
+
+      {/* Restore Confirm Modal */}
+      {showRestoreConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="card p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-2xl">
+                ⚠️
+              </div>
+              <div>
+                <h3 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Restore Backup?</h3>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>This will overwrite current entries</p>
+              </div>
+            </div>
+            <p className="mb-6" style={{ color: 'var(--text-on-card)' }}>
+              Are you sure you want to restore the hosts file from backup? All current entries will be replaced.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowRestoreConfirm(false)}
+                className="button-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRestoreConfirm}
+                className="button-primary"
+              >
+                🔄 Restore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

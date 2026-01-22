@@ -296,7 +296,8 @@ export default class HostsManager {
     }
 
     // Use elevated PowerShell to write to hosts file
-    private elevatedCopyToHosts(sourceFile: string): Promise<HostsOperationResult> {
+    // deleteSourceAfter: true for temp files, false for backup files
+    private elevatedCopyToHosts(sourceFile: string, deleteSourceAfter: boolean = true): Promise<HostsOperationResult> {
         return new Promise((resolve) => {
             // Validate source file path (ป้องกัน Command Injection)
             if (!this.validateSourcePath(sourceFile)) {
@@ -310,7 +311,7 @@ export default class HostsManager {
             
             // Create a PowerShell script that copies the file
             const scriptContent = `Copy-Item -Path '${srcPath}' -Destination '${destPath}' -Force`;
-            const scriptPath = sourceFile.replace('.temp', '.ps1');
+            const scriptPath = path.join(path.dirname(this.backupPath), 'hosts-restore.ps1');
             
             try {
                 fs.writeFileSync(scriptPath, scriptContent, 'utf8');
@@ -323,9 +324,9 @@ export default class HostsManager {
             const command = `powershell -Command "Start-Process powershell -Verb RunAs -Wait -ArgumentList '-ExecutionPolicy Bypass -File \\"${scriptPath.replace(/\\/g, '/')}\\"'"`;
             
             exec(command, (error) => {
-                // Clean up temp files
+                // Clean up temp files (but not backup file)
                 try {
-                    if (fs.existsSync(sourceFile)) fs.unlinkSync(sourceFile);
+                    if (deleteSourceAfter && fs.existsSync(sourceFile)) fs.unlinkSync(sourceFile);
                     if (fs.existsSync(scriptPath)) fs.unlinkSync(scriptPath);
                 } catch {
                     // Ignore cleanup errors
@@ -369,15 +370,16 @@ export default class HostsManager {
         }
     }
 
-    // Restore from backup
-    restoreBackup(): HostsOperationResult {
+    // Restore from backup - using elevated PowerShell
+    async restoreBackup(): Promise<HostsOperationResult> {
         try {
             if (!fs.existsSync(this.backupPath)) {
                 return { success: false, error: 'No backup file found' };
             }
 
-            fs.copyFileSync(this.backupPath, this.hostsPath);
-            return { success: true };
+            // Use elevated PowerShell to copy backup to hosts file
+            // Don't delete backup file after restore (deleteSourceAfter = false)
+            return await this.elevatedCopyToHosts(this.backupPath, false);
         } catch (error) {
             return { 
                 success: false, 

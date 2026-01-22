@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>A Modern Local Development Environment for Windows</strong><br>
-  ทางเลือกที่ทันสมัยสำหรับ XAMPP และ Laragon
+  The modern alternative to XAMPP and Laragon
 </p>
 
 <p align="center">

@@ -168,7 +168,7 @@ export class SSLManager {
             // Generate self-signed certificate
             const openssl = this.openSSLPath;
             const days = 365;
-            const subject = `/CN=${sanitizedDomain}/O=LocalDevine/OU=Development`;
+            const _subject = `/CN=${sanitizedDomain}/O=LocalDevine/OU=Development`; // Used in configContent
             
             // Create OpenSSL config for SAN (Subject Alternative Names)
             const configPath = path.join(certDir, 'openssl.cnf');
@@ -290,7 +290,7 @@ IP.1 = 127.0.0.1
             
             try {
                 await execAsync(cmd);
-            } catch (error) {
+            } catch {
                 // If failed, it's likely due to lack of admin privileges
                 return { 
                     success: false, 

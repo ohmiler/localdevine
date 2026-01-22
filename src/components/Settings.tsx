@@ -607,23 +607,47 @@ function Settings({ onBack }: SettingsProps) {
                     </div>
                 </div>
 
-                {/* Logs Quick Access */}
+                {/* Quick Access Folders */}
                 <div className="card p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-500 to-slate-600 flex items-center justify-center text-lg">
-                            📋
+                            📁
                         </div>
-                        <h2 className="text-xl font-heading" style={{ color: 'var(--text-on-card)' }}>Application Logs</h2>
+                        <h2 className="text-xl font-heading" style={{ color: 'var(--text-on-card)' }}>Quick Access</h2>
                     </div>
                     <p className="mb-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                        View application logs for debugging and troubleshooting issues.
+                        Quick access to important folders for configuration and debugging.
                     </p>
-                    <button
-                        onClick={() => window.electronAPI.logsOpenDir()}
-                        className="px-6 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-gray-500 to-slate-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]"
-                    >
-                        📂 Open Logs Folder
-                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            onClick={() => window.electronAPI.openFolder('bin')}
+                            className="px-4 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] text-sm"
+                            title="Open folder containing Apache, PHP, MariaDB executables"
+                        >
+                            ⚙️ Bin Folder
+                        </button>
+                        <button
+                            onClick={() => window.electronAPI.openFolder('config')}
+                            className="px-4 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] text-sm"
+                        >
+                            📄 Config Folder
+                        </button>
+                        <button
+                            onClick={() => window.electronAPI.openFolder('www')}
+                            className="px-4 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] text-sm"
+                        >
+                            🌐 WWW Folder
+                        </button>
+                        <button
+                            onClick={() => window.electronAPI.logsOpenDir()}
+                            className="px-4 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-gray-500 to-slate-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] text-sm"
+                        >
+                            📋 Logs Folder
+                        </button>
+                    </div>
+                    <p className="mt-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        💡 <strong>Bin Folder</strong> contains Apache, PHP, MariaDB executables. Use this to add PHP extensions or configure services.
+                    </p>
                 </div>
 
             </div>

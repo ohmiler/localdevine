@@ -4,11 +4,13 @@ interface LogsManagerProps {
     onBack: () => void;
 }
 
-interface LogFileInfo {
+interface _LogFileInfo {
     name: string;
     size: string;
     modifiedAt: string;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type LogFileInfo = _LogFileInfo;
 
 export default function LogsManager({ onBack }: LogsManagerProps) {
     const [logDir, setLogDir] = useState<string>('');

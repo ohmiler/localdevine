@@ -38,7 +38,7 @@ export default function SSLManager({ onBack }: SSLManagerProps) {
         try {
             const info = await window.electronAPI.sslCheckOpenSSL();
             setOpenSSLInfo(info);
-        } catch (err) {
+        } catch {
             setOpenSSLInfo({ available: false });
         }
     }, []);

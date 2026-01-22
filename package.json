@@ -41,7 +41,12 @@
       "!bin/**/*.lib",
       "!bin/**/man/**/*",
       "!bin/**/docs/**/*",
-      "!bin/**/dev/**/*"
+      "!bin/**/dev/**/*",
+      "!bin/nginx/**/*",
+      "!bin/mariadb/data/**/*",
+      "!bin/mariadb/lib/**/*",
+      "!bin/mariadb/share/charsets/**/*",
+      "!bin/mariadb/share/mysql_system_tables*.sql"
     ],
     "extraMetadata": {
       "main": "dist-electron/main.js",
@@ -65,7 +70,11 @@
       "!bin/**/*.lib",
       "!bin/**/man/**",
       "!bin/**/docs/**",
-      "!bin/**/dev/**"
+      "!bin/**/dev/**",
+      "!bin/nginx/**",
+      "!bin/mariadb/data/**",
+      "!bin/mariadb/lib/**",
+      "!bin/mariadb/share/charsets/**"
     ],
     "nsis": {
       "oneClick": false,

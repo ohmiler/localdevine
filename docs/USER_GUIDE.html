@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LocalDevine User Guide - Complete documentation for setting up and using LocalDevine">
+    <title>User Guide - LocalDevine</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        .guide-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 120px 20px 60px;
+        }
+        .guide-content h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .guide-content h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 3rem 0 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border-color);
+            color: var(--text-color);
+        }
+        .guide-content h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 2rem 0 1rem;
+            color: var(--text-color);
+        }
+        .guide-content p {
+            margin: 1rem 0;
+            line-height: 1.8;
+            color: var(--text-light);
+        }
+        .guide-content ul, .guide-content ol {
+            margin: 1rem 0;
+            padding-left: 1.5rem;
+        }
+        .guide-content li {
+            margin: 0.5rem 0;
+            line-height: 1.7;
+            color: var(--text-light);
+        }
+        .guide-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .guide-content th, .guide-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .guide-content th {
+            background: var(--bg-light);
+            font-weight: 700;
+            color: var(--text-color);
+        }
+        .guide-content tr:last-child td {
+            border-bottom: none;
+        }
+        .guide-content tr:hover td {
+            background: var(--bg-light);
+        }
+        .guide-content code {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            color: var(--primary-color);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+        .guide-content pre {
+            background: var(--bg-dark);
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+        .guide-content pre code {
+            background: none;
+            padding: 0;
+            border: none;
+            color: inherit;
+        }
+        .guide-content blockquote {
+            border-left: 4px solid var(--warning-color);
+            background: rgba(245, 158, 11, 0.1);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 12px 12px 0;
+        }
+        .guide-content blockquote p {
+            margin: 0;
+            color: var(--text-color);
+        }
+        .guide-content strong {
+            color: var(--text-color);
+            font-weight: 600;
+        }
+        .guide-content a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .guide-content a:hover {
+            text-decoration: underline;
+        }
+        .toc {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            margin: 2rem 0;
+            border: 1px solid var(--border-color);
+        }
+        .toc h2 {
+            margin-top: 0 !important;
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+        }
+        .toc ol {
+            columns: 2;
+            column-gap: 2rem;
+        }
+        .toc li {
+            break-inside: avoid;
+        }
+        @media (max-width: 768px) {
+            .toc ol {
+                columns: 1;
+            }
+            .guide-content {
+                padding: 100px 16px 40px;
+            }
+            .guide-content h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <img src="icon.png" alt="LocalDevine" class="logo">
+                <a href="index.html" class="brand-name">LocalDevine</a>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="index.html#features">Features</a>
+                <a href="download.html">Download</a>
+                <a href="https://github.com/ohmiler/localdevine" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="guide-content">
+        <h1>📘 LocalDevine User Guide</h1>
+        <p>Complete user manual for LocalDevine | คู่มือการใช้งาน LocalDevine ฉบับสมบูรณ์</p>
+
+        <div class="toc">
+            <h2>📖 Table of Contents</h2>
+            <ol>
+                <li><a href="#getting-started">Getting Started</a></li>
+                <li><a href="#managing-services">Managing Services</a></li>
+                <li><a href="#creating-projects">Creating Projects</a></li>
+                <li><a href="#virtual-hosts">Virtual Hosts</a></li>
+                <li><a href="#database-management">Database Management</a></li>
+                <li><a href="#ssl-certificates">SSL Certificates</a></li>
+                <li><a href="#environment-variables">Environment Variables</a></li>
+                <li><a href="#hosts-file-editor">Hosts File Editor</a></li>
+                <li><a href="#quick-access">Quick Access</a></li>
+                <li><a href="#settings">Settings</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+            </ol>
+        </div>
+
+        <h2 id="getting-started">🚀 Getting Started</h2>
+        <h3>First Steps</h3>
+        <ol>
+            <li><strong>Open LocalDevine</strong> - Double-click <code>LocalDevine.exe</code>. Recommended: Right-click → Run as Administrator</li>
+            <li><strong>Start Services</strong> - Click Start on Apache and MariaDB. Wait for green "Running" status</li>
+            <li><strong>Test</strong> - Open browser and go to <code>http://localhost</code></li>
+        </ol>
+        <h3>Dashboard Overview</h3>
+        <ul>
+            <li><strong>Service Cards</strong> - Apache, PHP, MariaDB status and controls</li>
+            <li><strong>Quick Actions</strong> - Open www folder, Config, Terminal, Database</li>
+            <li><strong>Console Logs</strong> - Real-time service logs</li>
+            <li><strong>Navigation</strong> - Projects, Virtual Hosts, SSL, Settings, etc.</li>
+        </ul>
+
+        <h2 id="managing-services">⚙️ Managing Services</h2>
+        <h3>Apache Web Server</h3>
+        <table>
+            <tr><th>Action</th><th>Steps</th></tr>
+            <tr><td><strong>Start</strong></td><td>Click Start on Apache card → Wait for Running status</td></tr>
+            <tr><td><strong>Stop</strong></td><td>Click Stop on Apache card → Wait for Stopped status</td></tr>
+            <tr><td><strong>Restart</strong></td><td>Click Stop then Start (required after config changes)</td></tr>
+        </table>
+        <h3>MariaDB Database</h3>
+        <p><strong>Default Credentials:</strong> Username: <code>root</code> | Password: <code>root</code></p>
+        <h3>PHP</h3>
+        <p>PHP runs automatically with Apache - no separate start needed.</p>
+
+        <h2 id="creating-projects">📁 Creating Projects</h2>
+        <h3>Create New Project</h3>
+        <ol>
+            <li>Go to <strong>Projects</strong> menu</li>
+            <li>Click <strong>Create New Project</strong></li>
+            <li>Fill in: Project Name, Template (PHP/HTML), Create Database option</li>
+            <li>Click <strong>Create</strong></li>
+        </ol>
+        <h3>Available Templates</h3>
+        <table>
+            <tr><th>Template</th><th>Description</th></tr>
+            <tr><td><strong>PHP Basic</strong></td><td>PHP project with index.php</td></tr>
+            <tr><td><strong>HTML Basic</strong></td><td>Basic HTML/CSS/JS project</td></tr>
+        </table>
+        <h3>Access Your Project</h3>
+        <ul>
+            <li><strong>URL:</strong> <code>http://localhost/project-name</code></li>
+            <li><strong>Folder:</strong> <code>C:\LocalDevine\www\project-name</code></li>
+        </ul>
+
+        <h2 id="virtual-hosts">🌐 Virtual Hosts</h2>
+        <p>Virtual Hosts let you use custom local domains instead of <code>localhost/project</code></p>
+        <h3>Create Virtual Host</h3>
+        <ol>
+            <li><strong>Run LocalDevine as Administrator</strong> (required!)</li>
+            <li>Go to <strong>Virtual Hosts</strong> menu</li>
+            <li>Click <strong>Add Virtual Host</strong></li>
+            <li>Fill in: Name, Domain (e.g., mysite.local), Path</li>
+            <li>Click Add → <strong>Restart Apache</strong></li>
+        </ol>
+        <h3>Recommended Domains</h3>
+        <table>
+            <tr><th>Domain</th><th>Notes</th></tr>
+            <tr><td><code>*.local</code></td><td>✅ Recommended</td></tr>
+            <tr><td><code>*.test</code></td><td>✅ Recommended</td></tr>
+            <tr><td><code>*.dev</code></td><td>❌ Not recommended (used by Google)</td></tr>
+        </table>
+
+        <h2 id="database-management">🗄️ Database Management</h2>
+        <h3>Access Adminer</h3>
+        <ol>
+            <li>Click <strong>🗄️ Database</strong> button on dashboard</li>
+            <li>Login with: Server <code>127.0.0.1</code>, Username <code>root</code>, Password <code>root</code></li>
+        </ol>
+        <h3>Import/Export</h3>
+        <table>
+            <tr><th>Action</th><th>Steps</th></tr>
+            <tr><td><strong>Import</strong></td><td>Select database → Click Import → Choose .sql file → Execute</td></tr>
+            <tr><td><strong>Export</strong></td><td>Select database → Click Export → Choose SQL format → Export</td></tr>
+        </table>
+
+        <h2 id="ssl-certificates">🔐 SSL Certificates</h2>
+        <p>Generate self-signed SSL certificates for HTTPS development.</p>
+        <h3>Generate Certificate</h3>
+        <ol>
+            <li>Go to <strong>SSL</strong> menu</li>
+            <li>Click <strong>Generate Certificate</strong></li>
+            <li>Enter domain name (e.g., <code>mysite.local</code>)</li>
+            <li>Click <strong>Generate</strong></li>
+        </ol>
+        <h3>Trust Certificate</h3>
+        <ol>
+            <li>Click <strong>Trust</strong> button next to the certificate</li>
+            <li>Windows will ask for confirmation</li>
+            <li>Certificate is added to trusted root</li>
+        </ol>
+
+        <h2 id="environment-variables">🌍 Environment Variables</h2>
+        <p>Manage <code>.env</code> files for your projects.</p>
+        <ol>
+            <li>Go to <strong>Environment</strong> menu</li>
+            <li>Select a project</li>
+            <li>View and edit environment variables</li>
+            <li>Click <strong>Save</strong></li>
+        </ol>
+
+        <h2 id="hosts-file-editor">📝 Hosts File Editor</h2>
+        <p>Edit Windows hosts file without opening Notepad.</p>
+        <ol>
+            <li>Go to <strong>Hosts File</strong> menu</li>
+            <li>Click <strong>Add Entry</strong></li>
+            <li>Enter IP Address and Hostname</li>
+            <li>Click <strong>Add</strong></li>
+        </ol>
+        <blockquote>
+            <p>⚠️ <strong>Note:</strong> Requires Administrator privileges</p>
+        </blockquote>
+
+        <h2 id="quick-access">📂 Quick Access</h2>
+        <p>Easy access to important folders from Settings.</p>
+        <table>
+            <tr><th>Button</th><th>Location</th><th>Purpose</th></tr>
+            <tr><td><strong>⚙️ Bin Folder</strong></td><td>Program Files\LocalDevine\...\bin</td><td>Apache, PHP, MariaDB executables</td></tr>
+            <tr><td><strong>📄 Config Folder</strong></td><td>C:\LocalDevine\config</td><td>php.ini, httpd.conf</td></tr>
+            <tr><td><strong>🌐 WWW Folder</strong></td><td>C:\LocalDevine\www</td><td>Your projects</td></tr>
+            <tr><td><strong>📋 Logs Folder</strong></td><td>%APPDATA%\LocalDevine\logs</td><td>Application logs</td></tr>
+        </table>
+
+        <h2 id="settings">⚙️ Settings</h2>
+        <h3>Port Configuration</h3>
+        <table>
+            <tr><th>Service</th><th>Default Port</th><th>How to Change</th></tr>
+            <tr><td>Apache</td><td>80</td><td>Settings → Apache Port</td></tr>
+            <tr><td>MariaDB</td><td>3306</td><td>Settings → MariaDB Port</td></tr>
+        </table>
+        <h3>Other Settings</h3>
+        <ul>
+            <li><strong>Auto-start Services</strong> - Start services automatically when app opens</li>
+            <li><strong>Theme</strong> - Toggle between Light and Dark theme</li>
+        </ul>
+
+        <h2 id="troubleshooting">🔧 Troubleshooting</h2>
+        <h3>Apache Won't Start</h3>
+        <p><strong>Possible causes:</strong> Port 80 in use, config errors</p>
+        <pre><code># Check what's using port 80
+netstat -ano | findstr :80</code></pre>
+        
+        <h3>MariaDB Won't Start</h3>
+        <p><strong>Solution:</strong> Delete <code>C:\LocalDevine\data\mariadb\*.pid</code> files and try again</p>
+        
+        <h3>Virtual Host Not Working</h3>
+        <ul>
+            <li>Run LocalDevine as Administrator</li>
+            <li>Check domain is in hosts file</li>
+            <li>Restart Apache after adding Virtual Host</li>
+        </ul>
+        
+        <h3>Can't Login to Adminer</h3>
+        <p>Make sure MariaDB is running. Use: Server <code>127.0.0.1</code>, Username <code>root</code>, Password <code>root</code></p>
+
+        <hr style="margin: 3rem 0; border: none; border-top: 1px solid var(--border-color);">
+        
+        <p style="text-align: center;">
+            <strong>Need help?</strong> <a href="https://github.com/ohmiler/localdevine/issues" target="_blank">Report an issue on GitHub</a>
+        </p>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>LocalDevine</h4>
+                    <p>A Modern Local Development Environment for Windows</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="https://github.com/ohmiler/localdevine" target="_blank">GitHub</a></li>
+                        <li><a href="https://github.com/ohmiler/localdevine/releases" target="_blank">Releases</a></li>
+                        <li><a href="https://github.com/ohmiler/localdevine/issues" target="_blank">Issues</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>License</h4>
+                    <p>MIT License</p>
+                    <p>Free for personal and commercial use</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Made with ❤️ by <a href="https://github.com/ohmiler" target="_blank">Miler</a></p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

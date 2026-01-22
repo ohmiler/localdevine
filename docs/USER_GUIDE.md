@@ -1,310 +1,366 @@
 # LocalDevine User Guide
 
-คู่มือการใช้งาน LocalDevine ฉบับสมบูรณ์
+Complete user manual for LocalDevine | คู่มือการใช้งาน LocalDevine ฉบับสมบูรณ์
 
 ---
 
-## 📖 สารบัญ
+## 📖 Table of Contents
 
-1. [เริ่มต้นใช้งาน](#-เริ่มต้นใช้งาน)
-2. [การจัดการ Services](#-การจัดการ-services)
-3. [การสร้างโปรเจค](#-การสร้างโปรเจค)
+1. [Getting Started](#-getting-started)
+2. [Managing Services](#-managing-services)
+3. [Creating Projects](#-creating-projects)
 4. [Virtual Hosts](#-virtual-hosts)
 5. [Database Management](#-database-management)
-6. [Hosts File Editor](#-hosts-file-editor)
-7. [Settings](#-settings)
-8. [Troubleshooting](#-troubleshooting)
+6. [SSL Certificates](#-ssl-certificates)
+7. [Environment Variables](#-environment-variables)
+8. [Hosts File Editor](#-hosts-file-editor)
+9. [Quick Access](#-quick-access)
+10. [Settings](#-settings)
+11. [Troubleshooting](#-troubleshooting)
 
 ---
 
-## 🚀 เริ่มต้นใช้งาน
+## 🚀 Getting Started
 
-### ขั้นตอนแรก
+### First Steps | ขั้นตอนแรก
 
-1. **เปิด LocalDevine**
-   - ดับเบิลคลิก `LocalDevine.exe`
-   - แนะนำ: คลิกขวา → **Run as Administrator** (สำหรับ Virtual Hosts)
+1. **Open LocalDevine | เปิด LocalDevine**
+   - Double-click `LocalDevine.exe`
+   - Recommended: Right-click → **Run as Administrator** (for Virtual Hosts)
 
-2. **Start Services**
-   - คลิกปุ่ม **Start** บน **Apache**
-   - คลิกปุ่ม **Start** บน **MariaDB**
-   - รอสักครู่จนสถานะเป็น **Running** (สีเขียว)
+2. **Start Services | เริ่ม Services**
+   - Click **Start** on **Apache**
+   - Click **Start** on **MariaDB**
+   - Wait until status shows **Running** (green)
 
-3. **ทดสอบ**
-   - เปิด Browser ไปที่ `http://localhost`
-   - ควรเห็นหน้า Welcome หรือ Index
+3. **Test | ทดสอบ**
+   - Open browser and go to `http://localhost`
+   - You should see the Welcome or Index page
 
-### หน้าหลัก (Dashboard)
+### Dashboard Overview
 
-```
-┌─────────────────────────────────────────────────┐
-│  LocalDevine                                    │
-├─────────────────────────────────────────────────┤
-│  [📁 www] [📄 Config] [💻 Terminal] [🗄️ Database] │
-├─────────────────────────────────────────────────┤
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐        │
-│  │  Apache  │ │   PHP    │ │ MariaDB  │        │
-│  │  [Start] │ │  Active  │ │  [Start] │        │
-│  └──────────┘ └──────────┘ └──────────┘        │
-├─────────────────────────────────────────────────┤
-│  Console Logs                                   │
-│  > Apache started on port 80                    │
-│  > MariaDB started on port 3306                 │
-└─────────────────────────────────────────────────┘
-```
+The main dashboard shows:
+- **Service Cards** - Apache, PHP, MariaDB status and controls
+- **Quick Actions** - Open www folder, Config, Terminal, Database
+- **Console Logs** - Real-time service logs
+- **Navigation** - Projects, Virtual Hosts, SSL, Settings, etc.
 
 ---
 
-## ⚙️ การจัดการ Services
+## ⚙️ Managing Services
 
 ### Apache Web Server
 
-**Start Apache:**
-1. คลิกปุ่ม **Start** บน Apache card
-2. รอจนสถานะเป็น **Running**
-3. เปิด `http://localhost` เพื่อทดสอบ
+| Action | Steps |
+|--------|-------|
+| **Start** | Click **Start** on Apache card → Wait for **Running** status |
+| **Stop** | Click **Stop** on Apache card → Wait for **Stopped** status |
+| **Restart** | Click Stop then Start (required after config changes) |
 
-**Stop Apache:**
-1. คลิกปุ่ม **Stop** บน Apache card
-2. รอจนสถานะเป็น **Stopped**
-
-**Restart Apache:**
-- คลิก **Stop** แล้ว **Start** ใหม่
-- จำเป็นหลังแก้ไข config หรือเพิ่ม Virtual Host
+**Test:** Open `http://localhost` in your browser
 
 ### MariaDB Database
 
-**Start MariaDB:**
-1. คลิกปุ่ม **Start** บน MariaDB card
-2. รอจนสถานะเป็น **Running**
+| Action | Steps |
+|--------|-------|
+| **Start** | Click **Start** on MariaDB card → Wait for **Running** status |
+| **Stop** | Click **Stop** on MariaDB card → Wait for **Stopped** status |
 
-**Stop MariaDB:**
-1. คลิกปุ่ม **Stop** บน MariaDB card
-2. รอจนสถานะเป็น **Stopped**
+**Default Credentials:**
+- Username: `root`
+- Password: `root`
 
 ### PHP
 
-PHP จะทำงานอัตโนมัติร่วมกับ Apache ไม่ต้อง start แยก
+PHP runs automatically with Apache - no separate start needed.
 
 ---
 
-## 📁 การสร้างโปรเจค
+## 📁 Creating Projects
 
-### สร้างโปรเจคใหม่
+### Create New Project
 
-1. ไปที่เมนู **Projects**
-2. คลิก **Create New Project**
-3. กรอกข้อมูล:
-   - **Project Name:** ชื่อโปรเจค (ใช้เป็น URL path)
-   - **Template:** เลือก PHP Basic หรือ HTML Basic
-   - **Create Database:** ติ๊กถ้าต้องการสร้าง database
-4. คลิก **Create**
+1. Go to **Projects** menu
+2. Click **Create New Project**
+3. Fill in:
+   - **Project Name:** Name for the project (used as URL path)
+   - **Template:** Choose PHP Basic or HTML Basic
+   - **Create Database:** Check if you need a database
+4. Click **Create**
 
-### Templates ที่มี
+### Available Templates
 
-| Template | รายละเอียด |
-|----------|------------|
-| **PHP Basic** | โปรเจค PHP พร้อม index.php |
-| **HTML Basic** | โปรเจค HTML/CSS/JS พื้นฐาน |
+| Template | Description |
+|----------|-------------|
+| **PHP Basic** | PHP project with index.php |
+| **HTML Basic** | Basic HTML/CSS/JS project |
 
-### เข้าถึงโปรเจค
+### Access Your Project
 
 - **URL:** `http://localhost/project-name`
-- **Folder:** `www/project-name`
+- **Folder:** `C:\LocalDevine\www\project-name`
 
-### ลบโปรเจค
+### Delete Project
 
-1. ไปที่เมนู **Projects**
-2. คลิกไอคอน **🗑️** ของโปรเจคที่ต้องการลบ
-3. ยืนยันการลบ
+1. Go to **Projects** menu
+2. Click the **🗑️** icon on the project
+3. Confirm deletion
 
-> ⚠️ **คำเตือน:** การลบโปรเจคจะลบไฟล์ทั้งหมดในโฟลเดอร์
+> ⚠️ **Warning:** Deleting a project removes all files in that folder
 
 ---
 
 ## 🌐 Virtual Hosts
 
-Virtual Hosts ช่วยให้คุณใช้ domain ท้องถิ่นแทน `localhost/project`
+Virtual Hosts let you use custom local domains instead of `localhost/project`
 
-### ข้อดีของ Virtual Hosts
+### Benefits
 
-| แบบเดิม | แบบ Virtual Host |
-|---------|------------------|
+| Without Virtual Host | With Virtual Host |
+|---------------------|-------------------|
 | `http://localhost/mysite` | `http://mysite.local` |
 | `http://localhost/blog` | `http://blog.test` |
 
-### สร้าง Virtual Host
+### Create Virtual Host
 
-1. **รัน LocalDevine เป็น Administrator** (สำคัญมาก!)
-2. ไปที่เมนู **Virtual Hosts**
-3. คลิก **Add Virtual Host**
-4. กรอกข้อมูล:
-   - **Name:** ชื่อ (สำหรับแสดงใน UI)
-   - **Domain:** เช่น `mysite.local`
-   - **Path:** เลือก folder ของโปรเจค
-5. คลิก **Add**
+1. **Run LocalDevine as Administrator** (required!)
+2. Go to **Virtual Hosts** menu
+3. Click **Add Virtual Host**
+4. Fill in:
+   - **Name:** Display name
+   - **Domain:** e.g., `mysite.local`
+   - **Path:** Select project folder
+5. Click **Add**
 6. **Restart Apache**
 
-### Domain ที่แนะนำ
+### Recommended Domains
 
-| Domain | หมายเหตุ |
-|--------|----------|
-| `*.local` | แนะนำ |
-| `*.test` | แนะนำ |
-| `*.dev` | ไม่แนะนำ (ใช้โดย Google) |
-| `*.localhost` | ใช้ได้ |
+| Domain | Notes |
+|--------|-------|
+| `*.local` | ✅ Recommended |
+| `*.test` | ✅ Recommended |
+| `*.dev` | ❌ Not recommended (used by Google) |
+| `*.localhost` | ✅ Works fine |
 
-### ลบ Virtual Host
+### Delete Virtual Host
 
-1. ไปที่เมนู **Virtual Hosts**
-2. คลิกไอคอน **🗑️** ของ host ที่ต้องการลบ
+1. Go to **Virtual Hosts** menu
+2. Click the **🗑️** icon
 3. Restart Apache
 
 ---
 
 ## 🗄️ Database Management
 
-### เข้าถึง Adminer
+### Access Adminer
 
-1. คลิกปุ่ม **🗄️ Database** ที่หน้าหลัก
-2. Adminer จะเปิดใน Browser
-3. Login:
+1. Click **🗄️ Database** button on dashboard
+2. Adminer opens in browser
+3. Login with:
    - **System:** MySQL
-   - **Server:** 127.0.0.1
-   - **Username:** root
-   - **Password:** root
+   - **Server:** `127.0.0.1`
+   - **Username:** `root`
+   - **Password:** `root`
 
-### สร้าง Database ใหม่
+### Create Database
 
-1. เข้า Adminer
-2. คลิก **Create database**
-3. ใส่ชื่อ database
-4. เลือก **utf8mb4_unicode_ci**
-5. คลิก **Save**
+1. Open Adminer
+2. Click **Create database**
+3. Enter database name
+4. Select **utf8mb4_unicode_ci**
+5. Click **Save**
 
-### Import Database
+### Import/Export
 
-1. เข้า Adminer
-2. เลือก database
-3. คลิก **Import**
-4. เลือกไฟล์ `.sql`
-5. คลิก **Execute**
+| Action | Steps |
+|--------|-------|
+| **Import** | Select database → Click Import → Choose `.sql` file → Execute |
+| **Export** | Select database → Click Export → Choose SQL format → Export |
 
-### Export Database
+---
 
-1. เข้า Adminer
-2. เลือก database
-3. คลิก **Export**
-4. เลือก format (SQL)
-5. คลิก **Export**
+## 🔐 SSL Certificates
+
+Generate self-signed SSL certificates for HTTPS development.
+
+### Generate Certificate
+
+1. Go to **SSL** menu
+2. Click **Generate Certificate**
+3. Enter domain name (e.g., `mysite.local`)
+4. Click **Generate**
+5. Certificate files are created in the SSL folder
+
+### Trust Certificate
+
+1. Click **Trust** button next to the certificate
+2. Windows will ask for confirmation
+3. Certificate is added to trusted root
+
+### Use with Virtual Host
+
+After generating SSL certificate:
+1. Go to **Virtual Hosts**
+2. Enable **SSL** option when creating/editing virtual host
+3. Restart Apache
+4. Access via `https://yourdomain.local`
+
+---
+
+## 🌍 Environment Variables
+
+Manage `.env` files for your projects.
+
+### View/Edit .env
+
+1. Go to **Environment** menu
+2. Select a project
+3. View and edit environment variables
+4. Click **Save**
+
+### Create .env
+
+1. Go to **Environment** menu
+2. Select a project without `.env`
+3. Click **Create .env**
+4. Add your variables
+5. Click **Save**
 
 ---
 
 ## 📝 Hosts File Editor
 
-แก้ไข Windows hosts file โดยไม่ต้องเปิด Notepad
+Edit Windows hosts file without opening Notepad.
 
-### เข้าถึง Hosts Editor
+### Add Entry
 
-1. ไปที่เมนู **Hosts File**
-2. ดูรายการ entries ทั้งหมด
+1. Go to **Hosts File** menu
+2. Click **Add Entry**
+3. Enter IP Address (e.g., `127.0.0.1`)
+4. Enter Hostname (e.g., `mysite.local`)
+5. Click **Add**
 
-### เพิ่ม Entry
+### Toggle/Delete Entry
 
-1. คลิก **Add Entry**
-2. กรอก IP Address (เช่น `127.0.0.1`)
-3. กรอก Hostname (เช่น `mysite.local`)
-4. คลิก **Add**
+- Click the toggle to enable/disable an entry
+- Click **🗑️** to delete an entry
 
-### ลบ Entry
+> ⚠️ **Note:** Requires Administrator privileges
 
-1. คลิกไอคอน **🗑️** ของ entry
-2. ยืนยันการลบ
+---
 
-> ⚠️ **หมายเหตุ:** ต้องรัน LocalDevine เป็น Administrator
+## 📂 Quick Access
+
+Easy access to important folders from Settings.
+
+### Available Folders
+
+| Button | Location | Purpose |
+|--------|----------|---------|
+| **⚙️ Bin Folder** | `Program Files\LocalDevine\...\bin` | Apache, PHP, MariaDB executables |
+| **📄 Config Folder** | `C:\LocalDevine\config` | php.ini, httpd.conf |
+| **🌐 WWW Folder** | `C:\LocalDevine\www` | Your projects |
+| **📋 Logs Folder** | `%APPDATA%\LocalDevine\logs` | Application logs |
+
+### Access Quick Folders
+
+1. Go to **Settings**
+2. Scroll to **Quick Access** section
+3. Click any folder button to open in Explorer
 
 ---
 
 ## ⚙️ Settings
 
-### เปลี่ยน Ports
+### Port Configuration
 
-1. ไปที่เมนู **Settings**
-2. แก้ไข port ที่ต้องการ:
-   - **Apache Port:** default 80
-   - **MariaDB Port:** default 3306
-   - **PHP Port:** default 9000
-3. คลิก **Save**
-4. Restart services
+| Service | Default Port | How to Change |
+|---------|--------------|---------------|
+| Apache | 80 | Settings → Apache Port |
+| MariaDB | 3306 | Settings → MariaDB Port |
+
+After changing ports, restart the services.
 
 ### Auto-start Services
 
-1. ไปที่เมนู **Settings**
-2. เปิด **Auto-start services on launch**
-3. Services จะ start อัตโนมัติเมื่อเปิด app
+1. Go to **Settings**
+2. Enable **Auto-start services on launch**
+3. Services will start automatically when app opens
+
+### Theme
+
+- Toggle between **Light** and **Dark** theme
+- Theme preference is saved automatically
 
 ---
 
 ## 🔧 Troubleshooting
 
-### Apache ไม่ start
+### Apache Won't Start
 
-**สาเหตุที่เป็นไปได้:**
-1. Port 80 ถูกใช้งานโดยโปรแกรมอื่น (Skype, IIS, etc.)
-2. Config file มีข้อผิดพลาด
+**Possible causes:**
+- Port 80 is in use by another program (Skype, IIS, etc.)
+- Config file has errors
 
-**วิธีแก้:**
-```bash
-# ตรวจสอบ port 80
+**Solution:**
+```powershell
+# Check what's using port 80
 netstat -ano | findstr :80
 
-# หยุดโปรแกรมที่ใช้ port 80
-# หรือเปลี่ยน port ใน Settings
+# Change Apache port in Settings, or stop the conflicting program
 ```
 
-### MariaDB ไม่ start
+### MariaDB Won't Start
 
-**สาเหตุที่เป็นไปได้:**
-1. Port 3306 ถูกใช้งาน
-2. มีไฟล์ lock ค้างอยู่
+**Possible causes:**
+- Port 3306 is in use
+- Lock files exist from previous crash
 
-**วิธีแก้:**
-1. ลบไฟล์ `bin/mariadb/data/*.pid`
-2. ลองใหม่
+**Solution:**
+1. Delete `C:\LocalDevine\data\mariadb\*.pid` files
+2. Try starting again
 
-### Virtual Host ไม่ทำงาน
-
-**Checklist:**
-- [ ] รัน LocalDevine เป็น Administrator
-- [ ] Domain อยู่ใน hosts file
-- [ ] Restart Apache หลังเพิ่ม Virtual Host
-- [ ] ตรวจสอบ path ถูกต้อง
-
-### เข้า localhost ไม่ได้
+### Virtual Host Not Working
 
 **Checklist:**
-- [ ] Apache กำลัง running
-- [ ] ไม่มี firewall block
-- [ ] ลอง `http://127.0.0.1` แทน
+- [ ] Run LocalDevine as Administrator
+- [ ] Domain is in hosts file
+- [ ] Restart Apache after adding Virtual Host
+- [ ] Check path is correct
 
-### Adminer login ไม่ได้
+### Can't Access localhost
 
-**ตรวจสอบ:**
-- MariaDB กำลัง running
-- ใช้ credentials:
+**Checklist:**
+- [ ] Apache is running (green status)
+- [ ] No firewall blocking port 80
+- [ ] Try `http://127.0.0.1` instead
+
+### Can't Login to Adminer
+
+**Check:**
+- MariaDB is running
+- Use these credentials:
   - Server: `127.0.0.1`
   - Username: `root`
   - Password: `root`
 
+### Can't Access Bin Folder
+
+**Solution:**
+1. Go to **Settings** → **Quick Access**
+2. Click **⚙️ Bin Folder**
+3. In production, bin folder is in Program Files
+
 ---
 
-## 📞 ติดต่อสอบถาม
+## 📞 Contact & Support
 
 - **GitHub Issues:** [Report Bug](https://github.com/ohmiler/localdevine/issues)
-- **Email:** ติดต่อผ่าน GitHub
+- **GitHub:** [ohmiler/localdevine](https://github.com/ohmiler/localdevine)
 
 ---
 
 <p align="center">
-  <strong>LocalDevine</strong> - Modern Local Development Environment
+  <strong>LocalDevine</strong> - Modern Local Development Environment for Windows<br>
+  Made with ❤️ by <a href="https://github.com/ohmiler">Miler</a>
 </p>

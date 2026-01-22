@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="LocalDevine - A Modern Local Development Environment for Windows. ทางเลือกที่ทันสมัยสำหรับ XAMPP และ Laragon">
+    <meta name="description" content="LocalDevine - A Modern Local Development Environment for Windows. The modern alternative to XAMPP and Laragon. One-click Apache, PHP, MariaDB setup.">
     <title>LocalDevine - Modern Local Development Environment for Windows</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
 </head>
 <body>
     <!-- Navigation -->
@@ -34,12 +35,12 @@
                 <img src="icon.png" alt="LocalDevine Logo" class="hero-logo">
                 <h1 class="hero-title">LocalDevine</h1>
                 <p class="hero-subtitle">A Modern Local Development Environment for Windows</p>
-                <p class="hero-description">ทางเลือกที่ทันสมัยสำหรับ XAMPP และ Laragon</p>
+                <p class="hero-description">The modern alternative to XAMPP and Laragon<br><small style="opacity: 0.8">ทางเลือกที่ทันสมัยสำหรับ XAMPP และ Laragon</small></p>
                 <div class="hero-buttons">
                     <a href="#download" class="btn btn-primary">Download v1.0.0</a>
                     <a href="https://github.com/ohmiler/localdevine" target="_blank" class="btn btn-secondary">View on GitHub</a>
                 </div>
-                <p class="hero-version">Latest: v1.0.0 • Windows 10/11</p>
+                <p class="hero-version"><span class="badge">Latest: v1.0.0</span> Windows 10/11 • 158 MB</p>
             </div>
         </div>
     </section>
@@ -48,46 +49,67 @@
     <section id="features" class="features">
         <div class="container">
             <h2 class="section-title">✨ Features</h2>
+            <p class="section-subtitle">Everything you need for local web development, beautifully designed and easy to use.</p>
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">🚀</div>
                     <h3>One-Click Start</h3>
-                    <p>เริ่มต้น Apache, PHP, MariaDB ด้วยคลิกเดียว</p>
+                    <p>Start Apache, PHP, MariaDB with a single click</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📁</div>
                     <h3>Project Templates</h3>
-                    <p>สร้างโปรเจค PHP/HTML ได้ทันที</p>
+                    <p>Create PHP/HTML projects instantly with templates</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🌐</div>
                     <h3>Virtual Hosts</h3>
-                    <p>จัดการ domain ท้องถิ่น (.local, .test) ง่ายๆ</p>
+                    <p>Manage local domains (.local, .test) easily</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🗄️</div>
                     <h3>Database Management</h3>
-                    <p>เข้าถึง Adminer ได้รวดเร็ว</p>
+                    <p>Access Adminer for database operations</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">⚙️</div>
-                    <h3>Port Configuration</h3>
-                    <p>ปรับ port Apache, MariaDB ได้ตามต้องการ</p>
+                    <div class="feature-icon">🔐</div>
+                    <h3>SSL Certificates</h3>
+                    <p>Generate self-signed SSL certificates for HTTPS</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🎨</div>
-                    <h3>Modern UI</h3>
-                    <p>อินเตอร์เฟสสวยงาม ใช้งานง่าย</p>
+                    <div class="feature-icon">�</div>
+                    <h3>Environment Variables</h3>
+                    <p>Manage .env files for your projects</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📝</div>
                     <h3>Hosts File Editor</h3>
-                    <p>แก้ไข hosts file โดยไม่ต้องเปิด Notepad</p>
+                    <p>Edit Windows hosts file without Notepad</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📂</div>
+                    <h3>Quick Access</h3>
+                    <p>Easy access to bin, config, www, and logs folders</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Modern UI</h3>
+                    <p>Beautiful interface with dark/light theme</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚙️</div>
+                    <h3>Port Configuration</h3>
+                    <p>Configure Apache, MariaDB ports as needed</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🔄</div>
                     <h3>Auto Updater</h3>
-                    <p>ตรวจสอบและอัพเดทอัตโนมัติ</p>
+                    <p>Automatic update checking and installation</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💻</div>
+                    <h3>System Tray</h3>
+                    <p>Minimize to tray for background operation</p>
                 </div>
             </div>
         </div>
@@ -118,18 +140,18 @@
     <section id="download" class="download">
         <div class="container">
             <h2 class="section-title">📥 Download</h2>
+            <p class="section-subtitle">Get started with LocalDevine in minutes. Free and open source.</p>
             <div class="download-card">
                 <div class="download-info">
                     <h3>LocalDevine v1.0.0</h3>
-                    <p>Installer size: ~162 MB</p>
-                    <p>Installed size: ~792 MB</p>
+                    <p>📦 Installer: <strong>158 MB</strong> • 💾 Installed: <strong>~626 MB</strong></p>
                 </div>
                 <div class="download-buttons">
                     <a href="https://github.com/ohmiler/localdevine/releases/latest" target="_blank" class="btn btn-primary btn-large">
-                        Download from GitHub
+                        ⬇️ Download from GitHub
                     </a>
                     <a href="https://drive.google.com/file/d/1R4aM8bYeKL6iQBAR1SvfGEBUCGjnHNZb/view?usp=sharing" target="_blank" class="btn btn-secondary btn-large">
-                        ⚡ Fast Download (Google Drive)
+                        ☁️ Google Drive Mirror
                     </a>
                 </div>
             </div>
@@ -138,7 +160,7 @@
                 <ul>
                     <li>Windows 10/11 (64-bit)</li>
                     <li>4GB RAM minimum</li>
-                    <li>500MB free disk space</li>
+                    <li>1GB free disk space</li>
                     <li>Administrator rights (for Virtual Hosts)</li>
                 </ul>
             </div>
@@ -149,33 +171,34 @@
     <section class="quickstart">
         <div class="container">
             <h2 class="section-title">🚀 Quick Start</h2>
+            <p class="section-subtitle">Get up and running in just 4 easy steps</p>
             <div class="steps">
                 <div class="step">
                     <div class="step-number">1</div>
                     <div class="step-content">
                         <h3>Download & Install</h3>
-                        <p>Download installer and run setup</p>
+                        <p>Run the installer</p>
                     </div>
                 </div>
                 <div class="step">
                     <div class="step-number">2</div>
                     <div class="step-content">
-                        <h3>Launch LocalDevine</h3>
-                        <p>Open the application</p>
+                        <h3>Launch App</h3>
+                        <p>Open LocalDevine</p>
                     </div>
                 </div>
                 <div class="step">
                     <div class="step-number">3</div>
                     <div class="step-content">
                         <h3>Start Services</h3>
-                        <p>Click Start on Apache and MariaDB</p>
+                        <p>Click Start buttons</p>
                     </div>
                 </div>
                 <div class="step">
                     <div class="step-number">4</div>
                     <div class="step-content">
-                        <h3>Start Developing</h3>
-                        <p>Open <code>http://localhost</code> in your browser</p>
+                        <h3>Start Coding</h3>
+                        <p>Open <code>localhost</code></p>
                     </div>
                 </div>
             </div>
@@ -206,7 +229,7 @@
     <!-- Support -->
     <section class="support">
         <div class="container">
-            <h2 class="section-title">☕ Support the Developer</h2>
+            <h2 class="section-title" style="color: white;">☕ Support the Developer</h2>
             <p class="support-text">If you find LocalDevine useful, consider supporting its development!</p>
             <a href="https://buymeacoffee.com/milerdev" target="_blank" class="btn btn-primary">
                 ☕ Buy Me a Coffee

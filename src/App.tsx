@@ -15,11 +15,12 @@ import ThemeToggle from './components/ThemeToggle';
 import PHPDownloadDialog from './components/PHPDownloadDialog';
 import ComposerPanel from './components/ComposerPanel';
 import PHPConfigEditor from './components/PHPConfigEditor';
+import XdebugPanel from './components/XdebugPanel';
 import { useKeyboardShortcuts, defaultShortcuts } from './hooks/useKeyboardShortcuts';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 import './styles/themes.css';
 
-type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl' | 'logs' | 'composer' | 'phpconfig';
+type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl' | 'logs' | 'composer' | 'phpconfig' | 'xdebug';
 
 interface Services {
   php: ServiceStatus;
@@ -375,6 +376,8 @@ function App() {
         return <ComposerPanel onBack={() => setCurrentPage('home')} />;
       case 'phpconfig':
         return <PHPConfigEditor onBack={() => setCurrentPage('home')} />;
+      case 'xdebug':
+        return <XdebugPanel onBack={() => setCurrentPage('home')} />;
       default:
         return renderHomePage();
     }

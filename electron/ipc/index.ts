@@ -17,6 +17,7 @@ import SSLManager from '../services/SSLManager';
 import PHPDownloader, { DownloadProgress } from '../services/PHPDownloader';
 import ComposerManager from '../services/ComposerManager';
 import PHPConfigManager from '../services/PHPConfigManager';
+import XdebugManager from '../services/XdebugManager';
 import PathResolver from '../services/PathResolver';
 import logger, { Logger } from '../services/Logger';
 
@@ -145,6 +146,7 @@ export function registerIPCHandlers(): void {
   registerPHPDownloadHandlers();
   registerComposerHandlers();
   registerPHPConfigHandlers();
+  registerXdebugHandlers();
 }
 
 // ============================================
@@ -1266,5 +1268,81 @@ function registerPHPConfigHandlers(): void {
       phpConfigManager = new PHPConfigManager();
     }
     return { success: true, hasBackup: phpConfigManager.hasBackup() };
+  });
+}
+
+// ============================================
+// Xdebug Handlers
+// ============================================
+let xdebugManager: XdebugManager | null = null;
+
+function registerXdebugHandlers(): void {
+  // Get Xdebug status
+  ipcMain.handle('xdebug-get-status', async () => {
+    if (!xdebugManager) {
+      xdebugManager = new XdebugManager();
+    }
+    return xdebugManager.getStatus();
+  });
+
+  // Install Xdebug
+  ipcMain.handle('xdebug-install', async () => {
+    if (!xdebugManager) {
+      xdebugManager = new XdebugManager();
+    }
+    
+    return xdebugManager.install((progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('xdebug-install-progress', progress);
+      }
+    });
+  });
+
+  // Enable Xdebug
+  ipcMain.handle('xdebug-enable', async (_event: IpcMainInvokeEvent, config?: { mode?: string; port?: number; ideKey?: string; startWithRequest?: string }) => {
+    if (!xdebugManager) {
+      xdebugManager = new XdebugManager();
+    }
+    return xdebugManager.enable(config as any);
+  });
+
+  // Disable Xdebug
+  ipcMain.handle('xdebug-disable', async () => {
+    if (!xdebugManager) {
+      xdebugManager = new XdebugManager();
+    }
+    return xdebugManager.disable();
+  });
+
+  // Update Xdebug config
+  ipcMain.handle('xdebug-update-config', async (_event: IpcMainInvokeEvent, config: { mode?: string; port?: number; ideKey?: string; startWithRequest?: string }) => {
+    if (!xdebugManager) {
+      xdebugManager = new XdebugManager();
+    }
+    return xdebugManager.updateConfig(config as any);
+  });
+
+  // Uninstall Xdebug
+  ipcMain.handle('xdebug-uninstall', async () => {
+    if (!xdebugManager) {
+      xdebugManager = new XdebugManager();
+    }
+    return xdebugManager.uninstall();
+  });
+
+  // Get VS Code config
+  ipcMain.handle('xdebug-get-vscode-config', async () => {
+    if (!xdebugManager) {
+      xdebugManager = new XdebugManager();
+    }
+    return { success: true, config: xdebugManager.getVSCodeConfig() };
+  });
+
+  // Test Xdebug connection
+  ipcMain.handle('xdebug-test-connection', async () => {
+    if (!xdebugManager) {
+      xdebugManager = new XdebugManager();
+    }
+    return xdebugManager.testConnection();
   });
 }

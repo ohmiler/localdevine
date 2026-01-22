@@ -113,14 +113,38 @@ class ConfigManager {
                 if (entry.isDirectory() && entry.name.startsWith('php')) {
                     const phpCgiPath = path_1.default.join(this.binDir, entry.name, 'php-cgi.exe');
                     if (fs_1.default.existsSync(phpCgiPath)) {
+                        // Format display name with dots (e.g., "PHP 8.1", "PHP 8.5 (default)")
+                        let displayName;
+                        if (entry.name === 'php') {
+                            displayName = 'PHP 8.5 (default)';
+                        }
+                        else {
+                            // Convert php81 -> PHP 8.1, php82 -> PHP 8.2, etc.
+                            const match = entry.name.match(/php(\d)(\d)/);
+                            if (match) {
+                                displayName = `PHP ${match[1]}.${match[2]}`;
+                            }
+                            else {
+                                displayName = entry.name.toUpperCase();
+                            }
+                        }
                         versions.push({
                             id: entry.name,
-                            name: entry.name === 'php' ? 'PHP (default)' : entry.name.toUpperCase().replace('PHP', 'PHP '),
+                            name: displayName,
                             path: path_1.default.join(this.binDir, entry.name)
                         });
                     }
                 }
             }
+            // Sort by version descending (8.5, 8.4, 8.3, 8.2, 8.1)
+            versions.sort((a, b) => {
+                // Extract version numbers for sorting
+                const getVersion = (name) => {
+                    const match = name.match(/PHP (\d+\.\d+)/);
+                    return match ? parseFloat(match[1]) : 0;
+                };
+                return getVersion(b.name) - getVersion(a.name);
+            });
         }
         catch (error) {
             Logger_1.configLogger.error(`Error scanning PHP versions: ${error.message}`);

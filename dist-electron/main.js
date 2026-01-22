@@ -45,6 +45,8 @@ const ConfigManager_1 = __importDefault(require("./services/ConfigManager"));
 const HostsManager_1 = __importDefault(require("./services/HostsManager"));
 const ProjectTemplateManager_1 = __importDefault(require("./services/ProjectTemplateManager"));
 const DatabaseManager_1 = __importDefault(require("./services/DatabaseManager"));
+const EnvManager_1 = __importDefault(require("./services/EnvManager"));
+const SSLManager_1 = __importDefault(require("./services/SSLManager"));
 const AutoUpdater_1 = __importDefault(require("./services/AutoUpdater"));
 const ipc_1 = require("./ipc");
 // Initialize file logger
@@ -168,8 +170,10 @@ electron_1.app.whenReady().then(() => {
     projectTemplateManager = new ProjectTemplateManager_1.default();
     const databaseManager = new DatabaseManager_1.default(configManager);
     databaseManager.setMainWindow(win);
+    const envManager = new EnvManager_1.default();
+    const sslManager = new SSLManager_1.default();
     // Initialize IPC with manager references
-    (0, ipc_1.initializeIPC)(win, serviceManager, configManager, hostsManager, projectTemplateManager, databaseManager);
+    (0, ipc_1.initializeIPC)(win, serviceManager, configManager, hostsManager, projectTemplateManager, databaseManager, envManager, sslManager);
     // Start health monitoring
     serviceManager.startHealthMonitoring(5000);
     // Create system tray

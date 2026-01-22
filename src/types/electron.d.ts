@@ -164,6 +164,37 @@ export interface CommonSetting {
     currentValue: string | null;
 }
 
+// Xdebug types
+export interface XdebugStatus {
+    installed: boolean;
+    enabled: boolean;
+    version: string | null;
+    phpVersion: string | null;
+    mode: string;
+    port: number;
+    ideKey: string;
+    startWithRequest: string;
+    dllPath: string | null;
+}
+
+export interface XdebugConfig {
+    mode: 'off' | 'develop' | 'debug' | 'profile' | 'trace' | 'coverage';
+    port: number;
+    ideKey: string;
+    startWithRequest: 'yes' | 'no' | 'trigger' | 'default';
+    clientHost: string;
+    clientPort: number;
+    logLevel: number;
+    logPath: string;
+}
+
+export interface XdebugInstallProgress {
+    percent: number;
+    downloaded: number;
+    total: number;
+    status: string;
+}
+
 // ElectronAPI interface for renderer process
 export interface ElectronAPI {
     // Service control
@@ -287,6 +318,16 @@ export interface ElectronAPI {
     phpConfigSaveRaw: (content: string) => Promise<{ success: boolean; error?: string }>;
     phpConfigRestoreBackup: () => Promise<{ success: boolean; error?: string }>;
     phpConfigHasBackup: () => Promise<{ success: boolean; hasBackup: boolean }>;
+
+    // Xdebug Manager
+    xdebugGetStatus: () => Promise<XdebugStatus>;
+    xdebugInstall: () => Promise<{ success: boolean; error?: string }>;
+    xdebugEnable: (config?: Partial<XdebugConfig>) => Promise<{ success: boolean; error?: string }>;
+    xdebugDisable: () => Promise<{ success: boolean; error?: string }>;
+    xdebugUpdateConfig: (config: Partial<XdebugConfig>) => Promise<{ success: boolean; error?: string }>;
+    xdebugUninstall: () => Promise<{ success: boolean; error?: string }>;
+    xdebugGetVSCodeConfig: () => Promise<{ success: boolean; config: object }>;
+    xdebugTestConnection: () => Promise<{ success: boolean; message: string }>;
 
     // Window utilities
     refocusWindow: () => Promise<{ success: boolean }>;

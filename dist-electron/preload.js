@@ -23,6 +23,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // PHP Versions
     getPHPVersions: () => ipcRenderer.invoke('get-php-versions'),
     setPHPVersion: (version) => ipcRenderer.invoke('set-php-version', version),
+    switchPhpVersion: (version) => ipcRenderer.invoke('switch-php-version', version),
+    // PHP Download
+    phpGetAvailableVersions: () => ipcRenderer.invoke('php-get-available-versions'),
+    phpGetInstalledVersions: () => ipcRenderer.invoke('php-get-installed-versions'),
+    phpDownloadVersion: (version) => ipcRenderer.invoke('php-download-version', version),
+    phpDownloadMultiple: (versions) => ipcRenderer.invoke('php-download-multiple', versions),
     // Data Path
     getDataPath: () => ipcRenderer.invoke('get-data-path'),
     setDataPath: (path) => ipcRenderer.invoke('set-data-path', path),
@@ -83,11 +89,43 @@ contextBridge.exposeInMainWorld('electronAPI', {
     logsGetDir: () => ipcRenderer.invoke('logs-get-dir'),
     logsGetFile: () => ipcRenderer.invoke('logs-get-file'),
     logsOpenDir: () => ipcRenderer.invoke('logs-open-dir'),
+    // Composer Manager
+    composerGetStatus: () => ipcRenderer.invoke('composer-get-status'),
+    composerInstall: () => ipcRenderer.invoke('composer-install'),
+    composerGetProjectInfo: (projectPath) => ipcRenderer.invoke('composer-get-project-info', projectPath),
+    composerRunInstall: (projectPath) => ipcRenderer.invoke('composer-run-install', projectPath),
+    composerRunUpdate: (projectPath) => ipcRenderer.invoke('composer-run-update', projectPath),
+    composerRunRequire: (projectPath, packageName, isDev) => ipcRenderer.invoke('composer-run-require', projectPath, packageName, isDev),
+    composerRunRemove: (projectPath, packageName, isDev) => ipcRenderer.invoke('composer-run-remove', projectPath, packageName, isDev),
+    composerRunDumpAutoload: (projectPath) => ipcRenderer.invoke('composer-run-dump-autoload', projectPath),
+    composerInit: (projectPath, projectName) => ipcRenderer.invoke('composer-init', projectPath, projectName),
+    composerRunCommand: (projectPath, command, args) => ipcRenderer.invoke('composer-run-command', projectPath, command, args),
+    // PHP Config Manager
+    phpConfigGetPath: () => ipcRenderer.invoke('php-config-get-path'),
+    phpConfigRead: () => ipcRenderer.invoke('php-config-read'),
+    phpConfigGetCommon: () => ipcRenderer.invoke('php-config-get-common'),
+    phpConfigUpdateSetting: (key, value) => ipcRenderer.invoke('php-config-update-setting', key, value),
+    phpConfigUpdateSettings: (settings) => ipcRenderer.invoke('php-config-update-settings', settings),
+    phpConfigGetExtensions: () => ipcRenderer.invoke('php-config-get-extensions'),
+    phpConfigToggleExtension: (name, enable) => ipcRenderer.invoke('php-config-toggle-extension', name, enable),
+    phpConfigGetRaw: () => ipcRenderer.invoke('php-config-get-raw'),
+    phpConfigSaveRaw: (content) => ipcRenderer.invoke('php-config-save-raw', content),
+    phpConfigRestoreBackup: () => ipcRenderer.invoke('php-config-restore-backup'),
+    phpConfigHasBackup: () => ipcRenderer.invoke('php-config-has-backup'),
+    // Xdebug Manager
+    xdebugGetStatus: () => ipcRenderer.invoke('xdebug-get-status'),
+    xdebugInstall: () => ipcRenderer.invoke('xdebug-install'),
+    xdebugEnable: (config) => ipcRenderer.invoke('xdebug-enable', config),
+    xdebugDisable: () => ipcRenderer.invoke('xdebug-disable'),
+    xdebugUpdateConfig: (config) => ipcRenderer.invoke('xdebug-update-config', config),
+    xdebugUninstall: () => ipcRenderer.invoke('xdebug-uninstall'),
+    xdebugGetVSCodeConfig: () => ipcRenderer.invoke('xdebug-get-vscode-config'),
+    xdebugTestConnection: () => ipcRenderer.invoke('xdebug-test-connection'),
     // Window utilities
     refocusWindow: () => ipcRenderer.invoke('refocus-window'),
     // Event listeners
     on: (channel, callback) => {
-        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status'];
+        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status', 'php-download-progress', 'composer-output', 'composer-install-progress', 'xdebug-install-progress'];
         if (allowedChannels.includes(channel)) {
             ipcRenderer.on(channel, (event, ...args) => callback(event, ...args));
         }

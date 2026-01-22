@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Listen for Xdebug",
+      "type": "php",
+      "request": "launch",
+      "port": 9003,
+      "pathMappings": {
+          "C:/Users/Miler/Documents/dev/localdevine/www/php-basic": "${workspaceFolder}"
+      }
+    }
+  ]
+}

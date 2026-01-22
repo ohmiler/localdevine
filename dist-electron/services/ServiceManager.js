@@ -15,6 +15,7 @@ class ServiceManager {
         this.healthStatus = {};
         this.lastNotificationTime = {};
         this.serviceStartTime = {}; // Track when each service was started
+        this.stoppingServices = new Set(); // Track services that are being stopped intentionally
         this.WARMUP_PERIOD_MS = 15000; // 15 seconds grace period after service start (MariaDB init takes time)
         this.mainWindow = mainWindow;
         this.configManager = configManager;
@@ -294,6 +295,11 @@ class ServiceManager {
     }
     checkAndNotify(serviceName, health) {
         const displayName = serviceName === 'mariadb' ? 'MariaDB' : serviceName.toUpperCase();
+        // Skip notifications if service is being stopped intentionally
+        if (this.stoppingServices.has(serviceName)) {
+            Logger_1.serviceLogger.debug(`${serviceName} is being stopped intentionally, skipping notification`);
+            return;
+        }
         // Skip error notifications during warmup period (service just started)
         if (this.isInWarmupPeriod(serviceName) && health.status === 'error') {
             Logger_1.serviceLogger.debug(`${serviceName} is in warmup period, skipping error notification`);
@@ -786,13 +792,24 @@ ${vhostBlocks}
                 // Log all close events for debugging
                 this.log(serviceName, `Process closed - code: ${code}, signal: ${signal}`);
                 this.processes[serviceName] = null;
-                this.notifyStatus(serviceName, 'stopped');
+                // Only notify if not being stopped intentionally
+                if (!this.stoppingServices.has(serviceName)) {
+                    // Unexpected close - this is an error
+                    if (code !== 0 && code !== null) {
+                        this.log(serviceName, `Unexpected exit with code ${code}`);
+                    }
+                    this.notifyStatus(serviceName, 'stopped');
+                }
+                // If intentional stop, notifyStatus will be called in stopService after cleanup
             });
             child.on('error', (err) => {
                 this.log(serviceName, `Failed to start: ${err.message}`);
                 Logger_1.serviceLogger.error(`${serviceName} spawn error: ${err.message}`);
                 this.processes[serviceName] = null;
-                this.notifyStatus(serviceName, 'stopped');
+                // Only notify if not being stopped intentionally
+                if (!this.stoppingServices.has(serviceName)) {
+                    this.notifyStatus(serviceName, 'stopped');
+                }
             });
         }
         catch (e) {
@@ -807,10 +824,13 @@ ${vhostBlocks}
                 const pid = child.pid;
                 if (pid) {
                     this.log(serviceName, `Stopping (PID: ${pid})...`);
+                    // Mark service as stopping to prevent error notifications during shutdown
+                    this.stoppingServices.add(serviceName);
                     // Kill using PID instead of /IM for safety
                     this.killByPID(pid, serviceName)
                         .then(() => {
                         this.processes[serviceName] = null;
+                        this.stoppingServices.delete(serviceName);
                         this.notifyStatus(serviceName, 'stopped');
                         resolve();
                     })
@@ -819,6 +839,7 @@ ${vhostBlocks}
                         // Try force kill as fallback
                         child.kill('SIGKILL');
                         this.processes[serviceName] = null;
+                        this.stoppingServices.delete(serviceName);
                         this.notifyStatus(serviceName, 'stopped');
                         resolve();
                     });

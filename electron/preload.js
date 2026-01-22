@@ -129,12 +129,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
     phpConfigRestoreBackup: () => ipcRenderer.invoke('php-config-restore-backup'),
     phpConfigHasBackup: () => ipcRenderer.invoke('php-config-has-backup'),
 
+    // Xdebug Manager
+    xdebugGetStatus: () => ipcRenderer.invoke('xdebug-get-status'),
+    xdebugInstall: () => ipcRenderer.invoke('xdebug-install'),
+    xdebugEnable: (config) => ipcRenderer.invoke('xdebug-enable', config),
+    xdebugDisable: () => ipcRenderer.invoke('xdebug-disable'),
+    xdebugUpdateConfig: (config) => ipcRenderer.invoke('xdebug-update-config', config),
+    xdebugUninstall: () => ipcRenderer.invoke('xdebug-uninstall'),
+    xdebugGetVSCodeConfig: () => ipcRenderer.invoke('xdebug-get-vscode-config'),
+    xdebugTestConnection: () => ipcRenderer.invoke('xdebug-test-connection'),
+
     // Window utilities
     refocusWindow: () => ipcRenderer.invoke('refocus-window'),
 
     // Event listeners
     on: (channel, callback) => {
-        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status', 'php-download-progress', 'composer-output', 'composer-install-progress'];
+        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status', 'php-download-progress', 'composer-output', 'composer-install-progress', 'xdebug-install-progress'];
         if (allowedChannels.includes(channel)) {
             ipcRenderer.on(channel, (event, ...args) => callback(event, ...args));
         }

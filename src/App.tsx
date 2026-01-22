@@ -94,8 +94,12 @@ function App() {
     const currentState = services[service];
     if (window.electronAPI) {
       if (currentState === 'stopped') {
+        // Optimistic update: show loading state immediately
+        setServices(prev => ({ ...prev, [service]: 'starting' }));
         window.electronAPI.startService(service);
-      } else {
+      } else if (currentState === 'running') {
+        // Optimistic update: show loading state immediately
+        setServices(prev => ({ ...prev, [service]: 'stopping' }));
         window.electronAPI.stopService(service);
       }
     }
@@ -103,12 +107,24 @@ function App() {
 
   const startAllServices = useCallback(() => {
     if (window.electronAPI) {
+      // Optimistic update: show loading state immediately for all services
+      setServices({
+        php: 'starting',
+        apache: 'starting',
+        mariadb: 'starting'
+      });
       window.electronAPI.startAllServices();
     }
   }, []);
 
   const stopAllServices = useCallback(() => {
     if (window.electronAPI) {
+      // Optimistic update: show loading state immediately for all services
+      setServices({
+        php: 'stopping',
+        apache: 'stopping',
+        mariadb: 'stopping'
+      });
       window.electronAPI.stopAllServices();
     }
   }, []);

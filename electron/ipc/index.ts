@@ -113,7 +113,8 @@ export function initializeIPC(
   hosts: HostsManager,
   projects: ProjectTemplateManager,
   database?: DatabaseManager,
-  env?: EnvManager
+  env?: EnvManager,
+  ssl?: SSLManager
 ): void {
   mainWindow = win;
   serviceManager = services;
@@ -122,6 +123,7 @@ export function initializeIPC(
   projectTemplateManager = projects;
   databaseManager = database || null;
   envManager = env || null;
+  sslManager = ssl || null;
 }
 
 /**

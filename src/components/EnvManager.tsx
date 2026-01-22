@@ -19,6 +19,8 @@ export default function EnvManager({ onBack }: EnvManagerProps) {
     const [newVarKey, setNewVarKey] = useState('');
     const [newVarValue, setNewVarValue] = useState('');
     const [hasChanges, setHasChanges] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+    const [showDiscardConfirm, setShowDiscardConfirm] = useState<string | null>(null);
 
     // Load env files
     const loadFiles = useCallback(async () => {
@@ -106,11 +108,22 @@ export default function EnvManager({ onBack }: EnvManagerProps) {
         }
     };
 
-    // Delete file
-    const handleDeleteFile = async (filename: string) => {
-        if (!confirm(`Are you sure you want to delete "${filename}"?`)) return;
+    // Delete file - show modal first
+    const handleDeleteFile = (filename: string) => {
+        setShowDeleteConfirm(filename);
+    };
+
+    // Confirm delete file
+    const confirmDeleteFile = async () => {
+        if (!showDeleteConfirm) return;
+        const filename = showDeleteConfirm;
+        setShowDeleteConfirm(null);
+        
         try {
             const result = await window.electronAPI.envDeleteFile(filename);
+            // Refocus window after operation
+            await window.electronAPI.refocusWindow();
+            
             if (result.success) {
                 setSuccess(`Deleted ${filename}`);
                 if (selectedFile === filename) {
@@ -122,6 +135,25 @@ export default function EnvManager({ onBack }: EnvManagerProps) {
             }
         } catch (err) {
             setError((err as Error).message);
+            await window.electronAPI.refocusWindow();
+        }
+    };
+
+    // Handle file selection with unsaved changes check
+    const handleFileSelect = (filename: string) => {
+        if (hasChanges) {
+            setShowDiscardConfirm(filename);
+        } else {
+            setSelectedFile(filename);
+        }
+    };
+
+    // Confirm discard changes
+    const confirmDiscardChanges = () => {
+        if (showDiscardConfirm) {
+            setSelectedFile(showDiscardConfirm);
+            setShowDiscardConfirm(null);
+            setHasChanges(false);
         }
     };
 
@@ -235,10 +267,7 @@ export default function EnvManager({ onBack }: EnvManagerProps) {
                                 {files.map(file => (
                                     <div
                                         key={file.name}
-                                        onClick={() => {
-                                            if (hasChanges && !confirm('Discard unsaved changes?')) return;
-                                            setSelectedFile(file.name);
-                                        }}
+                                        onClick={() => handleFileSelect(file.name)}
                                         className={`p-3 rounded-lg cursor-pointer transition-all flex justify-between items-center border-2 ${
                                             selectedFile === file.name
                                                 ? 'border-indigo-500'
@@ -445,6 +474,74 @@ export default function EnvManager({ onBack }: EnvManagerProps) {
                                 className="flex-1 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold disabled:opacity-50"
                             >
                                 {loading ? 'Creating...' : 'Create'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirm Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="card p-6 max-w-md w-full mx-4">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-2xl">
+                                🗑️
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Delete File?</h3>
+                                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>This action cannot be undone</p>
+                            </div>
+                        </div>
+                        <p className="mb-6" style={{ color: 'var(--text-on-card)' }}>
+                            Are you sure you want to delete <strong>{showDeleteConfirm}</strong>?
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setShowDeleteConfirm(null)}
+                                className="button-secondary"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeleteFile}
+                                className="px-4 py-2 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+                            >
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Discard Changes Confirm Modal */}
+            {showDiscardConfirm && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="card p-6 max-w-md w-full mx-4">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-2xl">
+                                ⚠️
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Discard Changes?</h3>
+                                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>You have unsaved changes</p>
+                            </div>
+                        </div>
+                        <p className="mb-6" style={{ color: 'var(--text-on-card)' }}>
+                            Your changes will be lost if you switch files without saving.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setShowDiscardConfirm(null)}
+                                className="button-secondary"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDiscardChanges}
+                                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+                            >
+                                Discard Changes
                             </button>
                         </div>
                     </div>

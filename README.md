@@ -21,28 +21,31 @@
 
 ## ✨ Features
 
-- **🚀 One-Click Start** - เริ่มต้น Apache, PHP, MariaDB ด้วยคลิกเดียว
-- **📁 Project Templates** - สร้างโปรเจค PHP/HTML ได้ทันที
-- **🌐 Virtual Hosts** - จัดการ domain ท้องถิ่น (.local, .test) ง่ายๆ
-- **🗄️ Database Management** - เข้าถึง Adminer ได้รวดเร็ว
-- **⚙️ Port Configuration** - ปรับ port Apache, MariaDB ได้ตามต้องการ
-- **🎨 Modern UI** - อินเตอร์เฟสสวยงาม ใช้งานง่าย
-- **📝 Hosts File Editor** - แก้ไข hosts file โดยไม่ต้องเปิด Notepad
+- **🚀 One-Click Start** - Start Apache, PHP, MariaDB with a single click
+- **📁 Project Templates** - Create PHP/HTML projects instantly
+- **🌐 Virtual Hosts** - Manage local domains (.local, .test) easily
+- **🗄️ Database Management** - Access Adminer for database operations
+- **⚙️ Port Configuration** - Configure Apache, MariaDB ports as needed
+- **🎨 Modern UI** - Beautiful interface with easy navigation
+- **📝 Hosts File Editor** - Edit hosts file without opening Notepad
+- **🔐 SSL Certificate Manager** - Create self-signed certificates for HTTPS
+- **🌍 Environment Variables** - Manage .env files for projects
+- **📁 Quick Access** - Easy access to bin, config, www, and logs folders
 
 ## 📋 Requirements
 
 - **Windows 10/11** (64-bit)
-- **4GB RAM** ขั้นต่ำ
-- **500MB** พื้นที่ว่าง
-- **Administrator rights** (สำหรับแก้ไข hosts file)
+- **4GB RAM** minimum
+- **500MB** free disk space
+- **Administrator rights** (for hosts file editing)
 
 ## 📦 Installation
 
-### Option 1: Download Installer (แนะนำ)
-1. ดาวน์โหลด `LocalDevine-Setup.exe` จาก [Releases](https://github.com/ohmiler/localdevine/releases)
-2. รันไฟล์ติดตั้ง
-3. เลือกตำแหน่งติดตั้ง
-4. เสร็จสิ้น!
+### Option 1: Download Installer (Recommended)
+1. Download `LocalDevine-Setup.exe` from [Releases](https://github.com/ohmiler/localdevine/releases)
+2. Run the installer
+3. Choose installation location
+4. Done!
 
 ### Option 2: Build from Source
 ```bash
@@ -66,35 +69,49 @@ npm run electron:build
 
 ## 🚀 Usage
 
-### เริ่มต้นใช้งาน
+### Getting Started
 
-1. **เปิด LocalDevine** (Run as Administrator แนะนำสำหรับ Virtual Hosts)
-2. **คลิก Start** บน Apache และ MariaDB
-3. **เปิด Browser** ไปที่ `http://localhost`
-4. **เริ่มพัฒนา!**
+1. **Open LocalDevine** (Run as Administrator recommended for Virtual Hosts)
+2. **Click Start** on Apache and MariaDB
+3. **Open Browser** to `http://localhost`
+4. **Start developing!**
 
-### สร้างโปรเจคใหม่
+### Create New Project
 
-1. ไปที่ **Projects** → **Create New Project**
-2. เลือก Template (PHP Basic / HTML Basic)
-3. ใส่ชื่อโปรเจค
-4. คลิก **Create**
-5. เปิด `http://localhost/project-name`
+1. Go to **Projects** → **Create New Project**
+2. Choose Template (PHP Basic / HTML Basic)
+3. Enter project name
+4. Click **Create**
+5. Open `http://localhost/project-name`
 
-### สร้าง Virtual Host
+### Create Virtual Host
 
-1. ไปที่ **Virtual Hosts** → **Add Virtual Host**
-2. ใส่ชื่อ และ domain (เช่น `mysite.local`)
-3. เลือก path ของโปรเจค
-4. คลิก **Add**
-5. เปิด `http://mysite.local`
+1. Go to **Virtual Hosts** → **Add Virtual Host**
+2. Enter name and domain (e.g., `mysite.local`)
+3. Choose project path
+4. Click **Add**
+5. Open `http://mysite.local`
 
-### จัดการ Database
+### Database Management
 
-1. คลิกปุ่ม **🗄️ Database** ที่หน้าแรก
-2. Adminer จะเปิดใน Browser
+1. Click **🗄️ Database** button on main page
+2. Adminer will open in browser
 3. Login: `root` / `root`
-4. จัดการ database ได้ทันที
+4. Manage databases instantly
+
+### SSL Certificates
+
+1. Go to **SSL** → **Generate Certificate**
+2. Enter domain name (e.g., `mysite.local`)
+3. Certificate will be created and Apache config updated
+4. Restart Apache to apply HTTPS
+
+### Environment Variables
+
+1. Go to **Environment** → **Create New File**
+2. Enter filename (e.g., `.env`)
+3. Add key-value pairs
+4. Save and use in your projects
 
 ## 📁 Project Structure
 
@@ -109,6 +126,23 @@ localdevine/
 ├── src/                    # React UI
 └── config.json             # Application config
 ```
+
+## 📂 File Locations (After Installation)
+| Folder | Windows Location | Purpose |
+|--------|------------------|---------|
+| **WWW** | `C:\LocalDevine\www` | Your projects |
+| **Config** | `C:\LocalDevine\config` | php.ini, httpd.conf |
+| **Data** | `C:\LocalDevine\data` | MariaDB data |
+| **Logs** | `%APPDATA%\LocalDevine\logs` | Application logs |
+| **Bin** | `C:\Program Files\LocalDevine\resources\app.asar.unpacked\bin` | Apache, PHP, MariaDB |
+
+## 📁 Quick Access Folders
+In Settings → Quick Access, you can easily access important folders:
+
+- **⚙️ Bin Folder** - Apache, PHP, MariaDB executables (for adding PHP extensions)
+- **📄 Config Folder** - Editable config files (php.ini, httpd.conf)
+- **🌐 WWW Folder** | Your projects
+- **📋 Logs Folder** | Application logs for debugging
 
 ## ⚙️ Configuration
 
@@ -126,19 +160,24 @@ localdevine/
 
 ## 🔧 Troubleshooting
 
-### Apache ไม่ start
-- ตรวจสอบว่า port 80 ไม่ถูกใช้งาน
-- ลอง Stop แล้ว Start ใหม่
-- ตรวจสอบ Console logs
+### Apache doesn't start
+- Check if port 80 is not in use
+- Try Stop and Start again
+- Check Console logs
 
-### Virtual Host ไม่ทำงาน
-- รัน LocalDevine เป็น Administrator
-- ตรวจสอบว่า domain อยู่ใน hosts file
-- รีสตาร์ท Apache หลังเพิ่ม Virtual Host
+### Virtual Host doesn't work
+- Run LocalDevine as Administrator
+- Check if domain exists in hosts file
+- Restart Apache after adding Virtual Host
 
-### MariaDB ไม่ start
-- ตรวจสอบว่า port 3306 ไม่ถูกใช้งาน
-- ลบไฟล์ `bin/mariadb/data/*.pid` แล้วลองใหม่
+### MariaDB doesn't start
+- Check if port 3306 is not in use
+- Delete `bin/mariadb/data/*.pid` files and try again
+
+### Can't access Bin Folder
+- Go to Settings → Quick Access → ⚙️ Bin Folder
+- In production, Bin folder is in Program Files
+- Use Quick Access buttons for easy navigation
 
 ## 🛠️ Built With
 
@@ -152,12 +191,12 @@ localdevine/
 
 ## 📝 License
 
-MIT License - ใช้งานได้ฟรี ทั้งส่วนตัวและเชิงพาณิชย์
+MIT License - Free for personal and commercial use
 
-**หมายเหตุ:** 
-- ✅ คุณสามารถใช้โปรแกรมนี้ในการทำงานหาเงินได้ (เช่น รับงานลูกค้า, ใช้ในบริษัท)
-- ✅ คุณสามารถแก้ไข แจกจ่าย และรวมในโปรเจคของคุณได้
-- ⚠️ โปรดระวัง: ห้ามขายโปรแกรมนี้เองเป็นผลิตภัณฑ์ หรือแจกจ่ายแบบมีค่าใช้จ่าย
+**Important:** 
+- ✅ You can use this program for commercial work (e.g., client projects, company use)
+- ✅ You can modify, distribute, and include in your projects
+- ⚠️ Warning: Do not sell this program as a product or distribute for a fee
 
 See [LICENSE](LICENSE) file for full terms.
 

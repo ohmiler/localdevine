@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl' | 'logs' | 'composer';
+type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl' | 'logs' | 'composer' | 'phpconfig';
 
 interface SidebarProps {
     currentPage: PageType;
@@ -19,6 +19,7 @@ const navItems: NavItem[] = [
     { id: 'home', label: 'Dashboard', icon: '🏠' },
     { id: 'templates', label: 'Projects', icon: '📦' },
     { id: 'composer', label: 'Composer', icon: '🎼' },
+    { id: 'phpconfig', label: 'PHP Config', icon: '⚙️' },
     { id: 'vhosts', label: 'Virtual Hosts', icon: '🌐' },
     { id: 'ssl', label: 'SSL Manager', icon: '🔐' },
     { id: 'database', label: 'Database', icon: '🗄️' },

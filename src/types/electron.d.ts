@@ -132,6 +132,38 @@ export interface ProjectComposerInfo {
     vendorExists: boolean;
 }
 
+// PHP Config types
+export interface PHPConfigValue {
+    key: string;
+    value: string;
+    section: string;
+    comment?: string;
+    isCommented: boolean;
+    line: number;
+}
+
+export interface PHPConfigSection {
+    name: string;
+    settings: PHPConfigValue[];
+}
+
+export interface PHPExtension {
+    name: string;
+    enabled: boolean;
+    available: boolean;
+}
+
+export interface CommonSetting {
+    key: string;
+    label: string;
+    description: string;
+    type: 'boolean' | 'number' | 'string' | 'size' | 'select';
+    options?: string[];
+    defaultValue: string;
+    category: string;
+    currentValue: string | null;
+}
+
 // ElectronAPI interface for renderer process
 export interface ElectronAPI {
     // Service control
@@ -242,6 +274,19 @@ export interface ElectronAPI {
     composerRunDumpAutoload: (projectPath: string) => Promise<ComposerRunResult>;
     composerInit: (projectPath: string, projectName: string) => Promise<ComposerRunResult>;
     composerRunCommand: (projectPath: string, command: string, args: string[]) => Promise<ComposerRunResult>;
+
+    // PHP Config Manager
+    phpConfigGetPath: () => Promise<{ success: boolean; path: string }>;
+    phpConfigRead: () => Promise<{ success: boolean; data?: PHPConfigSection[]; raw?: string; error?: string }>;
+    phpConfigGetCommon: () => Promise<{ success: boolean; data?: CommonSetting[]; error?: string }>;
+    phpConfigUpdateSetting: (key: string, value: string) => Promise<{ success: boolean; error?: string }>;
+    phpConfigUpdateSettings: (settings: { key: string; value: string }[]) => Promise<{ success: boolean; error?: string }>;
+    phpConfigGetExtensions: () => Promise<{ success: boolean; data?: PHPExtension[]; error?: string }>;
+    phpConfigToggleExtension: (name: string, enable: boolean) => Promise<{ success: boolean; error?: string }>;
+    phpConfigGetRaw: () => Promise<{ success: boolean; content?: string; error?: string }>;
+    phpConfigSaveRaw: (content: string) => Promise<{ success: boolean; error?: string }>;
+    phpConfigRestoreBackup: () => Promise<{ success: boolean; error?: string }>;
+    phpConfigHasBackup: () => Promise<{ success: boolean; hasBackup: boolean }>;
 
     // Window utilities
     refocusWindow: () => Promise<{ success: boolean }>;

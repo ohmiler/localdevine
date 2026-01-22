@@ -14,11 +14,12 @@ import Sidebar from './components/Sidebar';
 import ThemeToggle from './components/ThemeToggle';
 import PHPDownloadDialog from './components/PHPDownloadDialog';
 import ComposerPanel from './components/ComposerPanel';
+import PHPConfigEditor from './components/PHPConfigEditor';
 import { useKeyboardShortcuts, defaultShortcuts } from './hooks/useKeyboardShortcuts';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 import './styles/themes.css';
 
-type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl' | 'logs' | 'composer';
+type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl' | 'logs' | 'composer' | 'phpconfig';
 
 interface Services {
   php: ServiceStatus;
@@ -372,6 +373,8 @@ function App() {
         return <LogsManager onBack={() => setCurrentPage('home')} />;
       case 'composer':
         return <ComposerPanel onBack={() => setCurrentPage('home')} />;
+      case 'phpconfig':
+        return <PHPConfigEditor onBack={() => setCurrentPage('home')} />;
       default:
         return renderHomePage();
     }

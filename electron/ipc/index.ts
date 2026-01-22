@@ -16,6 +16,7 @@ import EnvManager, { EnvVariable } from '../services/EnvManager';
 import SSLManager from '../services/SSLManager';
 import PHPDownloader, { DownloadProgress } from '../services/PHPDownloader';
 import ComposerManager from '../services/ComposerManager';
+import PHPConfigManager from '../services/PHPConfigManager';
 import PathResolver from '../services/PathResolver';
 import logger, { Logger } from '../services/Logger';
 
@@ -143,6 +144,7 @@ export function registerIPCHandlers(): void {
   registerSSLHandlers();
   registerPHPDownloadHandlers();
   registerComposerHandlers();
+  registerPHPConfigHandlers();
 }
 
 // ============================================
@@ -1149,5 +1151,120 @@ function registerComposerHandlers(): void {
         mainWindow.webContents.send('composer-output', { output });
       }
     });
+  });
+}
+
+// ============================================
+// PHP Config Handlers
+// ============================================
+let phpConfigManager: PHPConfigManager | null = null;
+
+function registerPHPConfigHandlers(): void {
+  // Get PHP config path
+  ipcMain.handle('php-config-get-path', async () => {
+    if (!phpConfigManager) {
+      phpConfigManager = new PHPConfigManager();
+    }
+    return { success: true, path: phpConfigManager.getConfigPath() };
+  });
+
+  // Read PHP config
+  ipcMain.handle('php-config-read', async () => {
+    if (!phpConfigManager) {
+      phpConfigManager = new PHPConfigManager();
+    }
+    return phpConfigManager.readConfig();
+  });
+
+  // Get common settings
+  ipcMain.handle('php-config-get-common', async () => {
+    if (!phpConfigManager) {
+      phpConfigManager = new PHPConfigManager();
+    }
+    return phpConfigManager.getCommonSettings();
+  });
+
+  // Update a single setting
+  ipcMain.handle('php-config-update-setting', async (_event: IpcMainInvokeEvent, key: string, value: string) => {
+    if (!phpConfigManager) {
+      phpConfigManager = new PHPConfigManager();
+    }
+    
+    if (typeof key !== 'string' || !key.trim()) {
+      return { success: false, error: 'Invalid setting key' };
+    }
+    
+    return phpConfigManager.updateSetting(key, value);
+  });
+
+  // Update multiple settings
+  ipcMain.handle('php-config-update-settings', async (_event: IpcMainInvokeEvent, settings: { key: string; value: string }[]) => {
+    if (!phpConfigManager) {
+      phpConfigManager = new PHPConfigManager();
+    }
+    
+    if (!Array.isArray(settings)) {
+      return { success: false, error: 'Settings must be an array' };
+    }
+    
+    return phpConfigManager.updateSettings(settings);
+  });
+
+  // Get extensions
+  ipcMain.handle('php-config-get-extensions', async () => {
+    if (!phpConfigManager) {
+      phpConfigManager = new PHPConfigManager();
+    }
+    return phpConfigManager.getExtensions();
+  });
+
+  // Toggle extension
+  ipcMain.handle('php-config-toggle-extension', async (_event: IpcMainInvokeEvent, extensionName: string, enable: boolean) => {
+    if (!phpConfigManager) {
+      phpConfigManager = new PHPConfigManager();
+    }
+    
+    if (typeof extensionName !== 'string' || !extensionName.trim()) {
+      return { success: false, error: 'Invalid extension name' };
+    }
+    
+    return phpConfigManager.toggleExtension(extensionName, enable);
+  });
+
+  // Get raw content
+  ipcMain.handle('php-config-get-raw', async () => {
+    if (!phpConfigManager) {
+      phpConfigManager = new PHPConfigManager();
+    }
+    return phpConfigManager.getRawContent();
+  });
+
+  // Save raw content
+  ipcMain.handle('php-config-save-raw', async (_event: IpcMainInvokeEvent, content: string) => {
+    if (!phpConfigManager) {
+      phpConfigManager = new PHPConfigManager();
+    }
+    
+    if (typeof content !== 'string') {
+      return { success: false, error: 'Invalid content' };
+    }
+    
+    return phpConfigManager.saveRawContent(content);
+  });
+
+  // Restore from backup
+  ipcMain.handle('php-config-restore-backup', async () => {
+    if (!phpConfigManager) {
+      phpConfigManager = new PHPConfigManager();
+    }
+    return phpConfigManager.restoreBackup();
+  });
+
+  // Check if backup exists
+  ipcMain.handle('php-config-has-backup', async () => {
+    if (!phpConfigManager) {
+      phpConfigManager = new PHPConfigManager();
+    }
+    return { success: true, hasBackup: phpConfigManager.hasBackup() };
   });
 }

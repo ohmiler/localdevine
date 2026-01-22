@@ -116,6 +116,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
     composerInit: (projectPath, projectName) => ipcRenderer.invoke('composer-init', projectPath, projectName),
     composerRunCommand: (projectPath, command, args) => ipcRenderer.invoke('composer-run-command', projectPath, command, args),
 
+    // PHP Config Manager
+    phpConfigGetPath: () => ipcRenderer.invoke('php-config-get-path'),
+    phpConfigRead: () => ipcRenderer.invoke('php-config-read'),
+    phpConfigGetCommon: () => ipcRenderer.invoke('php-config-get-common'),
+    phpConfigUpdateSetting: (key, value) => ipcRenderer.invoke('php-config-update-setting', key, value),
+    phpConfigUpdateSettings: (settings) => ipcRenderer.invoke('php-config-update-settings', settings),
+    phpConfigGetExtensions: () => ipcRenderer.invoke('php-config-get-extensions'),
+    phpConfigToggleExtension: (name, enable) => ipcRenderer.invoke('php-config-toggle-extension', name, enable),
+    phpConfigGetRaw: () => ipcRenderer.invoke('php-config-get-raw'),
+    phpConfigSaveRaw: (content) => ipcRenderer.invoke('php-config-save-raw', content),
+    phpConfigRestoreBackup: () => ipcRenderer.invoke('php-config-restore-backup'),
+    phpConfigHasBackup: () => ipcRenderer.invoke('php-config-has-backup'),
+
     // Window utilities
     refocusWindow: () => ipcRenderer.invoke('refocus-window'),
 

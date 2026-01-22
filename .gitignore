@@ -33,6 +33,20 @@ hosts.backup
 release/
 dist-electron/
 
+# Composer
+bin/composer.phar
+composer/
+
+# User projects
+www/*/vendor/
+www/*/node_modules/
+www/*/.env.local
+www/*/.env.production
+www/*/composer.lock
+www/*/package-lock.json
+www/*/yarn.lock
+www/*/.DS_Store
+
 # Database files
 *.frm
 *.MYD

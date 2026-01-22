@@ -15,6 +15,7 @@ import DatabaseManager from '../services/DatabaseManager';
 import EnvManager, { EnvVariable } from '../services/EnvManager';
 import SSLManager from '../services/SSLManager';
 import PHPDownloader, { DownloadProgress } from '../services/PHPDownloader';
+import ComposerManager from '../services/ComposerManager';
 import PathResolver from '../services/PathResolver';
 import logger, { Logger } from '../services/Logger';
 
@@ -141,6 +142,7 @@ export function registerIPCHandlers(): void {
   registerEnvHandlers();
   registerSSLHandlers();
   registerPHPDownloadHandlers();
+  registerComposerHandlers();
 }
 
 // ============================================
@@ -970,5 +972,182 @@ function registerPHPDownloadHandlers(): void {
     });
     
     return phpDownloader.downloadMultipleVersions(versions);
+  });
+}
+
+// ============================================
+// Composer Handlers
+// ============================================
+let composerManager: ComposerManager | null = null;
+
+function registerComposerHandlers(): void {
+  // Get Composer status (installed, version, path)
+  ipcMain.handle('composer-get-status', async () => {
+    if (!composerManager) {
+      composerManager = new ComposerManager(configManager || undefined);
+    }
+    return composerManager.getStatus();
+  });
+
+  // Install Composer to bin folder
+  ipcMain.handle('composer-install', async () => {
+    if (!composerManager) {
+      composerManager = new ComposerManager(configManager || undefined);
+    }
+    
+    return composerManager.installComposer((message) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('composer-install-progress', { message });
+      }
+    });
+  });
+
+  // Get project Composer info
+  ipcMain.handle('composer-get-project-info', async (_event: IpcMainInvokeEvent, projectPath: string) => {
+    if (!composerManager) {
+      composerManager = new ComposerManager(configManager || undefined);
+    }
+    
+    if (typeof projectPath !== 'string' || !projectPath.trim()) {
+      return { success: false, error: 'Invalid project path' };
+    }
+    
+    try {
+      const info = await composerManager.getProjectInfo(projectPath);
+      return { success: true, data: info };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Run composer install
+  ipcMain.handle('composer-run-install', async (_event: IpcMainInvokeEvent, projectPath: string) => {
+    if (!composerManager) {
+      composerManager = new ComposerManager(configManager || undefined);
+    }
+    
+    if (typeof projectPath !== 'string' || !projectPath.trim()) {
+      return { success: false, error: 'Invalid project path' };
+    }
+    
+    return composerManager.install(projectPath, (output) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('composer-output', { output });
+      }
+    });
+  });
+
+  // Run composer update
+  ipcMain.handle('composer-run-update', async (_event: IpcMainInvokeEvent, projectPath: string) => {
+    if (!composerManager) {
+      composerManager = new ComposerManager(configManager || undefined);
+    }
+    
+    if (typeof projectPath !== 'string' || !projectPath.trim()) {
+      return { success: false, error: 'Invalid project path' };
+    }
+    
+    return composerManager.update(projectPath, (output) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('composer-output', { output });
+      }
+    });
+  });
+
+  // Run composer require
+  ipcMain.handle('composer-run-require', async (_event: IpcMainInvokeEvent, projectPath: string, packageName: string, isDev: boolean) => {
+    if (!composerManager) {
+      composerManager = new ComposerManager(configManager || undefined);
+    }
+    
+    if (typeof projectPath !== 'string' || !projectPath.trim()) {
+      return { success: false, error: 'Invalid project path' };
+    }
+    if (typeof packageName !== 'string' || !packageName.trim()) {
+      return { success: false, error: 'Invalid package name' };
+    }
+    
+    return composerManager.require(projectPath, packageName, isDev, (output) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('composer-output', { output });
+      }
+    });
+  });
+
+  // Run composer remove
+  ipcMain.handle('composer-run-remove', async (_event: IpcMainInvokeEvent, projectPath: string, packageName: string, isDev: boolean) => {
+    if (!composerManager) {
+      composerManager = new ComposerManager(configManager || undefined);
+    }
+    
+    if (typeof projectPath !== 'string' || !projectPath.trim()) {
+      return { success: false, error: 'Invalid project path' };
+    }
+    if (typeof packageName !== 'string' || !packageName.trim()) {
+      return { success: false, error: 'Invalid package name' };
+    }
+    
+    return composerManager.remove(projectPath, packageName, isDev || false, (output: string) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('composer-output', { output });
+      }
+    });
+  });
+
+  // Run composer dump-autoload
+  ipcMain.handle('composer-run-dump-autoload', async (_event: IpcMainInvokeEvent, projectPath: string) => {
+    if (!composerManager) {
+      composerManager = new ComposerManager(configManager || undefined);
+    }
+    
+    if (typeof projectPath !== 'string' || !projectPath.trim()) {
+      return { success: false, error: 'Invalid project path' };
+    }
+    
+    return composerManager.dumpAutoload(projectPath, (output) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('composer-output', { output });
+      }
+    });
+  });
+
+  // Initialize composer.json in project
+  ipcMain.handle('composer-init', async (_event: IpcMainInvokeEvent, projectPath: string, projectName: string) => {
+    if (!composerManager) {
+      composerManager = new ComposerManager(configManager || undefined);
+    }
+    
+    if (typeof projectPath !== 'string' || !projectPath.trim()) {
+      return { success: false, error: 'Invalid project path' };
+    }
+    if (typeof projectName !== 'string' || !projectName.trim()) {
+      return { success: false, error: 'Invalid project name' };
+    }
+    
+    return composerManager.init(projectPath, projectName, (output) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('composer-output', { output });
+      }
+    });
+  });
+
+  // Run custom composer command
+  ipcMain.handle('composer-run-command', async (_event: IpcMainInvokeEvent, projectPath: string, command: string, args: string[]) => {
+    if (!composerManager) {
+      composerManager = new ComposerManager(configManager || undefined);
+    }
+    
+    if (typeof projectPath !== 'string' || !projectPath.trim()) {
+      return { success: false, error: 'Invalid project path' };
+    }
+    if (typeof command !== 'string' || !command.trim()) {
+      return { success: false, error: 'Invalid command' };
+    }
+    
+    return composerManager.runCommand(projectPath, command, args || [], (output) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('composer-output', { output });
+      }
+    });
   });
 }

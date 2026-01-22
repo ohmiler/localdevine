@@ -101,6 +101,37 @@ export interface EnvFile {
     lastModified?: string;
 }
 
+// Composer types
+export interface ComposerStatus {
+    installed: boolean;
+    version: string | null;
+    path: string | null;
+    phpPath: string | null;
+}
+
+export interface ComposerRunResult {
+    success: boolean;
+    output: string;
+    error?: string;
+    exitCode: number | null;
+}
+
+export interface ComposerPackage {
+    name: string;
+    version: string;
+    description: string;
+    type?: 'require' | 'require-dev';
+}
+
+export interface ProjectComposerInfo {
+    hasComposer: boolean;
+    packages: ComposerPackage[];
+    requireCount: number;
+    requireDevCount: number;
+    lockExists: boolean;
+    vendorExists: boolean;
+}
+
 // ElectronAPI interface for renderer process
 export interface ElectronAPI {
     // Service control
@@ -199,6 +230,18 @@ export interface ElectronAPI {
     logsGetDir: () => Promise<{ success: boolean; path: string }>;
     logsGetFile: () => Promise<{ success: boolean; path: string }>;
     logsOpenDir: () => Promise<{ success: boolean; error?: string }>;
+
+    // Composer Manager
+    composerGetStatus: () => Promise<ComposerStatus>;
+    composerInstall: () => Promise<{ success: boolean; error?: string }>;
+    composerGetProjectInfo: (projectPath: string) => Promise<{ success: boolean; data?: ProjectComposerInfo; error?: string }>;
+    composerRunInstall: (projectPath: string) => Promise<ComposerRunResult>;
+    composerRunUpdate: (projectPath: string) => Promise<ComposerRunResult>;
+    composerRunRequire: (projectPath: string, packageName: string, isDev: boolean) => Promise<ComposerRunResult>;
+    composerRunRemove: (projectPath: string, packageName: string, isDev: boolean) => Promise<ComposerRunResult>;
+    composerRunDumpAutoload: (projectPath: string) => Promise<ComposerRunResult>;
+    composerInit: (projectPath: string, projectName: string) => Promise<ComposerRunResult>;
+    composerRunCommand: (projectPath: string, command: string, args: string[]) => Promise<ComposerRunResult>;
 
     // Window utilities
     refocusWindow: () => Promise<{ success: boolean }>;

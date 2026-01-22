@@ -104,12 +104,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
     logsGetFile: () => ipcRenderer.invoke('logs-get-file'),
     logsOpenDir: () => ipcRenderer.invoke('logs-open-dir'),
 
+    // Composer Manager
+    composerGetStatus: () => ipcRenderer.invoke('composer-get-status'),
+    composerInstall: () => ipcRenderer.invoke('composer-install'),
+    composerGetProjectInfo: (projectPath) => ipcRenderer.invoke('composer-get-project-info', projectPath),
+    composerRunInstall: (projectPath) => ipcRenderer.invoke('composer-run-install', projectPath),
+    composerRunUpdate: (projectPath) => ipcRenderer.invoke('composer-run-update', projectPath),
+    composerRunRequire: (projectPath, packageName, isDev) => ipcRenderer.invoke('composer-run-require', projectPath, packageName, isDev),
+    composerRunRemove: (projectPath, packageName, isDev) => ipcRenderer.invoke('composer-run-remove', projectPath, packageName, isDev),
+    composerRunDumpAutoload: (projectPath) => ipcRenderer.invoke('composer-run-dump-autoload', projectPath),
+    composerInit: (projectPath, projectName) => ipcRenderer.invoke('composer-init', projectPath, projectName),
+    composerRunCommand: (projectPath, command, args) => ipcRenderer.invoke('composer-run-command', projectPath, command, args),
+
     // Window utilities
     refocusWindow: () => ipcRenderer.invoke('refocus-window'),
 
     // Event listeners
     on: (channel, callback) => {
-        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status', 'php-download-progress'];
+        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status', 'php-download-progress', 'composer-output', 'composer-install-progress'];
         if (allowedChannels.includes(channel)) {
             ipcRenderer.on(channel, (event, ...args) => callback(event, ...args));
         }

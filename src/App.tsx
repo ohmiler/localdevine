@@ -13,11 +13,12 @@ import LogsManager from './components/LogsManager';
 import Sidebar from './components/Sidebar';
 import ThemeToggle from './components/ThemeToggle';
 import PHPDownloadDialog from './components/PHPDownloadDialog';
+import ComposerPanel from './components/ComposerPanel';
 import { useKeyboardShortcuts, defaultShortcuts } from './hooks/useKeyboardShortcuts';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 import './styles/themes.css';
 
-type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl' | 'logs';
+type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl' | 'logs' | 'composer';
 
 interface Services {
   php: ServiceStatus;
@@ -369,6 +370,8 @@ function App() {
         return <SSLManager onBack={() => setCurrentPage('home')} />;
       case 'logs':
         return <LogsManager onBack={() => setCurrentPage('home')} />;
+      case 'composer':
+        return <ComposerPanel onBack={() => setCurrentPage('home')} />;
       default:
         return renderHomePage();
     }

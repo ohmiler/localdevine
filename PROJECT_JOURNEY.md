@@ -861,7 +861,121 @@ Runtime Data (temporary)  →  %TEMP% / data directory
 
 ---
 
-*อัพเดทโดย Miler และ AI Agent Claude - January 2026*
+## 🔒 บทเรียนที่ 14: Security Code Review & Best Practices (January 2026)
+
+หลังจากโปรเจคเสถียรแล้ว ได้ทำ comprehensive code review เพื่อตรวจสอบความปลอดภัยและคุณภาพโค้ด พบปัญหาทั้งหมด **49 รายการ** แบ่งเป็น:
+
+### 🔴 Critical Security Issues (4 รายการ)
+
+1. **Path Traversal Vulnerability** - ชื่อโปรเจคไม่ถูก validate อาจเข้าถึงไฟล์นอก www directory
+2. **SQL Injection Risk** - Database name และ schema SQL อาจถูก manipulate
+3. **Command Injection** - PowerShell scripts อาจมีช่องโหว่จาก special characters
+4. **Input Validation** - IPC handlers ไม่ตรวจสอบ input types
+
+### 🟡 Code Quality Issues (31 รายการ)
+
+- Memory leaks จาก setTimeout และ event listeners
+- Race conditions ใน service management
+- Database connection cleanup ไม่สมบูรณ์
+- Hardcoded credentials และ paths
+- Missing accessibility attributes
+
+### แนวทางแก้ไขที่เรียนรู้
+
+```typescript
+// ✅ Input Validation Pattern
+function validateProjectName(name: string): boolean {
+    if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+        return false;
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+        return false;
+    }
+    const resolvedPath = path.resolve(wwwPath, name);
+    return resolvedPath.startsWith(path.resolve(wwwPath) + path.sep);
+}
+
+// ✅ Race Condition Prevention
+private startingServices: Set<string> = new Set();
+
+async startService(serviceName: string): Promise<void> {
+    if (this.startingServices.has(serviceName)) {
+        return; // Already starting
+    }
+    this.startingServices.add(serviceName);
+    try {
+        // ... start logic
+    } finally {
+        this.startingServices.delete(serviceName);
+    }
+}
+```
+
+### บทเรียนที่ได้
+> **Security ต้องคิดตั้งแต่เริ่มต้น** - การแก้ไขทีหลังยากกว่ามาก
+> **Code Review เป็นสิ่งจำเป็น** - แม้ AI จะช่วยเขียนโค้ด แต่ยังต้องมี human review
+
+---
+
+## 🎨 บทเรียนที่ 15: UI/UX Refinements & Theme System
+
+### Dark Mode Implementation
+
+สร้างระบบ theme ที่ใช้ CSS Variables:
+
+```css
+:root {
+    --bg-primary: #ffffff;
+    --text-primary: #1a1a1a;
+}
+
+[data-theme="dark"] {
+    --bg-primary: #1a1a1a;
+    --text-primary: #f5f5f5;
+}
+```
+
+### Quick Access Feature
+
+เพิ่มปุ่ม Quick Access ให้ผู้ใช้เปิดโฟลเดอร์สำคัญได้ง่าย:
+- **Bin Folder** - สำหรับเพิ่ม PHP extensions
+- **Config Folder** - แก้ไข php.ini, httpd.conf
+- **WWW Folder** - โปรเจคทั้งหมด
+- **Logs Folder** - Debug logs
+
+---
+
+## 📊 สถิติโปรเจคสุดท้าย
+
+| Metric | Value |
+|--------|-------|
+| **Total TypeScript Lines** | ~3,500+ lines |
+| **Components** | 16 React components |
+| **Services** | 13 Electron services |
+| **Development Time** | ~3 weeks |
+| **Code Review Issues Found** | 49 issues |
+| **Critical Issues Fixed** | 4/4 |
+| **Test Coverage** | Manual testing |
+
+---
+
+## 🎯 Roadmap & Future Plans
+
+### v1.1.0 (Planned)
+- [ ] Multiple PHP version switching
+- [ ] Laravel/WordPress project templates
+- [ ] Database backup/restore
+- [ ] MailHog integration improvements
+
+### v2.0.0 (Future)
+- [ ] Docker container support
+- [ ] Cloud sync configuration
+- [ ] Plugin system for community extensions
+- [ ] Cross-platform support (macOS, Linux)
+
+---
+
+*อัพเดทโดย Miler และ AI Agent Cascade - January 2026*
 
 ---
 

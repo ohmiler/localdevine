@@ -10,9 +10,17 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/platform-Windows-lightgrey.svg" alt="Platform">
+  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
+  <img src="https://img.shields.io/badge/electron-39.x-9feaf9.svg" alt="Electron">
+</p>
+
+<p align="center">
   <a href="#features">Features</a> •
   <a href="#installation">Installation</a> •
   <a href="#usage">Usage</a> •
+  <a href="#screenshots">Screenshots</a> •
   <a href="#documentation">Documentation</a> •
   <a href="#license">License</a>
 </p>
@@ -21,16 +29,25 @@
 
 ## ✨ Features
 
+### Core Features
 - **🚀 One-Click Start** - Start Apache, PHP, MariaDB with a single click
 - **📁 Project Templates** - Create PHP/HTML projects instantly
 - **🌐 Virtual Hosts** - Manage local domains (.local, .test) easily
 - **🗄️ Database Management** - Access Adminer for database operations
 - **⚙️ Port Configuration** - Configure Apache, MariaDB ports as needed
-- **🎨 Modern UI** - Beautiful interface with easy navigation
-- **📝 Hosts File Editor** - Edit hosts file without opening Notepad
+
+### User Experience
+- **🎨 Modern UI** - Beautiful interface built with React + TailwindCSS
+- **🌙 Dark/Light Theme** - Toggle between dark and light modes
+- **⌨️ Keyboard Shortcuts** - Quick access with Ctrl+S (Start All), Ctrl+T (Stop All)
+- **🔔 Health Monitoring** - Real-time service health checks with notifications
+
+### Advanced Features
+- **📝 Hosts File Editor** - Edit hosts file without opening Notepad (requires Admin)
 - **🔐 SSL Certificate Manager** - Create self-signed certificates for HTTPS
 - **🌍 Environment Variables** - Manage .env files for projects
 - **📁 Quick Access** - Easy access to bin, config, www, and logs folders
+- **🔄 Auto Updater** - Check for updates from GitHub automatically
 
 ## 📋 Requirements
 
@@ -181,13 +198,25 @@ In Settings → Quick Access, you can easily access important folders:
 
 ## 🛠️ Built With
 
-- [Electron](https://www.electronjs.org/) - Desktop framework
-- [React](https://reactjs.org/) - UI library
-- [TailwindCSS](https://tailwindcss.com/) - CSS framework
-- [Apache](https://httpd.apache.org/) - Web server
-- [PHP](https://www.php.net/) - PHP runtime
-- [MariaDB](https://mariadb.org/) - Database server
-- [Adminer](https://www.adminer.org/) - Database management
+| Component | Version | Description |
+|-----------|---------|-------------|
+| [Electron](https://www.electronjs.org/) | 39.x | Desktop framework |
+| [React](https://reactjs.org/) | 19.x | UI library |
+| [TailwindCSS](https://tailwindcss.com/) | 4.x | CSS framework |
+| [TypeScript](https://www.typescriptlang.org/) | 5.x | Type safety |
+| [Apache](https://httpd.apache.org/) | 2.4 | Web server |
+| [PHP](https://www.php.net/) | 8.x | PHP runtime |
+| [MariaDB](https://mariadb.org/) | 11.x | Database server |
+| [Adminer](https://www.adminer.org/) | Latest | Database management |
+
+## 📊 Technical Details
+
+- **Language:** TypeScript with strict type checking
+- **Architecture:** Electron with context isolation and secure IPC
+- **Security:** Content Security Policy, input validation
+- **Code Quality:** ESLint + Prettier
+- **Installer Size:** ~162 MB
+- **Installed Size:** ~792 MB
 
 ## 📝 License
 

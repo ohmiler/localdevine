@@ -1,6 +1,16 @@
 # 🎉 LocalDevine v1.0.0 - First Stable Release
 
+**Release Date:** January 23, 2026
+
 A Modern Local Development Environment for Windows - ทางเลือกที่ทันสมัยสำหรับ XAMPP และ Laragon
+
+---
+
+## 📥 Download
+
+| File | Size | Description |
+|------|------|-------------|
+| `LocalDevine-Setup-1.0.0.exe` | ~162 MB | Windows Installer |
 
 ---
 
@@ -13,15 +23,17 @@ A Modern Local Development Environment for Windows - ทางเลือกท
 - **Project Templates** - Quick project creation with PHP Basic and HTML Basic templates
 - **Database Management** - Access MariaDB via Adminer with pre-configured credentials
 - **Hosts File Editor** - Edit Windows hosts file directly from the app (requires Admin rights)
+- **Quick Access Buttons** - Easy access to bin, config, www, and logs folders
 
 ### 🎨 User Experience
 
-- **Modern UI** - Beautiful interface built with React and TailwindCSS
-- **Dark/Light Theme** - Toggle between dark and light themes
+- **Modern UI** - Beautiful interface built with React 19 and TailwindCSS 4
+- **Dark/Light Theme** - Toggle between dark and light themes with persistent preference
 - **System Tray** - Minimize to system tray, quick access to controls
 - **Keyboard Shortcuts** - Quick access to common actions (Ctrl+S, Ctrl+T)
 - **Health Monitoring** - Real-time service health checks with notifications
-- **Console Logs** - Real-time log viewer for debugging
+- **Console Logs** - Real-time log viewer with message filtering
+- **Warmup Period** - No false error notifications during service startup
 
 ### ⚙️ Configuration & Settings
 
@@ -101,10 +113,25 @@ A Modern Local Development Environment for Windows - ทางเลือกท
 
 ### Fixed in v1.0.0
 
-- ✅ Fixed ES module error (`exports is not defined`)
+- ✅ Fixed ES module error (`exports is not defined`) in production build
 - ✅ Reduced installer size from ~1GB to ~162MB
 - ✅ Excluded unnecessary files (.pdb, .lib, .h, temp folders)
 - ✅ Improved build configuration
+- ✅ Fixed production mode permission issues (path resolution)
+- ✅ Fixed Apache stale PID file cleanup before startup
+- ✅ Fixed false error notifications during service warmup period
+- ✅ Fixed MariaDB 11.x root password setup compatibility
+- ✅ Fixed PHP session directory auto-creation
+- ✅ Fixed dark mode text visibility issues
+- ✅ Fixed log filtering for harmless warning messages
+
+### Security Improvements
+
+- ✅ Input validation for project names (path traversal prevention)
+- ✅ Database name validation (SQL injection prevention)
+- ✅ PowerShell command sanitization
+- ✅ IPC input type checking
+- ✅ Content Security Policy implementation
 
 ---
 

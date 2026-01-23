@@ -61,6 +61,7 @@
 ### Option 1: Download Installer (Recommended)
 1. Download `LocalDevine-Setup.exe` from [Releases](https://github.com/ohmiler/localdevine/releases)
 2. Run the installer
+   > ⚠️ **Windows SmartScreen Warning:** If you see "Windows protected your PC", click **"More info"** → **"Run anyway"**. This is normal for new applications without a code signing certificate.
 3. Choose installation location
 4. Done!
 

@@ -74,6 +74,7 @@ A Modern Local Development Environment for Windows - ทางเลือกท
 
 1. **Download** `LocalDevine Setup 1.0.0.exe` from the assets below
 2. **Install** to your preferred location
+   > ⚠️ **Windows SmartScreen:** หากเห็น "Windows protected your PC" ให้คลิก **"More info"** → **"Run anyway"** (ปกติสำหรับโปรแกรมใหม่)
 3. **Launch** LocalDevine
 4. **Click Start** on Apache and MariaDB
 5. **Open** `http://localhost` in your browser

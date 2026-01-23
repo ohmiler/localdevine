@@ -7,7 +7,7 @@ interface MailHogPanelProps {
 
 export default function MailHogPanel({ onBack }: MailHogPanelProps) {
     const [status, setStatus] = useState<MailHogStatus | null>(null);
-    const [config, setConfig] = useState<MailHogConfig | null>(null);
+    const [_config, setConfig] = useState<MailHogConfig | null>(null);
     const [loading, setLoading] = useState(false);
     const [installing, setInstalling] = useState(false);
     const [installProgress, setInstallProgress] = useState<string>('');
@@ -90,8 +90,8 @@ export default function MailHogPanel({ onBack }: MailHogPanelProps) {
             } else {
                 setError(result.message);
             }
-        } catch (err) {
-            setError((err as Error).message);
+        } catch (error) {
+            setError((error as Error).message);
         } finally {
             setLoading(false);
         }
@@ -154,7 +154,7 @@ export default function MailHogPanel({ onBack }: MailHogPanelProps) {
                 await navigator.clipboard.writeText(configResult.config);
                 setSuccess(`${configType.toUpperCase()} config copied to clipboard!`);
             }
-        } catch (err) {
+        } catch {
             setError('Failed to copy config');
         }
     };

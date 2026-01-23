@@ -92,7 +92,7 @@ export default function ComposerPanel({ onBack }: ComposerPanelProps) {
             } else {
                 setProjectInfo(null);
             }
-        } catch (e) {
+        } catch {
             setProjectInfo(null);
         }
     };

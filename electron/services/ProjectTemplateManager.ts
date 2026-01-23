@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { BrowserWindow } from 'electron';
-import { spawn } from 'child_process';
 import PathResolver from './PathResolver';
 import ConfigManager, { DatabaseConfig } from './ConfigManager';
 import logger from './Logger';

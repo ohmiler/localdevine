@@ -3,8 +3,6 @@ import path from 'path';
 import https from 'https';
 import { IncomingMessage } from 'http';
 import { createWriteStream } from 'fs';
-import { pipeline } from 'stream/promises';
-import { createGunzip } from 'zlib';
 import { Extract } from 'unzipper';
 import PathResolver from './PathResolver';
 import { configLogger as logger } from './Logger';

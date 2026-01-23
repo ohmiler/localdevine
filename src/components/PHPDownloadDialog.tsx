@@ -24,7 +24,7 @@ interface PHPDownloadDialogProps {
   onSkip?: () => void;
 }
 
-function formatBytes(bytes: number): string {
+function _formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -83,7 +83,7 @@ export default function PHPDownloadDialog({ isOpen, onClose, onComplete, onSkip 
           .map((v: PHPVersionInfo) => v.version);
         setSelectedVersions(new Set(notInstalled));
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load PHP versions');
     }
   };

@@ -333,7 +333,6 @@ export class PHPConfigManager {
             const extensions: PHPExtension[] = AVAILABLE_EXTENSIONS.map(name => {
                 // Check if extension is enabled in php.ini
                 const enabledRegex = new RegExp(`^\\s*extension\\s*=\\s*${name}\\s*$`, 'im');
-                const commentedRegex = new RegExp(`^\\s*;\\s*extension\\s*=\\s*${name}\\s*$`, 'im');
                 
                 const enabled = enabledRegex.test(content);
                 const available = availableExtFiles.includes(name) || enabled;

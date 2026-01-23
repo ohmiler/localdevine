@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CommonSetting, PHPExtension, PHPConfigSection } from '../types/electron';
+import { CommonSetting, PHPExtension } from '../types/electron';
 
 interface PHPConfigEditorProps {
     onBack: () => void;

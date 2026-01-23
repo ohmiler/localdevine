@@ -1,5 +1,8 @@
 # LocalDevine User Guide
 
+**Version:** 1.0.0  
+**Updated:** January 23, 2026
+
 Complete user manual for LocalDevine | คู่มือการใช้งาน LocalDevine ฉบับสมบูรณ์
 
 ---

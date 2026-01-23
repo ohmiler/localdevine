@@ -162,12 +162,17 @@ export default function MailHogPanel({ onBack }: MailHogPanelProps) {
     return (
         <div className="p-8">
             {/* Header */}
-            <div className="mb-6">
-                <div className="flex items-center gap-4">
-                    <h1 className="text-3xl font-display header-title">
+            <header className="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-display mb-2 header-title">
                         <span className="header-icon">📧</span>
-                        <span className="header-text-white">MailHog</span>
+                        <span className="header-text">MailHog</span>
                     </h1>
+                    <p className="text-lg text-gradient opacity-90">
+                        Email testing tool for local development
+                    </p>
+                </div>
+                <div className="flex items-center gap-4">
                     {status?.installed && (
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                             status.running 
@@ -177,8 +182,11 @@ export default function MailHogPanel({ onBack }: MailHogPanelProps) {
                             {status.running ? '🟢 Running' : '⚪ Stopped'}
                         </span>
                     )}
+                    <button onClick={onBack} className="button-secondary">
+                        ← Back
+                    </button>
                 </div>
-            </div>
+            </header>
 
             {/* Messages */}
             {error && (

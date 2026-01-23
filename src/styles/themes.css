@@ -102,6 +102,38 @@
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
+/* All buttons should have pointer cursor */
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* All clickable form elements should have pointer cursor */
+input[type="checkbox"],
+input[type="radio"],
+select {
+  cursor: pointer;
+}
+
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
+/* Clickable labels */
+label.cursor-pointer {
+  cursor: pointer;
+}
+
+/* All elements with onClick should have pointer */
+[role="button"] {
+  cursor: pointer;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -283,6 +315,11 @@ body {
   transition: all 0.2s ease;
 }
 
+.button-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .button-primary:hover {
   background: var(--bg-button-hover);
   box-shadow: var(--shadow-lg);
@@ -300,10 +337,87 @@ body {
   transition: all 0.2s ease;
 }
 
+.button-secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .button-secondary:hover {
   background: var(--bg-card);
   border-color: var(--border-secondary);
   transform: translateY(-1px);
+}
+
+/* ============================================
+   Button Utilities
+   ============================================ */
+
+.button {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Gradient buttons */
+.bg-gradient-to-r {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bg-gradient-to-r:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Custom gradient classes */
+.bg-gradient-success {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bg-gradient-success:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.bg-gradient-error {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bg-gradient-error:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Tab buttons */
+.tab-button {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Gray tabs (inactive state) */
+.bg-gray-100 {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bg-gray-100:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.bg-gray-100:hover {
+  cursor: pointer;
 }
 
 /* ============================================

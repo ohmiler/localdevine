@@ -41,6 +41,7 @@
       "bin/**/*",
       "www/**/*",
       "public/**/*",
+      "build/**/*",
       "package.json",
       "!bin/**/*_temp",
       "!bin/**/*_temp/**/*",
@@ -64,7 +65,7 @@
     "win": {
       "target": "nsis",
       "icon": "build/icon.ico",
-      "signAndEditExecutable": false
+      "requestedExecutionLevel": "asInvoker"
     },
     "asar": true,
     "asarUnpack": [

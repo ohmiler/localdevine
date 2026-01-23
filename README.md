@@ -215,7 +215,7 @@ In Settings → Quick Access, you can easily access important folders:
 - **Architecture:** Electron with context isolation and secure IPC
 - **Security:** Content Security Policy, input validation
 - **Code Quality:** ESLint + Prettier
-- **Installer Size:** ~162 MB
+- **Installer Size:** ~165 MB
 - **Installed Size:** ~792 MB
 
 ## 📝 License

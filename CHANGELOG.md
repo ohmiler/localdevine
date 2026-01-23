@@ -36,6 +36,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MailHog Panel** - Email testing panel for development
 - **Composer Manager** - Composer integration for PHP projects
 
+#### Performance Optimizations
+- **10x Faster Startup** - App now starts in ~350ms instead of 3-4 seconds
+- **Quick Vite Detection** - 100ms timeout instead of 2s connection wait
+- **Parallel Health Checks** - 3x faster service status updates
+- **Process Metrics Caching** - 66% fewer expensive PowerShell calls
+- **Fast Process Check** - Uses `process.kill(pid, 0)` instead of slow `tasklist`
+- **Deferred File Operations** - Non-blocking file copies during startup
+
 #### Fixed
 - ✅ ES module error (`exports is not defined`) in production build
 - ✅ Production mode permission issues (path resolution)
@@ -45,6 +53,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ PHP session directory auto-creation
 - ✅ Dark mode text visibility issues
 - ✅ Log filtering for harmless warning messages
+- ✅ White screen issue when Vite dev server not running
+- ✅ 6 ESLint errors (unused imports and variables)
+- ✅ Improved fallback mechanism for loading built files
 
 #### Security
 - Input validation for project names (path traversal prevention)
@@ -60,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Content Security Policy implementation
 - ESLint and Prettier for code quality
 - NSIS installer with customizable install location
-- Installer size optimized from ~1GB to ~162MB
+- Installer size optimized from ~1GB to ~165MB (cleaned up test files, removed PHP 8.4)
 
 #### Components Included
 | Component | Version |

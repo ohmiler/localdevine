@@ -10,7 +10,7 @@ A Modern Local Development Environment for Windows - ทางเลือกท
 
 | File | Size | Description |
 |------|------|-------------|
-| `LocalDevine-Setup-1.0.0.exe` | ~162 MB | Windows Installer |
+| `LocalDevine-Setup-1.0.0.exe` | ~165 MB | Windows Installer |
 
 ---
 
@@ -104,7 +104,7 @@ A Modern Local Development Environment for Windows - ทางเลือกท
 - **Architecture:** Electron with context isolation
 - **Security:** Secure IPC communication
 - **Code Quality:** ESLint and Prettier
-- **Installer Size:** ~162 MB
+- **Installer Size:** ~165 MB
 - **Installed Size:** ~792 MB
 
 ---

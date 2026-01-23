@@ -414,8 +414,8 @@
 | **TypeScript Lines** | ~3,500+ |
 | **React Components** | 16 |
 | **Electron Services** | 13 |
-| **Code Review Issues** | 49 found, 4 critical fixed |
-| **Installer Size** | ~162 MB |
+| **Code Review Issues** | 49 found, 4 critical fixed, 6 ESLint errors fixed |
+| **Installer Size** | ~165 MB |
 | **Installed Size** | ~792 MB |
 
 ---

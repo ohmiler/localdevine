@@ -17,6 +17,9 @@ class ServiceManager {
         this.serviceStartTime = {}; // Track when each service was started
         this.stoppingServices = new Set(); // Track services that are being stopped intentionally
         this.WARMUP_PERIOD_MS = 15000; // 15 seconds grace period after service start (MariaDB init takes time)
+        // Performance optimization: Cache process metrics to reduce PowerShell calls
+        this.metricsCache = {};
+        this.METRICS_CACHE_TTL_MS = 3000; // Cache metrics for 3 seconds
         this.mainWindow = mainWindow;
         this.configManager = configManager;
         this.processes = {
@@ -71,14 +74,10 @@ class ServiceManager {
     }
     async checkAllServicesHealth() {
         const services = ['php', 'apache', 'mariadb'];
-        for (const service of services) {
-            try {
-                await this.checkServiceHealth(service);
-            }
-            catch (error) {
-                this.log('system', `Health check error for ${service}: ${error.message}`);
-            }
-        }
+        // Run health checks in PARALLEL instead of sequential for better performance
+        await Promise.allSettled(services.map(service => this.checkServiceHealth(service).catch(error => {
+            this.log('system', `Health check error for ${service}: ${error.message}`);
+        })));
         // Send health status to UI
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
             Logger_1.serviceLogger.debug('Sending health-status to renderer');
@@ -163,18 +162,26 @@ class ServiceManager {
     }
     async isProcessRunning(pid) {
         return new Promise((resolve, reject) => {
-            (0, child_process_1.exec)(`tasklist /FI "PID eq ${pid}" /NH`, (error, stdout) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                if (stdout.includes(pid.toString())) {
-                    resolve();
-                }
-                else {
-                    reject(new Error('Process not found'));
-                }
-            });
+            // Use faster method: try to send signal 0 (doesn't kill, just checks)
+            try {
+                process.kill(pid, 0);
+                resolve();
+            }
+            catch {
+                // Fallback to tasklist if signal method fails
+                (0, child_process_1.exec)(`tasklist /FI "PID eq ${pid}" /NH`, { timeout: 1000, windowsHide: true }, (error, stdout) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    if (stdout.includes(pid.toString())) {
+                        resolve();
+                    }
+                    else {
+                        reject(new Error('Process not found'));
+                    }
+                });
+            }
         });
     }
     async checkPHPHealth() {
@@ -246,11 +253,17 @@ class ServiceManager {
         return this.healthStatus;
     }
     // Get process metrics (CPU, Memory) using PowerShell (Windows 11+ compatible)
+    // Performance optimized with caching to reduce expensive PowerShell calls
     async getProcessMetrics(pid) {
+        // Check cache first
+        const cached = this.metricsCache[pid];
+        if (cached && (Date.now() - cached.timestamp) < this.METRICS_CACHE_TTL_MS) {
+            return { cpu: cached.cpu, memory: cached.memory };
+        }
         return new Promise((resolve) => {
             // Use PowerShell instead of deprecated WMIC for Windows 11+ compatibility
             const psCommand = `powershell -NoProfile -Command "Get-Process -Id ${pid} -ErrorAction SilentlyContinue | Select-Object @{N='Memory';E={[math]::Round($_.WorkingSet64/1MB,1)}},@{N='CPU';E={[math]::Round($_.CPU,1)}} | ConvertTo-Json"`;
-            (0, child_process_1.exec)(psCommand, { windowsHide: true }, (error, stdout) => {
+            (0, child_process_1.exec)(psCommand, { windowsHide: true, timeout: 2000 }, (error, stdout) => {
                 if (error) {
                     resolve({ cpu: 0, memory: 0 });
                     return;
@@ -259,10 +272,13 @@ class ServiceManager {
                     const trimmed = stdout.trim();
                     if (trimmed) {
                         const data = JSON.parse(trimmed);
-                        resolve({
+                        const result = {
                             cpu: data.CPU || 0,
                             memory: data.Memory || 0
-                        });
+                        };
+                        // Update cache
+                        this.metricsCache[pid] = { ...result, timestamp: Date.now() };
+                        resolve(result);
                     }
                     else {
                         resolve({ cpu: 0, memory: 0 });
@@ -526,6 +542,30 @@ ${vhostBlocks}
     }
     async stopAllServices() {
         const services = ['php', 'apache', 'mariadb'];
+        // IMPORTANT: Mark ALL services as stopping BEFORE starting the stop process
+        // This prevents race condition with health checks showing errors during shutdown
+        services.forEach(service => {
+            this.stoppingServices.add(service);
+            // Clear service start time to prevent warmup period confusion
+            delete this.serviceStartTime[service];
+            // Reset health status immediately to prevent showing stale errors
+            this.healthStatus[service] = {
+                service,
+                status: 'stopped',
+                isHealthy: false,
+                lastCheck: new Date().toISOString(),
+                error: undefined,
+                pid: undefined,
+                uptime: undefined,
+                memoryUsage: undefined,
+                cpuUsage: undefined,
+                port: this.getPort(service)
+            };
+        });
+        // Send updated health status to UI immediately
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            this.mainWindow.webContents.send('health-status', this.healthStatus);
+        }
         const stopPromises = services.map(service => this.stopService(service));
         await Promise.all(stopPromises);
     }
@@ -831,13 +871,28 @@ ${vhostBlocks}
     }
     stopService(serviceName) {
         return new Promise((resolve) => {
+            // IMPORTANT: Mark service as stopping IMMEDIATELY to prevent race condition with health checks
+            this.stoppingServices.add(serviceName);
+            // Clear service start time to prevent warmup period confusion
+            delete this.serviceStartTime[serviceName];
+            // Reset health status immediately to prevent showing stale errors
+            this.healthStatus[serviceName] = {
+                service: serviceName,
+                status: 'stopped',
+                isHealthy: false,
+                lastCheck: new Date().toISOString(),
+                error: undefined,
+                pid: undefined,
+                uptime: undefined,
+                memoryUsage: undefined,
+                cpuUsage: undefined,
+                port: this.getPort(serviceName)
+            };
             const child = this.processes[serviceName];
             if (child) {
                 const pid = child.pid;
                 if (pid) {
                     this.log(serviceName, `Stopping (PID: ${pid})...`);
-                    // Mark service as stopping to prevent error notifications during shutdown
-                    this.stoppingServices.add(serviceName);
                     // Kill using PID instead of /IM for safety
                     this.killByPID(pid, serviceName)
                         .then(() => {
@@ -863,10 +918,18 @@ ${vhostBlocks}
                     });
                 }
                 else {
+                    // No PID, but still need to clean up stoppingServices
+                    setTimeout(() => {
+                        this.stoppingServices.delete(serviceName);
+                    }, 5000);
                     resolve();
                 }
             }
             else {
+                // Service not running, but still need to clean up stoppingServices
+                setTimeout(() => {
+                    this.stoppingServices.delete(serviceName);
+                }, 5000);
                 resolve();
             }
         });

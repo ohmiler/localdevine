@@ -67,6 +67,10 @@ export class ServiceManager {
     private serviceStartTime: Record<string, number> = {}; // Track when each service was started
     private stoppingServices: Set<string> = new Set(); // Track services that are being stopped intentionally
     private readonly WARMUP_PERIOD_MS = 15000; // 15 seconds grace period after service start (MariaDB init takes time)
+    
+    // Performance optimization: Cache process metrics to reduce PowerShell calls
+    private metricsCache: Record<number, { cpu: number; memory: number; timestamp: number }> = {};
+    private readonly METRICS_CACHE_TTL_MS = 3000; // Cache metrics for 3 seconds
 
     constructor(mainWindow: MainWindow, configManager: ConfigManager | null) {
         this.mainWindow = mainWindow;
@@ -134,13 +138,14 @@ export class ServiceManager {
     private async checkAllServicesHealth(): Promise<void> {
         const services: Array<keyof ServiceProcesses> = ['php', 'apache', 'mariadb'];
         
-        for (const service of services) {
-            try {
-                await this.checkServiceHealth(service);
-            } catch (error) {
-                this.log('system', `Health check error for ${service}: ${(error as Error).message}`);
-            }
-        }
+        // Run health checks in PARALLEL instead of sequential for better performance
+        await Promise.allSettled(
+            services.map(service => 
+                this.checkServiceHealth(service).catch(error => {
+                    this.log('system', `Health check error for ${service}: ${(error as Error).message}`);
+                })
+            )
+        );
 
         // Send health status to UI
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
@@ -235,18 +240,25 @@ export class ServiceManager {
 
     private async isProcessRunning(pid: number): Promise<void> {
         return new Promise((resolve, reject) => {
-            exec(`tasklist /FI "PID eq ${pid}" /NH`, (error, stdout) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                
-                if (stdout.includes(pid.toString())) {
-                    resolve();
-                } else {
-                    reject(new Error('Process not found'));
-                }
-            });
+            // Use faster method: try to send signal 0 (doesn't kill, just checks)
+            try {
+                process.kill(pid, 0);
+                resolve();
+            } catch {
+                // Fallback to tasklist if signal method fails
+                exec(`tasklist /FI "PID eq ${pid}" /NH`, { timeout: 1000, windowsHide: true }, (error, stdout) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    
+                    if (stdout.includes(pid.toString())) {
+                        resolve();
+                    } else {
+                        reject(new Error('Process not found'));
+                    }
+                });
+            }
         });
     }
 
@@ -335,12 +347,19 @@ export class ServiceManager {
     }
 
     // Get process metrics (CPU, Memory) using PowerShell (Windows 11+ compatible)
+    // Performance optimized with caching to reduce expensive PowerShell calls
     private async getProcessMetrics(pid: number): Promise<{ cpu: number; memory: number }> {
+        // Check cache first
+        const cached = this.metricsCache[pid];
+        if (cached && (Date.now() - cached.timestamp) < this.METRICS_CACHE_TTL_MS) {
+            return { cpu: cached.cpu, memory: cached.memory };
+        }
+        
         return new Promise((resolve) => {
             // Use PowerShell instead of deprecated WMIC for Windows 11+ compatibility
             const psCommand = `powershell -NoProfile -Command "Get-Process -Id ${pid} -ErrorAction SilentlyContinue | Select-Object @{N='Memory';E={[math]::Round($_.WorkingSet64/1MB,1)}},@{N='CPU';E={[math]::Round($_.CPU,1)}} | ConvertTo-Json"`;
             
-            exec(psCommand, { windowsHide: true }, (error, stdout) => {
+            exec(psCommand, { windowsHide: true, timeout: 2000 }, (error, stdout) => {
                 if (error) {
                     resolve({ cpu: 0, memory: 0 });
                     return;
@@ -350,10 +369,13 @@ export class ServiceManager {
                     const trimmed = stdout.trim();
                     if (trimmed) {
                         const data = JSON.parse(trimmed);
-                        resolve({
+                        const result = {
                             cpu: data.CPU || 0,
                             memory: data.Memory || 0
-                        });
+                        };
+                        // Update cache
+                        this.metricsCache[pid] = { ...result, timestamp: Date.now() };
+                        resolve(result);
                     } else {
                         resolve({ cpu: 0, memory: 0 });
                     }

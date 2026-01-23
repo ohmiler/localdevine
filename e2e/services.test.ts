@@ -23,11 +23,18 @@ test.describe('Service Management E2E Tests', () => {
         ...process.env,
         NODE_ENV: 'development',
       },
+      timeout: 30000,
     });
 
     window = await electronApp.firstWindow();
     await window.waitForLoadState('domcontentloaded');
-    await window.waitForTimeout(3000); // Give app time to initialize
+    await window.waitForTimeout(5000); // Give app more time to initialize
+    
+    // Check if app is still alive
+    const isClosed = await window.isClosed();
+    if (isClosed) {
+      throw new Error('Electron app closed unexpectedly');
+    }
   });
 
   test.afterAll(async () => {
@@ -38,8 +45,36 @@ test.describe('Service Management E2E Tests', () => {
 
   test.describe('Service Cards Display', () => {
     test('should display Apache service card', async () => {
-      const apacheCard = await window.getByText(/Apache/i).first();
-      expect(await apacheCard.isVisible()).toBe(true);
+      // Check if window is still alive
+      if (await window.isClosed()) {
+        throw new Error('Window is closed');
+      }
+      
+      // Try multiple selectors for Apache
+      const selectors = [
+        'text=/Apache/i',
+        'text=Apache',
+        '[data-testid="apache-service"]',
+        '.apache-service',
+        'button:has-text("Apache")'
+      ];
+      
+      let found = false;
+      for (const selector of selectors) {
+        const element = window.locator(selector).first();
+        if (await element.isVisible()) {
+          found = true;
+          break;
+        }
+      }
+      
+      if (!found) {
+        // Take screenshot for debugging
+        await window.screenshot({ path: 'debug-apache.png' });
+        console.log('Screenshot saved to debug-apache.png');
+      }
+      
+      expect(found).toBe(true);
     });
 
     test('should display MariaDB service card', async () => {

@@ -1,0 +1,63 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e8]:
+    - navigation "Main toolbar" [ref=e9]:
+      - toolbar [ref=e10]:
+        - generic "Select an element in the page to inspect it" [ref=e11]:
+          - button "Select an element in the page to inspect it - Ctrl + Shift + C" [ref=e12]
+      - generic:
+        - tablist "Panels":
+          - tab "Elements" [ref=e15]:
+            - generic [ref=e16]: Elements
+          - tab "Console" [selected] [ref=e17]:
+            - generic [ref=e18]: Console
+          - tab "Sources" [ref=e19]:
+            - generic [ref=e20]: Sources
+          - tab "Network" [ref=e21]:
+            - generic [ref=e22]: Network
+          - tab "Performance" [ref=e23]:
+            - generic [ref=e24]: Performance
+          - tab "Memory" [ref=e25]:
+            - generic [ref=e26]: Memory
+          - tab "Application" [ref=e27]:
+            - generic [ref=e28]: Application
+          - tab "Security" [ref=e29]:
+            - generic [ref=e30]: Security
+        - button "More tabs" [ref=e32]
+      - toolbar [ref=e34]:
+        - generic:
+          - generic [ref=e36]:
+            - generic "Open Console to view":
+              - button "Open Console to view"
+          - generic "Settings" [ref=e38]:
+            - button "Settings - F1 - Shift + ?" [ref=e39]
+          - button "Customize and control DevTools" [ref=e41]:
+            - button "Customize and control DevTools" [ref=e42]
+    - tabpanel "Console panel" [ref=e45]:
+      - generic "console" [ref=e46]:
+        - generic [ref=e47]:
+          - toolbar [ref=e48]:
+            - generic:
+              - generic "Show console sidebar" [ref=e49]:
+                - button "Show console sidebar" [ref=e50]
+              - generic "Clear console" [ref=e52]:
+                - button "Clear console - Ctrl + L" [ref=e53]
+              - 'button "JavaScript context: Not selected" [disabled]'
+              - generic "Create live expression" [ref=e57]:
+                - button "Create live expression" [ref=e58]
+              - generic "e.g. /eventd/ -cdn url:a.com" [ref=e63]:
+                - textbox "Filter" [ref=e65]
+              - 'button "Log level: Default levels" [ref=e66]':
+                - generic [ref=e67]: Default levels
+              - generic "Some problems no longer generate console messages, but are surfaced in the issues tab. Click to go to the issues tab" [ref=e69]:
+                - button "Some problems no longer generate console messages, but are surfaced in the issues tab. Click to go to the issues tab" [ref=e71]:
+                  - generic [ref=e72]: No Issues
+              - generic "Console settings" [ref=e74]:
+                - button "Console settings" [ref=e75]
+            - generic "0 messages in console"
+          - textbox "Console prompt" [ref=e89]
+  - alert [ref=e94]: DevTools is undocked
+  - status
+```

@@ -1,0 +1,82 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e8]:
+    - navigation "Main toolbar" [ref=e9]:
+      - toolbar [ref=e10]:
+        - generic "Select an element in the page to inspect it" [ref=e11]:
+          - button "Select an element in the page to inspect it - Ctrl + Shift + C" [ref=e12]
+      - generic:
+        - tablist "Panels":
+          - tab "Elements" [ref=e15]:
+            - generic [ref=e16]: Elements
+          - tab "Console" [selected] [ref=e17]:
+            - generic [ref=e18]: Console
+          - tab "Sources" [ref=e19]:
+            - generic [ref=e20]: Sources
+          - tab "Network" [ref=e21]:
+            - generic [ref=e22]: Network
+          - tab "Performance" [ref=e23]:
+            - generic [ref=e24]: Performance
+          - tab "Memory" [ref=e25]:
+            - generic [ref=e26]: Memory
+          - tab "Application" [ref=e27]:
+            - generic [ref=e28]: Application
+          - tab "Security" [ref=e29]:
+            - generic [ref=e30]: Security
+        - button "More tabs" [ref=e32]
+      - toolbar [ref=e34]:
+        - generic:
+          - generic [ref=e36]:
+            - generic "Open Console to view 1 warning" [ref=e37]:
+              - button "Open Console to view 1 warning" [ref=e38]:
+                - generic [ref=e40]: "1"
+            - 'generic "Open Issues to view 1 issue: 1 possible improvement" [ref=e41]':
+              - 'button "Open Issues to view 1 issue: 1 possible improvement" [ref=e43]':
+                - generic [ref=e45]: "1"
+          - generic "Settings" [ref=e47]:
+            - button "Settings - F1 - Shift + ?" [ref=e48]
+          - button "Customize and control DevTools" [ref=e50]:
+            - button "Customize and control DevTools" [ref=e51]
+    - tabpanel "Console panel" [ref=e54]:
+      - generic "console" [ref=e55]:
+        - generic [ref=e56]:
+          - toolbar [ref=e57]:
+            - generic:
+              - generic "Show console sidebar" [ref=e58]:
+                - button "Show console sidebar" [ref=e59]
+              - generic "Clear console" [ref=e61]:
+                - button "Clear console - Ctrl + L" [ref=e62]
+              - 'button "JavaScript context: top" [ref=e65]':
+                - generic [ref=e66]: top
+              - generic "Create live expression" [ref=e69]:
+                - button "Create live expression" [ref=e70]
+              - generic "e.g. /eventd/ -cdn url:a.com" [ref=e75]:
+                - textbox "Filter" [ref=e77]
+              - 'button "Log level: Default levels" [ref=e78]':
+                - generic [ref=e79]: Default levels
+              - generic "Some problems no longer generate console messages, but are surfaced in the issues tab. Click to view 1 possible improvement" [ref=e81]:
+                - button "Some problems no longer generate console messages, but are surfaced in the issues tab. Click to view 1 possible improvement" [ref=e83]:
+                  - generic [ref=e84]: "1 Issue:"
+                  - generic [ref=e86]: "1"
+              - generic "Console settings" [ref=e88]:
+                - button "Console settings" [ref=e89]
+            - generic "1 messages in console"
+          - generic [ref=e96]:
+            - log "%cElectron Security Warning (Insecure Content-Security-Policy)" [ref=e98]:
+              - generic [ref=e100]:
+                - generic "Warning" [ref=e101]
+                - generic "Electron Security Warning (Insecure Content-Security-Policy) This renderer process has either no Content Security Policy set or a policy with \"unsafe-eval\" enabled. This exposes users of this app to unnecessary security risks. For more information and help, consult https://electronjs.org/docs/tutorial/security. This warning will not show up once the app is packaged. Stack table collapsed" [ref=e104]:
+                  - generic [ref=e107]:
+                    - link "VM4 sandbox_bundle:2" [ref=e109] [cursor=pointer]
+                    - generic [ref=e110]:
+                      - generic [ref=e111]: Electron Security Warning (Insecure Content-Security-Policy)
+                      - text: This renderer process has either no Content Security Policy set or a policy with "unsafe-eval" enabled. This exposes users of this app to unnecessary security risks. For more information and help, consult
+                      - link "https://electronjs.org/docs/tutorial/security" [ref=e112] [cursor=pointer]
+                      - text: . This warning will not show up once the app is packaged.
+                  - text: Show ignore-listed frames Show less
+            - textbox "Console prompt" [ref=e119]
+  - alert [ref=e124]: DevTools is undocked
+  - status
+```

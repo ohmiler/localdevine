@@ -97,16 +97,29 @@ function createWindow(): BrowserWindow {
   });
 
   // In production, load the built file
-  // In dev, load Vite dev server for hot reload
+  // In dev, check Vite availability quickly before loading
   if (app.isPackaged) {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   } else {
-    // Use Vite dev server for hot reload in development
     const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
-    mainWindow.loadURL(VITE_DEV_SERVER_URL);
     
-    // Open DevTools in development mode
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
+    // Quick check if Vite is running (100ms timeout instead of waiting for connection refused)
+    const http = require('http');
+    const checkVite = new Promise<boolean>((resolve) => {
+      const req = http.get(VITE_DEV_SERVER_URL, () => resolve(true));
+      req.setTimeout(100, () => { req.destroy(); resolve(false); });
+      req.on('error', () => resolve(false));
+    });
+    
+    checkVite.then((viteRunning) => {
+      if (viteRunning) {
+        mainWindow?.loadURL(VITE_DEV_SERVER_URL);
+        mainWindow?.webContents.openDevTools({ mode: 'detach' });
+      } else {
+        logger.info('Vite not running, loading from dist folder');
+        mainWindow?.loadFile(path.join(__dirname, '../dist/index.html'));
+      }
+    });
   }
 
   return mainWindow;

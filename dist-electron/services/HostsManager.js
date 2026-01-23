@@ -102,47 +102,6 @@ class HostsManager {
             };
         }
     }
-    // Write entries back to hosts file
-    writeHostsFile(entries) {
-        try {
-            // Create backup first
-            const backupResult = this.createBackup();
-            if (!backupResult.success) {
-                return backupResult;
-            }
-            // Read current file to preserve comments and structure
-            const currentContent = fs_1.default.readFileSync(this.hostsPath, 'utf8');
-            const lines = currentContent.split('\n');
-            // Create a map of entries by line number
-            const entryMap = new Map();
-            entries.forEach(entry => {
-                entryMap.set(entry.line, entry);
-            });
-            // Update lines
-            const updatedLines = lines.map((line, index) => {
-                const entry = entryMap.get(index);
-                if (!entry) {
-                    return line; // Keep original line (comments, empty lines)
-                }
-                // Reconstruct the line
-                let newLine = `${entry.ip}\t${entry.hostname}`;
-                if (entry.comment) {
-                    newLine += ` # ${entry.comment}`;
-                }
-                return entry.enabled ? newLine : `# ${newLine}`;
-            });
-            // Write back to file
-            const newContent = updatedLines.join('\n');
-            fs_1.default.writeFileSync(this.hostsPath, newContent, 'utf8');
-            return { success: true };
-        }
-        catch (error) {
-            return {
-                success: false,
-                error: `Failed to write hosts file: ${error.message}`
-            };
-        }
-    }
     // Add new entry - using elevated PowerShell
     async addEntry(ip, hostname, comment) {
         try {
@@ -286,19 +245,50 @@ class HostsManager {
             });
         });
     }
-    // Toggle entry enabled/disabled
-    toggleEntry(hostname) {
+    // Toggle entry enabled/disabled - using elevated PowerShell
+    async toggleEntry(hostname) {
         try {
-            const result = this.readHostsFile();
-            if (!result.success || !result.entries) {
-                return result;
+            // Validate hostname
+            const hostnameValidation = this.validateHostname(hostname);
+            if (!hostnameValidation.valid) {
+                return { success: false, error: hostnameValidation.error };
             }
-            const entry = result.entries.find(e => e.hostname.toLowerCase() === hostname.toLowerCase());
-            if (!entry) {
+            // Create backup first
+            const backupResult = this.createBackup();
+            if (!backupResult.success) {
+                return backupResult;
+            }
+            // Read current content
+            const currentContent = fs_1.default.readFileSync(this.hostsPath, 'utf8');
+            const lines = currentContent.split('\n');
+            let found = false;
+            const newLines = lines.map(line => {
+                const trimmed = line.trim();
+                // Check if this line contains the hostname (enabled or disabled)
+                const isCommented = trimmed.startsWith('#');
+                const activeLine = isCommented ? trimmed.substring(1).trim() : trimmed;
+                const parts = activeLine.split(/\s+/);
+                if (parts.length >= 2 && parts[1].toLowerCase() === hostname.toLowerCase()) {
+                    found = true;
+                    if (isCommented) {
+                        // Enable: remove the # prefix
+                        return line.replace(/^(\s*)#\s*/, '$1');
+                    }
+                    else {
+                        // Disable: add # prefix
+                        return '# ' + line;
+                    }
+                }
+                return line;
+            });
+            if (!found) {
                 return { success: false, error: `Hostname ${hostname} not found` };
             }
-            entry.enabled = !entry.enabled;
-            return this.writeHostsFile(result.entries);
+            // Write to temp file first
+            const tempFile = path_1.default.join(this.backupPath.replace('hosts.backup', 'hosts.temp'));
+            fs_1.default.writeFileSync(tempFile, newLines.join('\n'), 'utf8');
+            // Use elevated PowerShell to copy temp file to hosts
+            return await this.elevatedCopyToHosts(tempFile);
         }
         catch (error) {
             return {

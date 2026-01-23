@@ -125,16 +125,29 @@ function createWindow() {
         Logger_1.default.error(`Renderer process gone: ${details.reason}`, { forceLog: true });
     });
     // In production, load the built file
-    // In dev, load Vite dev server for hot reload
+    // In dev, check Vite availability quickly before loading
     if (electron_1.app.isPackaged) {
         mainWindow.loadFile(path_1.default.join(__dirname, '../dist/index.html'));
     }
     else {
-        // Use Vite dev server for hot reload in development
         const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
-        mainWindow.loadURL(VITE_DEV_SERVER_URL);
-        // Open DevTools in development mode
-        mainWindow.webContents.openDevTools({ mode: 'detach' });
+        // Quick check if Vite is running (100ms timeout instead of waiting for connection refused)
+        const http = require('http');
+        const checkVite = new Promise((resolve) => {
+            const req = http.get(VITE_DEV_SERVER_URL, () => resolve(true));
+            req.setTimeout(100, () => { req.destroy(); resolve(false); });
+            req.on('error', () => resolve(false));
+        });
+        checkVite.then((viteRunning) => {
+            if (viteRunning) {
+                mainWindow?.loadURL(VITE_DEV_SERVER_URL);
+                mainWindow?.webContents.openDevTools({ mode: 'detach' });
+            }
+            else {
+                Logger_1.default.info('Vite not running, loading from dist folder');
+                mainWindow?.loadFile(path_1.default.join(__dirname, '../dist/index.html'));
+            }
+        });
     }
     return mainWindow;
 }

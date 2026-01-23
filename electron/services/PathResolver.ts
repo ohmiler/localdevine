@@ -146,8 +146,8 @@ export class PathResolver {
             }
         }
 
-        // Copy default files to www if they don't exist
-        this.copyDefaultFiles();
+        // Copy default files asynchronously to not block startup
+        setImmediate(() => this.copyDefaultFiles());
     }
 
     private copyDefaultFiles(): void {

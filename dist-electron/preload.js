@@ -138,7 +138,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     refocusWindow: () => ipcRenderer.invoke('refocus-window'),
     // Event listeners
     on: (channel, callback) => {
-        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status', 'php-download-progress', 'composer-output', 'composer-install-progress', 'xdebug-install-progress', 'mailhog-install-progress'];
+        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status', 'php-download-progress', 'composer-output', 'composer-install-progress', 'xdebug-install-progress', 'mailhog-install-progress', 'navigate-to', 'check-for-updates-menu'];
         if (allowedChannels.includes(channel)) {
             ipcRenderer.on(channel, (event, ...args) => callback(event, ...args));
         }

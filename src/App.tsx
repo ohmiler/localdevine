@@ -152,6 +152,16 @@ function App() {
       window.electronAPI.on('health-status', handleHealth);
       window.electronAPI.on('service-notification', handleNotification);
 
+      // Menu event listeners
+      window.electronAPI.on('navigate-to', (_event, page: string) => {
+        setCurrentPage(page as PageType);
+      });
+
+      window.electronAPI.on('check-for-updates-menu', () => {
+        // Check for updates - show message for now
+        alert('Check for updates feature coming soon!');
+      });
+
       return () => {
         // Clear all notification timeouts to prevent memory leaks
         notificationTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));

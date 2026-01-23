@@ -1,4 +1,4 @@
-import { app, BrowserWindow, session } from 'electron';
+import { app, BrowserWindow, session, Menu, shell, dialog } from 'electron';
 import path from 'path';
 
 import { ServiceManager } from './services/ServiceManager';
@@ -128,6 +128,100 @@ function createWindow(): BrowserWindow {
 // Register all IPC handlers BEFORE app ready
 registerIPCHandlers();
 
+// Create application menu
+function createApplicationMenu(win: BrowserWindow): void {
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Settings',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => {
+            win.webContents.send('navigate-to', 'settings');
+          }
+        },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+       
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'close' }
+      ]
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: '☕ Buy Me a Coffee',
+          click: () => {
+            shell.openExternal('https://buymeacoffee.com/milerdev');
+          }
+        },
+        { type: 'separator' },
+        {
+          label: '📖 Documentation',
+          click: () => {
+            shell.openExternal('https://github.com/ohmiler/localdevine#readme');
+          }
+        },
+        {
+          label: '🐛 Report Issue',
+          click: () => {
+            shell.openExternal('https://github.com/ohmiler/localdevine/issues');
+          }
+        },
+        {
+          label: '⭐ Star on GitHub',
+          click: () => {
+            shell.openExternal('https://github.com/ohmiler/localdevine');
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'ℹ️ About LocalDevine',
+          click: () => {
+            dialog.showMessageBox(win, {
+              type: 'info',
+              title: 'About LocalDevine',
+              message: 'LocalDevine',
+              detail: `Version: ${app.getVersion()}\n\nA Modern Local Development Environment Manager\n\nAuthor: Miler\nLicense: MIT\n\n© 2025 LocalDevine`,
+              buttons: ['OK'],
+              icon: path.join(__dirname, '../public/icon.png')
+            });
+          }
+        }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
+
 app.whenReady().then(() => {
   // Set Content Security Policy
   // In dev mode: relaxed CSP to allow Vite HMR (Hot Module Replacement)
@@ -172,6 +266,9 @@ app.whenReady().then(() => {
   // Create system tray
   trayManager = new TrayManager(win, serviceManager, app);
   trayManager.create();
+
+  // Create application menu
+  createApplicationMenu(win);
 
   // Initialize auto updater (only in production)
   if (app.isPackaged) {

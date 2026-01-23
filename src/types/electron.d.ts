@@ -349,7 +349,7 @@ export interface ElectronAPI {
     refocusWindow: () => Promise<{ success: boolean }>;
 
     // Event listeners
-    on: (channel: 'service-status' | 'log-entry' | 'health-status' | 'service-notification' | 'php-download-progress', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;
+    on: (channel: 'service-status' | 'log-entry' | 'health-status' | 'service-notification' | 'update-status' | 'php-download-progress' | 'composer-output' | 'composer-install-progress' | 'xdebug-install-progress' | 'mailhog-install-progress' | 'navigate-to', callback: (event: IpcRendererEvent, ...args: any[]) => void) => void;
     removeListener: (channel: string, callback: (...args: any[]) => void) => void;
 }
 

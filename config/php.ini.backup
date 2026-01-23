@@ -5,20 +5,19 @@ precision = 14
 output_buffering = 4096
 zlib.output_compression = Off
 implicit_flush = Off
-extension_dir = "ext"
+extension_dir = "C:/Users/Miler/Documents/dev/localdevine/bin/php/ext"
 extension=curl
 extension=mbstring
 extension=mysqli
 extension=pdo_mysql
 extension=openssl
-extension=zip
 
 display_errors = On
 display_startup_errors = On
 error_reporting = E_ALL
 log_errors = On
 max_execution_time = 30
-memory_limit = 128M
+memory_limit = 256M
 register_argc_argv = Off
 post_max_size = 8M
 file_uploads = On
@@ -30,7 +29,7 @@ default_socket_timeout = 60
 
 [Session]
 session.save_handler = files
-session.save_path = "C:/LocalDevine/tmp"
+session.save_path = "C:/Users/Miler/Documents/dev/localdevine/tmp"
 session.use_strict_mode = 0
 session.use_cookies = 1
 session.use_only_cookies = 1
@@ -44,3 +43,12 @@ session.serialize_handler = php
 session.gc_probability = 1
 session.gc_divisor = 1000
 session.gc_maxlifetime = 1440
+
+; Xdebug Configuration
+zend_extension=xdebug
+xdebug.mode=debug
+xdebug.client_host=127.0.0.1
+xdebug.client_port=9003
+xdebug.start_with_request=yes
+xdebug.idekey=VSCODE
+xdebug.log_level=0

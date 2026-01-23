@@ -5,6 +5,7 @@ export type { ServiceStatus, LogEntry, VHostConfig, ServiceHealth } from '../../
 export type { Config, PHPVersion } from '../../../electron/services/ConfigManager';
 export type { HostsEntry, HostsFileResult, HostsOperationResult } from '../../../electron/services/HostsManager';
 export type { ProjectTemplate, CreateProjectOptions, CreateProjectResult } from '../../../electron/services/ProjectTemplateManager';
+export type { MailHogStatus, MailHogConfig, DownloadProgress as MailHogDownloadProgress } from '../../../electron/services/MailHogManager';
 
 // Additional frontend-specific types
 export interface ServiceStatusEvent {
@@ -254,6 +255,7 @@ export interface ElectronAPI {
     openProjectBrowser: (projectName: string) => Promise<void>;
     openBrowser: (url: string) => Promise<void>;
 
+
     // Database Manager
     dbList: () => Promise<{ success: boolean; data: DatabaseInfo[]; error?: string }>;
     dbCreate: (name: string) => Promise<{ success: boolean; message?: string; error?: string }>;
@@ -328,6 +330,20 @@ export interface ElectronAPI {
     xdebugUninstall: () => Promise<{ success: boolean; error?: string }>;
     xdebugGetVSCodeConfig: () => Promise<{ success: boolean; config: object }>;
     xdebugTestConnection: () => Promise<{ success: boolean; message: string }>;
+
+    // MailHog Manager
+    mailhogGetStatus: () => Promise<MailHogStatus>;
+    mailhogGetConfig: () => Promise<MailHogConfig>;
+    mailhogUpdateConfig: (config: Partial<MailHogConfig>) => Promise<{ success: boolean; message: string }>;
+    mailhogInstall: () => Promise<{ success: boolean; message: string }>;
+    mailhogUninstall: () => Promise<{ success: boolean; message: string }>;
+    mailhogStart: () => Promise<{ success: boolean; message: string }>;
+    mailhogStop: () => Promise<{ success: boolean; message: string }>;
+    mailhogOpenUI: () => Promise<{ success: boolean }>;
+    mailhogGetSmtpConfig: () => Promise<{ host: string; port: number }>;
+    mailhogGetPhpConfig: () => Promise<{ success: boolean; config: string }>;
+    mailhogGetLaravelConfig: () => Promise<{ success: boolean; config: string }>;
+    mailhogGetSymfonyConfig: () => Promise<{ success: boolean; config: string }>;
 
     // Window utilities
     refocusWindow: () => Promise<{ success: boolean }>;

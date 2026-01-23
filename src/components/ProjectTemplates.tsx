@@ -80,6 +80,7 @@ function ProjectTemplates() {
     }
   };
 
+
   const handleDeleteProject = async (name: string) => {
     setDeleteConfirm({ show: true, project: name });
   };
@@ -218,10 +219,9 @@ function ProjectTemplates() {
       {selectedTemplate && (
         <div className="card p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-display mb-2 header-title">
-              <span className="header-icon">📦</span>
-              <span className="header-text-black">Project Templates</span>
-            </h1>
+            <h3 className="text-lg font-semibold" style={{ color: 'var(--text-on-card)' }}>
+              Create Project
+            </h3>
             <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg">
               <span className="text-xl">{selectedTemplateData?.icon}</span>
               <span className="font-semibold">{selectedTemplateData?.name}</span>

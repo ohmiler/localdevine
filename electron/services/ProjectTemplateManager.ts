@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { BrowserWindow } from 'electron';
+import { spawn } from 'child_process';
 import PathResolver from './PathResolver';
 import ConfigManager, { DatabaseConfig } from './ConfigManager';
 import logger from './Logger';
@@ -28,6 +29,7 @@ export interface CreateProjectOptions {
     createDatabase?: boolean;
 }
 
+
 export interface CreateProjectResult {
     success: boolean;
     message: string;
@@ -39,6 +41,8 @@ export class ProjectTemplateManager {
     private mainWindow: BrowserWindow | null = null;
     private wwwPath: string;
     private configManager: ConfigManager | null = null;
+    private pathResolver: PathResolver;
+
 
     // Validation: ตรวจสอบชื่อโปรเจค (ป้องกัน Path Traversal)
     private validateProjectName(name: string): { valid: boolean; error?: string } {
@@ -483,8 +487,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     constructor(configManager?: ConfigManager) {
         // Use PathResolver for correct paths in both dev and production
-        const pathResolver = PathResolver.getInstance();
-        this.wwwPath = pathResolver.wwwDir;
+        this.pathResolver = PathResolver.getInstance();
+        this.wwwPath = this.pathResolver.wwwDir;
         this.configManager = configManager || null;
     }
 
@@ -520,6 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
     getTemplate(id: string): ProjectTemplate | undefined {
         return this.templates.find(t => t.id === id);
     }
+
 
     async createProject(options: CreateProjectOptions): Promise<CreateProjectResult> {
         const template = this.getTemplate(options.templateId);

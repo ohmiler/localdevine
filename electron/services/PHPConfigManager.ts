@@ -93,7 +93,8 @@ export class PHPConfigManager {
 
     constructor() {
         this.pathResolver = PathResolver.getInstance();
-        this.phpIniPath = path.join(this.pathResolver.binDir, 'php', 'php.ini');
+        // Use the user-editable php.ini from config folder (same as ServiceManager)
+        this.phpIniPath = this.pathResolver.phpIniPath;
     }
 
     /**

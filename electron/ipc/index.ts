@@ -18,6 +18,7 @@ import PHPDownloader, { DownloadProgress } from '../services/PHPDownloader';
 import ComposerManager from '../services/ComposerManager';
 import PHPConfigManager from '../services/PHPConfigManager';
 import XdebugManager from '../services/XdebugManager';
+import MailHogManager from '../services/MailHogManager';
 import PathResolver from '../services/PathResolver';
 import logger, { Logger } from '../services/Logger';
 
@@ -147,6 +148,7 @@ export function registerIPCHandlers(): void {
   registerComposerHandlers();
   registerPHPConfigHandlers();
   registerXdebugHandlers();
+  registerMailHogHandlers();
 }
 
 // ============================================
@@ -551,6 +553,7 @@ function registerProjectHandlers(): void {
     const port = configManager ? configManager.getPort('apache') : 80;
     shell.openExternal(`http://localhost:${port}/${projectName}`);
   });
+
 }
 
 // ============================================
@@ -1344,5 +1347,114 @@ function registerXdebugHandlers(): void {
       xdebugManager = new XdebugManager();
     }
     return xdebugManager.testConnection();
+  });
+}
+
+// ============================================
+// MailHog Handlers
+// ============================================
+let mailhogManager: MailHogManager | null = null;
+
+function registerMailHogHandlers(): void {
+  // Get MailHog status
+  ipcMain.handle('mailhog-get-status', async () => {
+    if (!mailhogManager) {
+      mailhogManager = MailHogManager.getInstance();
+    }
+    return mailhogManager.getStatus();
+  });
+
+  // Get MailHog config
+  ipcMain.handle('mailhog-get-config', async () => {
+    if (!mailhogManager) {
+      mailhogManager = MailHogManager.getInstance();
+    }
+    return mailhogManager.getConfig();
+  });
+
+  // Update MailHog config
+  ipcMain.handle('mailhog-update-config', async (_event: IpcMainInvokeEvent, config: { smtpPort?: number; httpPort?: number; autoStart?: boolean }) => {
+    if (!mailhogManager) {
+      mailhogManager = MailHogManager.getInstance();
+    }
+    return mailhogManager.updateConfig(config);
+  });
+
+  // Install MailHog
+  ipcMain.handle('mailhog-install', async () => {
+    if (!mailhogManager) {
+      mailhogManager = MailHogManager.getInstance();
+    }
+    
+    return mailhogManager.install((progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('mailhog-install-progress', progress);
+      }
+    });
+  });
+
+  // Uninstall MailHog
+  ipcMain.handle('mailhog-uninstall', async () => {
+    if (!mailhogManager) {
+      mailhogManager = MailHogManager.getInstance();
+    }
+    return mailhogManager.uninstall();
+  });
+
+  // Start MailHog
+  ipcMain.handle('mailhog-start', async () => {
+    if (!mailhogManager) {
+      mailhogManager = MailHogManager.getInstance();
+    }
+    return mailhogManager.start();
+  });
+
+  // Stop MailHog
+  ipcMain.handle('mailhog-stop', async () => {
+    if (!mailhogManager) {
+      mailhogManager = MailHogManager.getInstance();
+    }
+    return mailhogManager.stop();
+  });
+
+  // Open MailHog UI
+  ipcMain.handle('mailhog-open-ui', async () => {
+    if (!mailhogManager) {
+      mailhogManager = MailHogManager.getInstance();
+    }
+    mailhogManager.openUI();
+    return { success: true };
+  });
+
+  // Get SMTP config for display
+  ipcMain.handle('mailhog-get-smtp-config', async () => {
+    if (!mailhogManager) {
+      mailhogManager = MailHogManager.getInstance();
+    }
+    return mailhogManager.getSmtpConfig();
+  });
+
+  // Get PHP ini config
+  ipcMain.handle('mailhog-get-php-config', async () => {
+    if (!mailhogManager) {
+      mailhogManager = MailHogManager.getInstance();
+    }
+    return { success: true, config: mailhogManager.getPhpIniConfig() };
+  });
+
+  // Get Laravel env config
+  ipcMain.handle('mailhog-get-laravel-config', async () => {
+    if (!mailhogManager) {
+      mailhogManager = MailHogManager.getInstance();
+    }
+    return { success: true, config: mailhogManager.getLaravelEnvConfig() };
+  });
+
+  // Get Symfony env config
+  ipcMain.handle('mailhog-get-symfony-config', async () => {
+    if (!mailhogManager) {
+      mailhogManager = MailHogManager.getInstance();
+    }
+    return { success: true, config: mailhogManager.getSymfonyEnvConfig() };
   });
 }

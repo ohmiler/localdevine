@@ -312,7 +312,7 @@ export default function PHPConfigEditor({ onBack }: PHPConfigEditorProps) {
                         onClick={() => setActiveTab(tab.id as TabType)}
                         className={`px-4 py-2 rounded-lg font-semibold transition-all ${
                             activeTab === tab.id
-                                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+                                ? 'bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg'
                                 : ''
                         }`}
                         style={activeTab !== tab.id ? { background: 'var(--bg-card)', color: 'var(--text-secondary)' } : {}}

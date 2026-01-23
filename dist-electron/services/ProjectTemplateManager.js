@@ -474,8 +474,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         ];
         // Use PathResolver for correct paths in both dev and production
-        const pathResolver = PathResolver_1.default.getInstance();
-        this.wwwPath = pathResolver.wwwDir;
+        this.pathResolver = PathResolver_1.default.getInstance();
+        this.wwwPath = this.pathResolver.wwwDir;
         this.configManager = configManager || null;
     }
     setConfigManager(configManager) {

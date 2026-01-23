@@ -121,11 +121,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
     xdebugUninstall: () => ipcRenderer.invoke('xdebug-uninstall'),
     xdebugGetVSCodeConfig: () => ipcRenderer.invoke('xdebug-get-vscode-config'),
     xdebugTestConnection: () => ipcRenderer.invoke('xdebug-test-connection'),
+    // MailHog Manager
+    mailhogGetStatus: () => ipcRenderer.invoke('mailhog-get-status'),
+    mailhogGetConfig: () => ipcRenderer.invoke('mailhog-get-config'),
+    mailhogUpdateConfig: (config) => ipcRenderer.invoke('mailhog-update-config', config),
+    mailhogInstall: () => ipcRenderer.invoke('mailhog-install'),
+    mailhogUninstall: () => ipcRenderer.invoke('mailhog-uninstall'),
+    mailhogStart: () => ipcRenderer.invoke('mailhog-start'),
+    mailhogStop: () => ipcRenderer.invoke('mailhog-stop'),
+    mailhogOpenUI: () => ipcRenderer.invoke('mailhog-open-ui'),
+    mailhogGetSmtpConfig: () => ipcRenderer.invoke('mailhog-get-smtp-config'),
+    mailhogGetPhpConfig: () => ipcRenderer.invoke('mailhog-get-php-config'),
+    mailhogGetLaravelConfig: () => ipcRenderer.invoke('mailhog-get-laravel-config'),
+    mailhogGetSymfonyConfig: () => ipcRenderer.invoke('mailhog-get-symfony-config'),
     // Window utilities
     refocusWindow: () => ipcRenderer.invoke('refocus-window'),
     // Event listeners
     on: (channel, callback) => {
-        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status', 'php-download-progress', 'composer-output', 'composer-install-progress', 'xdebug-install-progress'];
+        const allowedChannels = ['service-status', 'log-entry', 'health-status', 'service-notification', 'update-status', 'php-download-progress', 'composer-output', 'composer-install-progress', 'xdebug-install-progress', 'mailhog-install-progress'];
         if (allowedChannels.includes(channel)) {
             ipcRenderer.on(channel, (event, ...args) => callback(event, ...args));
         }

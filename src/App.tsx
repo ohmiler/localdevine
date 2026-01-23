@@ -16,11 +16,12 @@ import PHPDownloadDialog from './components/PHPDownloadDialog';
 import ComposerPanel from './components/ComposerPanel';
 import PHPConfigEditor from './components/PHPConfigEditor';
 import XdebugPanel from './components/XdebugPanel';
+import MailHogPanel from './components/MailHogPanel';
 import { useKeyboardShortcuts, defaultShortcuts } from './hooks/useKeyboardShortcuts';
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 import './styles/themes.css';
 
-type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl' | 'logs' | 'composer' | 'phpconfig' | 'xdebug';
+type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl' | 'logs' | 'composer' | 'phpconfig' | 'xdebug' | 'mailhog';
 
 interface Services {
   php: ServiceStatus;
@@ -378,6 +379,8 @@ function App() {
         return <PHPConfigEditor onBack={() => setCurrentPage('home')} />;
       case 'xdebug':
         return <XdebugPanel onBack={() => setCurrentPage('home')} />;
+      case 'mailhog':
+        return <MailHogPanel onBack={() => setCurrentPage('home')} />;
       default:
         return renderHomePage();
     }

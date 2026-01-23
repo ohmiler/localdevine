@@ -140,8 +140,8 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
                 {/* Add New VHost */}
                 <div className="card p-6">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-lg">
-                            ➕
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-xl font-bold text-white">
+                            +
                         </div>
                         <h2 className="text-xl font-bold" style={{ color: 'var(--text-on-card)' }}>Add Virtual Host</h2>
                     </div>
@@ -196,7 +196,7 @@ function VirtualHosts({ onBack }: VirtualHostsProps) {
                                     : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
                                 }`}
                         >
-                            {saving ? '⏳ Adding...' : '➕ Add Virtual Host'}
+                            {saving ? '⏳ Adding...' : '+ Add Virtual Host'}
                         </button>
 
                         {error && (

@@ -654,6 +654,33 @@ ${vhostBlocks}
 
     async stopAllServices(): Promise<void> {
         const services: Array<keyof ServiceProcesses> = ['php', 'apache', 'mariadb'];
+        
+        // IMPORTANT: Mark ALL services as stopping BEFORE starting the stop process
+        // This prevents race condition with health checks showing errors during shutdown
+        services.forEach(service => {
+            this.stoppingServices.add(service);
+            // Clear service start time to prevent warmup period confusion
+            delete this.serviceStartTime[service];
+            // Reset health status immediately to prevent showing stale errors
+            this.healthStatus[service] = {
+                service,
+                status: 'stopped',
+                isHealthy: false,
+                lastCheck: new Date().toISOString(),
+                error: undefined,
+                pid: undefined,
+                uptime: undefined,
+                memoryUsage: undefined,
+                cpuUsage: undefined,
+                port: this.getPort(service)
+            };
+        });
+        
+        // Send updated health status to UI immediately
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            this.mainWindow.webContents.send('health-status', this.healthStatus);
+        }
+        
         const stopPromises = services.map(service => this.stopService(service));
         await Promise.all(stopPromises);
     }
@@ -993,14 +1020,29 @@ ${vhostBlocks}
 
     stopService(serviceName: keyof ServiceProcesses): Promise<void> {
         return new Promise((resolve) => {
+            // IMPORTANT: Mark service as stopping IMMEDIATELY to prevent race condition with health checks
+            this.stoppingServices.add(serviceName);
+            // Clear service start time to prevent warmup period confusion
+            delete this.serviceStartTime[serviceName];
+            // Reset health status immediately to prevent showing stale errors
+            this.healthStatus[serviceName] = {
+                service: serviceName,
+                status: 'stopped',
+                isHealthy: false,
+                lastCheck: new Date().toISOString(),
+                error: undefined,
+                pid: undefined,
+                uptime: undefined,
+                memoryUsage: undefined,
+                cpuUsage: undefined,
+                port: this.getPort(serviceName)
+            };
+            
             const child = this.processes[serviceName];
             if (child) {
                 const pid = child.pid;
                 if (pid) {
                     this.log(serviceName, `Stopping (PID: ${pid})...`);
-                    
-                    // Mark service as stopping to prevent error notifications during shutdown
-                    this.stoppingServices.add(serviceName);
 
                     // Kill using PID instead of /IM for safety
                     this.killByPID(pid, serviceName)
@@ -1026,9 +1068,17 @@ ${vhostBlocks}
                             resolve();
                         });
                 } else {
+                    // No PID, but still need to clean up stoppingServices
+                    setTimeout(() => {
+                        this.stoppingServices.delete(serviceName);
+                    }, 5000);
                     resolve();
                 }
             } else {
+                // Service not running, but still need to clean up stoppingServices
+                setTimeout(() => {
+                    this.stoppingServices.delete(serviceName);
+                }, 5000);
                 resolve();
             }
         });

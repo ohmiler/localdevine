@@ -5,15 +5,6 @@ All notable changes to LocalDevine will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Planned
-- Multiple PHP version switching
-- Laravel/WordPress project templates
-- Database backup/restore
-- Service logs export
-- MailHog email testing improvements
-
 ---
 
 ## [1.0.0] - 2026-01-23
@@ -71,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Content Security Policy implementation
 - ESLint and Prettier for code quality
 - NSIS installer with customizable install location
-- Installer size optimized from ~1GB to ~165MB (cleaned up test files, removed PHP 8.4)
+- Installer size optimized from ~1GB to ~165MB (cleaned up test files)
 
 #### Components Included
 | Component | Version |
@@ -85,7 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.2.0] - 2026-01-20 (Pre-release)
+## 2026-01-20 (Pre-release)
 
 ### Added
 - Production mode path resolution
@@ -100,7 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.1.0] - 2026-01-16 (Initial Development)
+## 2026-01-16 (Initial Development)
 
 ### Added
 - Basic service management (Apache, PHP, MariaDB)

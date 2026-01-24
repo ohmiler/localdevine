@@ -8,7 +8,6 @@ import ConfigManager from './services/ConfigManager';
 import HostsManager from './services/HostsManager';
 import ProjectTemplateManager from './services/ProjectTemplateManager';
 import DatabaseManager from './services/DatabaseManager';
-import EnvManager from './services/EnvManager';
 import SSLManager from './services/SSLManager';
 import AutoUpdater from './services/AutoUpdater';
 import { registerIPCHandlers, initializeIPC } from './ipc';
@@ -254,11 +253,10 @@ app.whenReady().then(() => {
   projectTemplateManager = new ProjectTemplateManager();
   const databaseManager = new DatabaseManager(configManager);
   databaseManager.setMainWindow(win);
-  const envManager = new EnvManager();
   const sslManager = new SSLManager();
 
   // Initialize IPC with manager references
-  initializeIPC(win, serviceManager, configManager, hostsManager, projectTemplateManager, databaseManager, envManager, sslManager);
+  initializeIPC(win, serviceManager, configManager, hostsManager, projectTemplateManager, databaseManager, sslManager);
 
   // Start health monitoring
   serviceManager.startHealthMonitoring(5000);

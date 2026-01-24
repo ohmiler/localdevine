@@ -88,20 +88,6 @@ export interface OpenSSLInfo {
     path?: string;
 }
 
-// Environment Variable types
-export interface EnvVariable {
-    key: string;
-    value: string;
-    comment?: string;
-}
-
-export interface EnvFile {
-    name: string;
-    path: string;
-    variables: EnvVariable[];
-    lastModified?: string;
-}
-
 // Composer types
 export interface ComposerStatus {
     installed: boolean;
@@ -267,15 +253,6 @@ export interface ElectronAPI {
     dbTestConnection: () => Promise<{ success: boolean; message?: string; error?: string }>;
     dbSelectFile: () => Promise<{ success: boolean; filePath: string | null }>;
     dbSaveFile: (defaultName: string) => Promise<{ success: boolean; filePath: string | null }>;
-
-    // Environment Variables Manager
-    envListFiles: () => Promise<{ success: boolean; data: EnvFile[] }>;
-    envGetFile: (filename: string) => Promise<{ success: boolean; data?: EnvFile; error?: string }>;
-    envCreateFile: (filename: string, variables?: EnvVariable[]) => Promise<{ success: boolean; message?: string; error?: string }>;
-    envSaveFile: (filename: string, variables: EnvVariable[]) => Promise<{ success: boolean; message?: string; error?: string }>;
-    envDeleteFile: (filename: string) => Promise<{ success: boolean; message?: string; error?: string }>;
-    envGetDir: () => Promise<{ success: boolean; path: string }>;
-    envOpenDir: () => Promise<{ success: boolean }>;
 
     // SSL Certificate Manager
     sslListCerts: () => Promise<SSLOperationResult>;

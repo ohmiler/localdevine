@@ -7,7 +7,6 @@ import HostsEditor from './components/HostsEditor';
 import NotificationPanel from './components/NotificationPanel';
 import ProjectTemplates from './components/ProjectTemplates';
 import DatabaseManager from './components/DatabaseManager';
-import EnvManager from './components/EnvManager';
 import SSLManager from './components/SSLManager';
 import LogsManager from './components/LogsManager';
 import Sidebar from './components/Sidebar';
@@ -21,7 +20,7 @@ import { useKeyboardShortcuts, defaultShortcuts } from './hooks/useKeyboardShort
 import { ServiceStatus, LogEntry, ServiceHealth, ServiceNotification } from './types/electron';
 import './styles/themes.css';
 
-type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'env' | 'ssl' | 'logs' | 'composer' | 'phpconfig' | 'xdebug' | 'mailhog';
+type PageType = 'home' | 'settings' | 'vhosts' | 'hosts' | 'templates' | 'database' | 'ssl' | 'logs' | 'composer' | 'phpconfig' | 'xdebug' | 'mailhog';
 
 interface Services {
   php: ServiceStatus;
@@ -372,8 +371,6 @@ function App() {
         );
       case 'database':
         return <DatabaseManager onBack={() => setCurrentPage('home')} />;
-      case 'env':
-        return <EnvManager onBack={() => setCurrentPage('home')} />;
       case 'ssl':
         return <SSLManager onBack={() => setCurrentPage('home')} />;
       case 'logs':

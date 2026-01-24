@@ -41,7 +41,7 @@ Phase 4: Virtual Hosts & Config Management
 
 ---
 
-## 🚧 ปัญหาแรกที่เจอ: JavaScript vs TypeScript
+## 🚧 บทเรียนที่ 1: ปัญหาแรกที่เจอ - JavaScript vs TypeScript
 
 ### สถานการณ์เริ่มต้น
 โปรเจคเริ่มจาก JavaScript แต่ AI Agent แนะนำให้ย้ายไป TypeScript เพื่อ:
@@ -82,7 +82,7 @@ ipcRenderer.on('service-status', (event, data: ServiceStatusEvent) => {
 
 ---
 
-## 🔥 ปัญหาที่สอง: Service Management Hell
+## 🔥 บทเรียนที่ 2: Service Management Hell
 
 ### ความท้าทาย
 การจัดการ Apache, PHP, MariaDB บน Windows นั้นยากกว่าที่คิด:
@@ -166,7 +166,7 @@ private killByPID(pid: number, serviceName: string): Promise<void> {
 
 ---
 
-## 💥 ปัญหาที่สาม: Path Resolution Nightmare
+## 💥 บทเรียนที่ 3: Path Resolution Nightmare
 
 ### สถานการณ์
 Electron Apps มีปัญหาเรื่อง path:
@@ -211,7 +211,7 @@ class PathResolver {
 
 ---
 
-## 🎨 ปัญหาที่สี่: UI/UX Design กับ AI Agent
+## 🎨 บทเรียนที่ 4: UI/UX Design กับ AI Agent
 
 ### ความท้าทาย
 AI Agent ไม่ใช่ Designer แต่ช่วยได้ในด้าน:
@@ -279,7 +279,7 @@ function ServiceCard({ service }) {
 
 ---
 
-## 🌐 ปัญหาที่ห้า: Virtual Hosts & Windows Permissions
+## 🌐 บทเรียนที่ 5: Virtual Hosts & Windows Permissions
 
 ### ความซับซ้อน
 Virtual Hosts บน Windows ต้องจัดการ:
@@ -344,7 +344,7 @@ class HostsManager {
 
 ---
 
-## 🎯 ปัญหาที่หก: Database Initialization
+## 🎯 บทเรียนที่ 6: Database Initialization
 
 ### ความท้าทาย
 MariaDB ต้อง:
@@ -523,11 +523,11 @@ LocalDevine คือตัวอย่างที่ชัดเจนขอ�
 
 ---
 
-## 🔧 บทเรียนเพิ่มเติม: Production Mode & Service Stability (January 2026)
+## 🔧 บทเรียนที่ 7-13: Production Mode & Service Stability (January 2026)
 
 หลังจากเวอร์ชันแรกเสร็จสมบูรณ์ ยังมีปัญหาอีกหลายอย่างที่ต้องแก้ไขเมื่อทดสอบใน Production Mode ต่อไปนี้คือบทเรียนสำคัญ:
 
-### 🚨 ปัญหาที่ 7: Production Mode Permission Issues
+### 🚨 บทเรียนที่ 7: Production Mode Permission Issues
 
 #### สถานการณ์
 เมื่อ build app และติดตั้งใน `C:\Program Files\LocalDevine` พบว่า:
@@ -590,7 +590,7 @@ C:\LocalDevine\                    ← User data (writable)
 
 ---
 
-### 🚨 ปัญหาที่ 8: Apache Stale PID File
+### 🚨 บทเรียนที่ 8: Apache Stale PID File
 
 #### สถานการณ์
 Apache แสดง warning "Unclean shutdown" ทุกครั้งที่เริ่ม
@@ -619,7 +619,7 @@ async startService(serviceName: 'apache') {
 
 ---
 
-### 🚨 ปัญหาที่ 9: False Error Notifications (Warmup Period)
+### 🚨 บทเรียนที่ 9: False Error Notifications (Warmup Period)
 
 #### สถานการณ์
 Health monitoring ส่ง notification ว่า service error ทั้งๆ ที่ service กำลัง start อยู่
@@ -665,7 +665,7 @@ class ServiceManager {
 
 ---
 
-### 🚨 ปัญหาที่ 10: MariaDB 11.x Password Setup
+### 🚨 บทเรียนที่ 10: MariaDB 11.x Password Setup
 
 #### สถานการณ์
 การ set root password ด้วย `SET PASSWORD` ไม่ทำงานใน MariaDB 11.x
@@ -696,7 +696,7 @@ private async setRootPassword(cwd: string, dataDir: string): Promise<void> {
 
 ---
 
-### 🚨 ปัญหาที่ 11: PHP Session Directory
+### 🚨 บทเรียนที่ 11: PHP Session Directory
 
 #### สถานการณ์
 PHP แสดง warning เกี่ยวกับ session save path
@@ -723,7 +723,7 @@ case 'php':
 
 ---
 
-### 🚨 ปัญหาที่ 12: Harmless Log Messages Flooding
+### 🚨 บทเรียนที่ 12: Harmless Log Messages Flooding
 
 #### สถานการณ์
 Log panel เต็มไปด้วย warning messages ที่ไม่สำคัญ:
@@ -768,7 +768,7 @@ log(service: string, message: string | Buffer): void {
 
 ---
 
-### 🎨 ปัญหาที่ 13: Dark Mode Text Visibility
+### 🎨 บทเรียนที่ 13: Dark Mode Text Visibility
 
 #### สถานการณ์
 ข้อความบาง elements อ่านไม่ออกใน dark mode
@@ -861,7 +861,7 @@ Runtime Data (temporary)  →  %TEMP% / data directory
 
 ---
 
-## 🔒 บทเรียนที่ 14: Security Code Review & Best Practices (January 2026)
+## 🔒 บทเรียนที่ 14: Security Code Review & Best Practices
 
 หลังจากโปรเจคเสถียรแล้ว ได้ทำ comprehensive code review เพื่อตรวจสอบความปลอดภัยและคุณภาพโค้ด พบปัญหาทั้งหมด **49 รายการ** แบ่งเป็น:
 

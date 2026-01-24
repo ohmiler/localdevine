@@ -114,7 +114,7 @@ export default function Sidebar({ currentPage, onNavigate, version }: SidebarPro
             </div>
 
             {/* Main Navigation */}
-            <nav style={{ flex: 1, padding: '12px 8px', overflowY: 'auto' }}>
+            <nav style={{ flex: 1, padding: '12px 8px', overflowY: 'hidden' }}>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                     {navItems.map((item) => (
                         <li key={item.id} style={{ marginBottom: '4px' }}>

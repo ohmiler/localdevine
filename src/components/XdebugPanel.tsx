@@ -23,6 +23,7 @@ export default function XdebugPanel({ onBack }: XdebugPanelProps) {
     // VS Code config
     const [showVSCodeConfig, setShowVSCodeConfig] = useState(false);
     const [vsCodeConfig, setVSCodeConfig] = useState<string>('');
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         loadStatus();
@@ -197,9 +198,14 @@ export default function XdebugPanel({ onBack }: XdebugPanelProps) {
         }
     };
 
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        setSuccess('Copied to clipboard!');
+    const copyToClipboard = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            setError('❌ Failed to copy to clipboard');
+        }
     };
 
     if (loading) {
@@ -471,10 +477,10 @@ export default function XdebugPanel({ onBack }: XdebugPanelProps) {
                         
                         <div className="flex gap-4 mt-4">
                             <button
-                                onClick={() => copyToClipboard(vsCodeConfig)}
-                                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+                                onClick={async () => await copyToClipboard(vsCodeConfig)}
+                                className={`px-4 py-2 text-white rounded-lg font-semibold transition-all ${copied ? 'bg-green-600' : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:shadow-lg'}`}
                             >
-                                📋 Copy to Clipboard
+                                {copied ? '✅ Copied!' : '📋 Copy to Clipboard'}
                             </button>
                             <button
                                 onClick={() => setShowVSCodeConfig(false)}

@@ -30,7 +30,6 @@ A Modern Local Development Environment for Windows - The next-generation alterna
 - **Modern UI** - Beautiful interface built with React 19 and TailwindCSS 4
 - **Dark/Light Theme** - Toggle between dark and light themes with persistent preference
 - **System Tray** - Minimize to system tray, quick access to controls
-- **Keyboard Shortcuts** - Quick access to common actions (Ctrl+S, Ctrl+T)
 - **Health Monitoring** - Real-time service health checks with notifications
 - **Console Logs** - Real-time log viewer with message filtering
 - **Warmup Period** - No false error notifications during service startup
@@ -74,7 +73,7 @@ A Modern Local Development Environment for Windows - The next-generation alterna
 
 1. **Download** `LocalDevine Setup 1.0.0.exe` from the assets below
 2. **Install** to your preferred location
-   > ⚠️ **Windows SmartScreen:** หากเห็น "Windows protected your PC" ให้คลิก **"More info"** → **"Run anyway"** (ปกติสำหรับโปรแกรมใหม่)
+   > ⚠️ **Windows SmartScreen:** หากเห็น "Windows protected your PC" Click **"More info"** → **"Run anyway"** (This is normal for new programs.)
 3. **Launch** LocalDevine
 4. **Click Start** on Apache and MariaDB
 5. **Open** `http://localhost` in your browser
@@ -105,8 +104,8 @@ A Modern Local Development Environment for Windows - The next-generation alterna
 - **Architecture:** Electron with context isolation
 - **Security:** Secure IPC communication
 - **Code Quality:** ESLint and Prettier
-- **Installer Size:** ~165 MB
-- **Installed Size:** ~792 MB
+- **Installer Size:** ~160 MB
+- **Installed Size:** ~600 MB
 
 ---
 

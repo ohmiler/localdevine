@@ -1,8 +1,8 @@
 # 🎉 LocalDevine v1.0.0 - First Stable Release
 
-**Release Date:** January 23, 2026
+**Release Date:** January 24, 2026
 
-A Modern Local Development Environment for Windows - ทางเลือกที่ทันสมัยสำหรับ XAMPP และ Laragon
+A Modern Local Development Environment for Windows - The next-generation alternative to XAMPP and Laragon with seamless service management and beautiful UI.
 
 ---
 
@@ -10,7 +10,7 @@ A Modern Local Development Environment for Windows - ทางเลือกท
 
 | File | Size | Description |
 |------|------|-------------|
-| `LocalDevine-Setup-1.0.0.exe` | ~165 MB | Windows Installer |
+| `LocalDevine Setup 1.0.0.exe` | ~160 MB | Windows Installer |
 
 ---
 
@@ -65,7 +65,7 @@ A Modern Local Development Environment for Windows - ทางเลือกท
 
 - **OS:** Windows 10/11 (64-bit)
 - **RAM:** 4GB minimum
-- **Disk Space:** 500MB free space
+- **Disk Space:** ~600MB free space
 - **Permissions:** Administrator rights (for Virtual Hosts and Hosts File Editor)
 
 ---

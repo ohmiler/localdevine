@@ -24,6 +24,9 @@ export default function XdebugPanel({ onBack }: XdebugPanelProps) {
     const [showVSCodeConfig, setShowVSCodeConfig] = useState(false);
     const [vsCodeConfig, setVSCodeConfig] = useState<string>('');
     const [copied, setCopied] = useState(false);
+    
+    // Uninstall confirmation modal
+    const [showUninstallModal, setShowUninstallModal] = useState(false);
 
     useEffect(() => {
         loadStatus();
@@ -145,9 +148,12 @@ export default function XdebugPanel({ onBack }: XdebugPanelProps) {
         }
     };
 
-    const handleUninstall = async () => {
-        if (!confirm('Are you sure you want to uninstall Xdebug?')) return;
-        
+    const handleUninstall = () => {
+        setShowUninstallModal(true);
+    };
+    
+    const confirmUninstall = async () => {
+        setShowUninstallModal(false);
         setSaving(true);
         setError(null);
         
@@ -538,6 +544,37 @@ export default function XdebugPanel({ onBack }: XdebugPanelProps) {
                     </div>
                 </div>
             </div>
+
+            {/* Uninstall Confirmation Modal */}
+            {showUninstallModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="card p-6 max-w-md w-full mx-4">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-xl">
+                                🗑️
+                            </div>
+                            <h3 className="text-lg font-heading" style={{ color: 'var(--text-on-card)' }}>Confirm Uninstall</h3>
+                        </div>
+                        <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
+                            Are you sure you want to uninstall <strong>Xdebug</strong>? You can reinstall it later if needed.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setShowUninstallModal(false)}
+                                className="button-secondary"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmUninstall}
+                                className="px-4 py-2 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+                            >
+                                Uninstall
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

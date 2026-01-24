@@ -25,6 +25,9 @@ export default function PHPConfigEditor({ onBack }: PHPConfigEditorProps) {
     const [rawContent, setRawContent] = useState('');
     const [hasBackup, setHasBackup] = useState(false);
     const [configPath, setConfigPath] = useState('');
+    
+    // Restore confirmation modal
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -139,11 +142,12 @@ export default function PHPConfigEditor({ onBack }: PHPConfigEditorProps) {
         }
     };
 
-    const restoreBackup = async () => {
-        if (!confirm('Are you sure you want to restore from backup? Current changes will be lost.')) {
-            return;
-        }
-
+    const handleRestoreClick = () => {
+        setShowRestoreModal(true);
+    };
+    
+    const confirmRestore = async () => {
+        setShowRestoreModal(false);
         setSaving(true);
         try {
             const result = await window.electronAPI.phpConfigRestoreBackup();
@@ -263,7 +267,7 @@ export default function PHPConfigEditor({ onBack }: PHPConfigEditorProps) {
                 <div className="flex items-center gap-4">
                     {hasBackup && (
                         <button
-                            onClick={restoreBackup}
+                            onClick={handleRestoreClick}
                             disabled={saving}
                             className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
                             style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
@@ -460,6 +464,37 @@ export default function PHPConfigEditor({ onBack }: PHPConfigEditorProps) {
                     
                     <div className="mt-4 text-sm" style={{ color: 'var(--text-muted)' }}>
                         <p>💡 Tip: Be careful when editing raw configuration. A backup will be created before saving.</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Restore Confirmation Modal */}
+            {showRestoreModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="card p-6 max-w-md w-full mx-4">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-xl">
+                                ⚠️
+                            </div>
+                            <h3 className="text-lg font-heading" style={{ color: 'var(--text-on-card)' }}>Confirm Restore</h3>
+                        </div>
+                        <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
+                            Are you sure you want to restore from backup? <strong>Current changes will be lost.</strong>
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setShowRestoreModal(false)}
+                                className="button-secondary"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmRestore}
+                                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+                            >
+                                Restore
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

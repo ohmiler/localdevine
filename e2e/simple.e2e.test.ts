@@ -22,6 +22,7 @@ test.describe('Simple E2E Tests', () => {
       env: {
         ...process.env,
         NODE_ENV: 'development',
+        E2E_TEST: 'true',
       },
       timeout: 30000,
     });

@@ -140,7 +140,10 @@ function createWindow() {
         checkVite.then((viteRunning) => {
             if (viteRunning) {
                 mainWindow?.loadURL(VITE_DEV_SERVER_URL);
-                mainWindow?.webContents.openDevTools({ mode: 'detach' });
+                // Don't open DevTools during E2E tests
+                if (!process.env.E2E_TEST) {
+                    mainWindow?.webContents.openDevTools({ mode: 'detach' });
+                }
             }
             else {
                 Logger_1.default.info('Vite not running, loading from dist folder');

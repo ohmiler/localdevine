@@ -519,10 +519,6 @@ LocalDevine คือตัวอย่างที่ชัดเจนขอ�
 
 ---
 
-*เขียนโดย Miler และ AI Agent Cascade - January 2025*
-
----
-
 ## 🔧 บทเรียนที่ 7-13: Production Mode & Service Stability (January 2026)
 
 หลังจากเวอร์ชันแรกเสร็จสมบูรณ์ ยังมีปัญหาอีกหลายอย่างที่ต้องแก้ไขเมื่อทดสอบใน Production Mode ต่อไปนี้คือบทเรียนสำคัญ:
@@ -1011,30 +1007,13 @@ await window.keyboard.press('Escape'); // ปิด modal ก่อนทดส�
 | **Security Issues Fixed** | 4/4 critical |
 | **Test Coverage** | Unit: 100%, E2E: 80% |
 | **Installer Size** | ~160 MB |
-| **Installed Size** | ~792 MB |
+| **Installed Size** | ~600 MB |
 
 #### GitHub Release
 - **Version**: v1.0.0
 - **Release Date**: January 24, 2026
 - **URL**: https://github.com/ohmiler/localdevine/releases/tag/v1.0.0
 - **Asset**: LocalDevine Setup 1.0.0.exe
-
----
-
-## 🎯 Roadmap & Future Plans
-
-### v1.1.0 (Planned)
-- [ ] Multiple PHP version switching
-- [ ] Laravel/WordPress project templates
-- [ ] Database backup/restore
-- [ ] MailHog integration improvements
-- [ ] Auto-update system improvements
-
-### v2.0.0 (Future)
-- [ ] Docker container support
-- [ ] Cloud sync configuration
-- [ ] Plugin system for community extensions
-- [ ] Cross-platform support (macOS, Linux)
 
 ---
 
